@@ -4,6 +4,13 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
 
 - Save id = `nds-<4-char game code>` from the ROM header at 0x0C (e.g. `nds-IPGE` = SoulSilver USA), so
   one save per game regardless of file name. `EJS_gameName` is set to this id, which fixes the file name.
+- **Each browser/device has its own save.** A random device id is kept in localStorage `pp_device`, and the
+  cloud copy lives at `saves/devices/<device>/<id>.sav` (API: `/api/save?device=<device>&id=<id>`), backups in
+  `saves/backups/devices/<device>/<id>/`. The cloud copy is a backup of that browser's save, not shared.
+  Clearing site data gives the browser a new id and an empty slot; the old slot stays in R2.
+- Before 2026-10-24 all devices shared one save at `saves/<id>.sav` (no `device=`). It is left in place.
+  A browser that synced with it before (`pp_synced_<id>` set) and has no slot yet settles against the shared
+  save one last time (same conflict rule), then stores the result in its own slot. New browsers start empty.
 - EmulatorJS saves live in IndexedDB database `/data/saves`, store `FILE_DATA` (Emscripten IDBFS),
   keyed by full path, value `{timestamp, mode, contents}`. Each core uses its own folder:
   `/data/saves/DeSmuME/<id>.dsv` and `/data/saves/melonDS/<id>.sav`.
@@ -14,7 +21,7 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
   `|-DESMUME SAVE-|`) is stripped on upload (`toRaw()`).
 - Conflict rule: if the local save changed since the last sync (hash in localStorage `pp_synced_<id>`)
   and differs from the cloud, the page asks which to keep. The loser is uploaded as a backup.
-- Server keeps the previous version on every overwrite in `saves/backups/<id>/` (last 20).
+- Server keeps the previous version on every overwrite in the slot's backups folder (last 20).
 - `SaveSync.started()` checks `getSaveFilePath()` matches the expected path and pauses sync if not.
 - Periodic sync reads passively every 30s, and also syncs on tab hide and on "Exit".
 - Save states are not synced (core-specific, browser-only).

@@ -1,6 +1,7 @@
 /* ---------- cloud save sync ---------- */
-// DS games only. The cloud keeps the plain (raw) save; DeSmuME's .dsv footer is stripped on
-// upload, and a cloud save is handed to DeSmuME as a .sav it converts at boot.
+// DS games only. Each browser/device has its own cloud save (random device id in localStorage).
+// The cloud keeps the plain (raw) save; DeSmuME's .dsv footer is stripped on upload, and a cloud
+// save is handed to DeSmuME as a .sav it converts at boot.
 const SaveSync = (() => {
   const INTERVAL_MS = 30000;
   const IDB_NAME = "/data/saves", STORE = "FILE_DATA"; // EmulatorJS/Emscripten IDBFS layout
@@ -14,6 +15,22 @@ const SaveSync = (() => {
   const syncedKey = () => "pp_synced_" + id;
   function getSynced() { try { return localStorage.getItem(syncedKey()); } catch { return null; } }
   function setSynced(h) { lastHash = h; try { localStorage.setItem(syncedKey(), h); } catch {} }
+
+  // This browser's own save slot in the cloud.
+  let device = null;
+  function deviceId() {
+    if (device) return device;
+    try { device = localStorage.getItem("pp_device"); } catch {}
+    if (!device || !/^[A-Za-z0-9_-]{1,64}$/.test(device)) {
+      const b = crypto.getRandomValues(new Uint8Array(12));
+      device = "d" + [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+      try { localStorage.setItem("pp_device", device); } catch {}
+    }
+    return device;
+  }
+  // shared = the old save all devices used to share (only read once, to migrate).
+  const saveUrl = (extra, shared) =>
+    "/api/save?" + (extra || "") + (shared ? "" : "device=" + deviceId() + "&") + "id=" + encodeURIComponent(id);
 
   async function sha(buf) {
     const d = new Uint8Array(await crypto.subtle.digest("SHA-256", buf));
@@ -102,8 +119,7 @@ const SaveSync = (() => {
   }
 
   async function upload(raw, hash, backupOnly) {
-    const url = "/api/save?" + (backupOnly ? "backup=1&" : "") + "id=" + encodeURIComponent(id);
-    const res = await fetch(url, { method: "PUT", credentials: "same-origin", body: raw });
+    const res = await fetch(saveUrl(backupOnly ? "backup=1&" : ""), { method: "PUT", credentials: "same-origin", body: raw });
     if (res.status === 401) { stop(); status("Locked: saves stay in this browser", "warn"); return false; }
     if (!res.ok) throw new Error("HTTP " + res.status);
     if (backupOnly) return true;
@@ -131,9 +147,14 @@ const SaveSync = (() => {
     lastHash = getSynced();
     status("Checking cloud save…");
 
-    let res;
-    try { res = await fetch("/api/save?id=" + encodeURIComponent(id), { credentials: "same-origin", cache: "no-store" }); }
-    catch { status("Offline: saves stay in this browser", "warn"); return id; }
+    const get = (shared) => fetch(saveUrl("", shared), { credentials: "same-origin", cache: "no-store" });
+    let res, migrating = false;
+    try {
+      res = await get(false);
+      // This browser synced with the old shared save before but has no slot of its own yet:
+      // settle against the shared save one last time, then keep the result in its own slot.
+      if (res.status === 404 && lastHash) { res = await get(true); migrating = true; }
+    } catch { status("Offline: saves stay in this browser", "warn"); return id; }
     if (res.status === 401) { status("Locked: unlock My games to sync saves", "warn"); return id; }
     const isJson = (res.headers.get("content-type") || "").includes("json");
     if (res.status === 404 && !isJson) { status("Cloud saves only work on the deployed site", "warn"); id = null; return null; }
@@ -167,6 +188,9 @@ const SaveSync = (() => {
     } else {
       setSynced(cloudHash);
       status("Save in sync (" + time(cloudWhen) + ")", "ok");
+    }
+    if (migrating && choice !== "local") { // copy the kept save into this device's own slot
+      await upload(choice === "cloud" ? cloud : local, cloudHash).catch(() => status("Save sync failed, will retry", "warn"));
     }
     return id;
   }
