@@ -1,0 +1,253 @@
+:root {
+  --ink: #181820;
+  --paper: #f8f8f0;
+  --paper-2: #e8e8d8;
+  --shade: rgba(16, 16, 32, .35);
+  --red: #d83820;
+  --gold: #e0b030;
+  --silver: #b8c0d0;
+  --pixel: "Press Start 2P", ui-monospace, monospace;
+  --term: "VT323", ui-monospace, monospace;
+
+  /* scene palette: day */
+  --sk1: #5898f0; --sk2: #78b0f8; --sk3: #98c8f8; --sk4: #c0e0f8;
+  --sun: #f8f0a0; --cl1: #ffffff; --cl2: #c8d8f0; --mt1: #6890c0; --mt2: #88a8d0;
+  --tr1: #205820; --tr2: #48a048; --tr3: #88d068; --tk1: #704020; --tk2: #985830;
+  --gr1: #78c050; --gr2: #5aa038; --gr3: #407828; --pa1: #e8d098; --pa2: #c8a868;
+  --tg1: #388828; --tg2: #68b848; --fe1: #885028; --fe2: #b07840; --sg1: #e8c890; --sg2: #a07848;
+  --fl1: #f86848; --fl2: #f8e858; --star: transparent;
+}
+:root[data-time="morn"] {
+  --sk1: #f0a090; --sk2: #f8b8a0; --sk3: #f8d0a8; --sk4: #f8e4c0;
+  --sun: #fff8d8; --cl1: #fff0e8; --cl2: #e8c0b8; --mt1: #9888b0; --mt2: #b8a8c8;
+}
+:root[data-time="nite"] {
+  --sk1: #0c1430; --sk2: #142048; --sk3: #1c3060; --sk4: #284070;
+  --sun: #f0f0d0; --cl1: #44507a; --cl2: #2c3858; --mt1: #24304e; --mt2: #34446a;
+  --tr1: #0a2416; --tr2: #18442c; --tr3: #2a6040; --tk1: #3c2414; --tk2: #4c3020;
+  --gr1: #285434; --gr2: #20482c; --gr3: #163820; --pa1: #807460; --pa2: #605848;
+  --tg1: #183c24; --tg2: #285a36; --fe1: #46301e; --fe2: #5a402a; --sg1: #807058; --sg2: #584834;
+  --fl1: #b04848; --fl2: #b8b860; --star: #f8f8d8;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--sk4); color: var(--ink);
+  font: 10px/1.8 var(--pixel); -webkit-font-smoothing: none; font-smooth: never;
+}
+
+/* ---------- background scene ---------- */
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; image-rendering: pixelated; }
+.sk1 { fill: var(--sk1); } .sk2 { fill: var(--sk2); } .sk3 { fill: var(--sk3); } .sk4 { fill: var(--sk4); }
+.sun { fill: var(--sun); } .cl1 { fill: var(--cl1); } .cl2 { fill: var(--cl2); }
+.mt1 { fill: var(--mt1); } .mt2 { fill: var(--mt2); }
+.tr1 { fill: var(--tr1); } .tr2 { fill: var(--tr2); } .tr3 { fill: var(--tr3); }
+.tk1 { fill: var(--tk1); } .tk2 { fill: var(--tk2); }
+.gr1 { fill: var(--gr1); } .gr2 { fill: var(--gr2); } .gr3 { fill: var(--gr3); }
+.pa1 { fill: var(--pa1); } .pa2 { fill: var(--pa2); }
+.tg1 { fill: var(--tg1); } .tg2 { fill: var(--tg2); }
+.fe1 { fill: var(--fe1); } .fe2 { fill: var(--fe2); } .sg1 { fill: var(--sg1); } .sg2 { fill: var(--sg2); }
+.fl1 { fill: var(--fl1); } .fl2 { fill: var(--fl2); } .star { fill: var(--star); }
+.cloud { animation: drift 90s steps(90) infinite; }
+.cloud.c1 { animation-duration: 140s; animation-delay: -40s; }
+.cloud.c2 { animation-duration: 110s; animation-delay: -80s; }
+@keyframes drift { from { transform: translateX(-60px); } to { transform: translateX(300px); } }
+.flower.fa { animation: wiggle 1.2s steps(1) infinite; }
+.flower.fb { animation: wiggle 1.2s steps(1) infinite -.6s; }
+@keyframes wiggle { 0% { transform: translateX(0); } 50% { transform: translateX(1px); } }
+.stars rect { animation: twinkle 3s steps(1) infinite; }
+.stars rect:nth-child(3n) { animation-delay: -1s; } .stars rect:nth-child(3n+1) { animation-delay: -2s; }
+@keyframes twinkle { 0%, 70% { opacity: 1; } 71%, 100% { opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .cloud, .flower, .stars rect { animation: none !important; } }
+
+/* ---------- text boxes ---------- */
+main { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 28px 16px 48px; }
+.box {
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 5px var(--ink), 6px 6px 0 var(--shade);
+  padding: 18px 18px 16px;
+  margin-bottom: 18px;
+}
+.box h2 {
+  font: 10px/1 var(--pixel); margin: 0 0 14px; letter-spacing: 1px;
+  display: inline-block; background: var(--ink); color: var(--paper); padding: 6px 8px 5px;
+}
+
+/* ---------- title ---------- */
+.title { text-align: center; margin: 8px 0 26px; }
+.logo { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; }
+.logo .l1 {
+  font-size: clamp(22px, 7vw, 40px); line-height: 1; color: var(--gold); letter-spacing: 2px;
+  text-shadow: 3px 0 var(--ink), -3px 0 var(--ink), 0 3px var(--ink), 0 -3px var(--ink),
+               3px 3px var(--ink), -3px -3px var(--ink), 3px -3px var(--ink), -3px 3px var(--ink),
+               6px 6px 0 var(--shade);
+}
+.logo .l2 {
+  font-size: clamp(12px, 3.4vw, 18px); line-height: 1; color: var(--silver); letter-spacing: 6px;
+  text-shadow: 2px 0 var(--ink), -2px 0 var(--ink), 0 2px var(--ink), 0 -2px var(--ink),
+               2px 2px var(--ink), -2px -2px var(--ink), 2px -2px var(--ink), -2px 2px var(--ink);
+}
+.clock {
+  display: inline-block; margin-top: 16px; font: 20px/1 var(--term); letter-spacing: 1px;
+  background: var(--ink); color: var(--paper); padding: 4px 10px 3px;
+  box-shadow: 4px 4px 0 var(--shade);
+}
+
+/* ---------- menu-style controls ---------- */
+button, select, input[type="password"] {
+  font: 10px/1 var(--pixel); color: var(--ink);
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 0;
+  padding: 9px 12px 8px; cursor: pointer;
+}
+button { position: relative; padding-left: 22px; text-transform: uppercase; }
+button::before { content: "▶"; position: absolute; left: 7px; top: 50%; transform: translateY(-52%); font-size: 8px; opacity: 0; }
+button:hover::before, button:focus-visible::before { opacity: 1; }
+button:hover, button:focus-visible { background: var(--paper-2); outline: none; }
+button:active { transform: translate(2px, 2px); }
+button.primary { background: var(--red); color: var(--paper); }
+button.primary:hover, button.primary:focus-visible { background: #b82810; }
+button:disabled { opacity: .6; cursor: wait; }
+button.link { border: 0; background: none; padding: 6px 0 0 16px; margin-top: 4px; font-size: 9px; }
+button.link::before { left: 2px; }
+select:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+input[type="password"] { cursor: text; letter-spacing: 3px; }
+input[type="password"]::placeholder { color: #8890a0; letter-spacing: 1px; }
+input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--ink); margin: 0; }
+label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; font-size: 9px; }
+
+/* ---------- game lists (party style) ---------- */
+#cloudList, #lib { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+#cloudList li, #lib li {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+  background: var(--paper); border: 3px solid var(--ink); padding: 10px 12px;
+}
+#cloudList li::before, #lib li::before {
+  content: ""; width: 14px; height: 14px; flex: none;
+  background: var(--tint, var(--red)); box-shadow: 0 0 0 2px var(--ink);
+}
+#cloudList .name, #lib .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; line-height: 1.6; }
+#cloudList .meta, #lib .meta { font: 17px/1.1 var(--term); color: #585868; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#login + #cloudList:not(:empty), #cloudList:empty { margin: 0; }
+#cloudList:not(:empty) { margin-top: 0; }
+#login:not([hidden]) ~ #cloudList { margin-top: 12px; }
+#cloudList button, #lib button { flex: none; }
+#login { display: flex; gap: 10px; flex-wrap: wrap; }
+#login input { flex: 1; min-width: 160px; }
+.muted { font: 18px/1.2 var(--term); color: #585868; margin-top: 8px; min-height: 0; }
+.muted:empty { display: none; }
+#empty { font: 18px/1.2 var(--term); color: #585868; }
+
+#err { font: 18px/1.2 var(--term); color: var(--red); margin-top: 10px; }
+#err:empty { display: none; }
+
+/* ---------- player ---------- */
+body.playing { overflow: hidden; background: #000; }
+body.playing #scene { display: none; }
+#player { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: #000; }
+#player[hidden], #menu[hidden] { display: none; }
+.bar {
+  display: flex; gap: 14px; align-items: center; padding: 8px 12px;
+  background: var(--ink); color: var(--paper); border-bottom: 4px solid #30303c;
+}
+.bar button { background: var(--ink); color: var(--paper); border-color: var(--paper); padding: 7px 10px 6px 20px; font-size: 9px; }
+.bar button:hover { background: #30303c; }
+.bar .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; color: var(--gold); }
+.sync { margin-left: auto; font: 17px/1 var(--term); white-space: nowrap; color: #a8b0c0; }
+.sync.ok { color: #88e070; }
+.sync.warn { color: #f8b848; }
+.conflict {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px;
+  background: var(--paper); color: var(--ink); border-bottom: 4px solid var(--ink);
+  font: 18px/1.2 var(--term);
+}
+.conflict[hidden] { display: none; }
+.conflict span { flex: 1; min-width: 220px; }
+.screen { flex: 1; min-height: 0; display: flex; justify-content: center; background: #000; }
+.screen > div { width: 100%; max-width: 1100px; height: 100%; }
+
+/* ---------- guide panel (HGSS): follows the player's current map ---------- */
+.screen > #game { flex: 1; min-width: 0; }
+.guide {
+  flex: none; width: 300px; overflow-y: auto; background: var(--paper); color: var(--ink);
+  border-left: 4px solid var(--ink); box-shadow: inset 3px 0 0 var(--paper), inset 5px 0 0 var(--ink);
+  padding: 14px 12px 18px 16px; font: 18px/1.15 var(--term);
+}
+.guide h3 {
+  font: 9px/1 var(--pixel); margin: 16px 0 8px; letter-spacing: 1px;
+  display: inline-block; background: var(--ink); color: var(--paper); padding: 5px 7px 4px;
+}
+.guide .loc { font: 11px/1.5 var(--pixel); margin: 2px 0 0; }
+.guide .place { color: #585868; }
+.guide .note { color: #585868; margin-top: 10px; }
+.guide .tabs { display: flex; gap: 6px; margin: 0 0 6px; }
+.guide .tabs button { font-size: 8px; padding: 5px 6px 4px; }
+.guide .tabs button::before { content: none; }
+.guide .tabs button.on { background: var(--ink); color: var(--paper); }
+.guide .method { font: 8px/1 var(--pixel); color: #585868; margin: 10px 0 4px; text-transform: uppercase; }
+.guide ul { list-style: none; margin: 0; padding: 0; }
+.guide .mons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.guide .mons li {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; column-gap: 4px;
+  border: 2px solid var(--ink); background: var(--paper-2); padding: 0 4px 0 0; overflow: hidden;
+}
+/* HGSS sprites are 80px with lots of empty space around the Pokémon: crop to the middle */
+.guide .mons img { width: 64px; height: 64px; margin: -10px; image-rendering: pixelated; grid-row: span 2; }
+.guide .mons .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guide .mons .lv { color: #585868; font-size: 16px; }
+.guide .items li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.guide .items img { width: 24px; height: 24px; image-rendering: pixelated; flex: none; }
+.guide .items .h { color: #585868; font-size: 15px; margin-left: auto; }
+.guide .story { line-height: 1.2; }
+/* the mini map stays in view while you scroll the lists below it */
+.guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
+.guide .mapbox { overflow: hidden; position: relative; }
+.guide .me {
+  position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  background: #3870e8; box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 3px #181820; pointer-events: none;
+  animation: me-blink 1s steps(2) infinite;
+}
+.guide .me[hidden] { display: none; }
+@keyframes me-blink { 50% { opacity: .35; } }
+.guide .minimap { display: block; margin: 0 auto; image-rendering: pixelated; border: 3px solid var(--ink); }
+.guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
+.guide .key::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
+  background: var(--c); box-shadow: 0 0 0 1px var(--ink);
+}
+.guide .dir { flex: none; width: 48px; color: #585868; }
+.guide .spot { cursor: pointer; }
+.guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
+.guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
+.guide .who { font-size: 18px; }
+.guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.guide .pm { display: inline-flex; align-items: center; font-size: 15px; color: #585868; }
+.guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
+.guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
+.guide .src a { color: inherit; }
+/* From 1300px wide the guide splits around the game: next step, map, items and exits on the
+   left (#guideL), wild Pokémon and trainers on the right (#guide). */
+#guideL { border-left: 0; border-right: 4px solid var(--ink); box-shadow: inset -3px 0 0 var(--paper), inset -5px 0 0 var(--ink); }
+@media (min-width: 1300px) { .guide { width: 320px; } }
+@media (max-width: 1299px) { #guideL { display: none; } }
+@media (max-width: 899px) { .guide { display: none; } #guideBtn { display: none; } }
+
+/* Keep EmulatorJS's menu bar visible on desktop, and give it its own strip under the game
+   so it never covers the DS touch screen. --ejs-bar is set to the bar's height at game start. */
+#game.ejs_big_screen .ejs_menu_bar_hidden, #game .ejs_big_screen .ejs_menu_bar_hidden {
+  opacity: 1 !important; pointer-events: auto !important; transform: none !important;
+}
+#game.ejs_big_screen .ejs_canvas_parent, #game .ejs_big_screen .ejs_canvas_parent {
+  height: calc(100% - var(--ejs-bar, 0px));
+}
+#game button::before { content: none; }
+#game button { position: static; text-transform: none; }
+
+@media (max-width: 480px) {
+  .box { padding: 14px 12px 12px; }
+  #cloudList li, #lib li { flex-wrap: wrap; }
+  #cloudList .name, #lib .name { flex-basis: calc(100% - 30px); }
+  .bar .t { display: none; }
+}

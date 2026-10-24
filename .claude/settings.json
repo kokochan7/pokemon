@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./guide/hgss.json)",
+      "Read(./scene.svg)",
+      "Read(./node_modules/**)",
+      "Read(./.wrangler/**)",
+      "Read(**/*.nds)",
+      "Read(**/*.gba)",
+      "Read(**/*.gb)",
+      "Read(**/*.gbc)",
+      "Read(**/*.zip)",
+      "Read(**/*.sav)",
+      "Read(**/*.state)"
+    ]
+  }
+}

@@ -6,3 +6,5 @@
 *.zip
 *.sav
 *.state
+node_modules/
+.wrangler/
