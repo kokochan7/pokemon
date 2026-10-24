@@ -3,9 +3,9 @@
 // The cloud keeps the plain (raw) save; DeSmuME's .dsv footer is stripped on upload, and a cloud
 // save is handed to DeSmuME as a .sav it converts at boot.
 const SaveSync = (() => {
-  const INTERVAL_MS = 30000;
+  const INTERVAL_MS = 2000; // how often the running game's save is checked
   const IDB_NAME = "/data/saves", STORE = "FILE_DATA"; // EmulatorJS/Emscripten IDBFS layout
-  let id = null, emuCore = null, lastHash = null, timer = null, busy = false;
+  let id = null, emuCore = null, lastHash = null, timer = null, busy = false, seen = null;
 
   function status(text, cls) {
     const el = $("sync");
@@ -197,7 +197,10 @@ const SaveSync = (() => {
 
   function gm() { return window.EJS_emulator && window.EJS_emulator.gameManager; }
 
-  async function tick(flush) {
+  // flush: make the core write its in-memory save to the file first. now: upload a change at once;
+  // otherwise wait until the save is the same on two checks in a row, so a save the game is still
+  // writing isn't uploaded half-done.
+  async function tick(flush, now) {
     if (!id || busy) return;
     const g = gm();
     if (!g || !g.FS) return;
@@ -208,7 +211,10 @@ const SaveSync = (() => {
       const raw = toRaw(bytes);
       if (!raw || !raw.length) return;
       const h = await sha(raw);
-      if (h === lastHash) return;
+      if (h === lastHash) { seen = h; return; }
+      const stable = h === seen;
+      seen = h;
+      if (!now && !stable) return;
       status("Syncing save…");
       await upload(raw, h);
     } catch (e) {
@@ -233,11 +239,11 @@ const SaveSync = (() => {
       }
     } catch {}
     stop();
-    timer = setInterval(() => tick(false), INTERVAL_MS); // passive read, no forced flush
+    timer = setInterval(() => tick(true), INTERVAL_MS);
   }
 
-  document.addEventListener("visibilitychange", () => { if (document.hidden) tick(false); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) tick(true, true); });
 
-  return { prepare, started, flush: () => tick(true) };
+  return { prepare, started, flush: () => tick(true, true) };
 })();
 
