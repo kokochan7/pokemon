@@ -68,6 +68,9 @@ Gen 2 (Gold/Silver/Crystal) Game Boy Color look. No instructional copy on the pa
 - The menu bar is kept visible on desktop via CSS overrides of `.ejs_menu_bar_hidden`, with
   `--ejs-bar` reserving space under the canvas (`pinMenuBar()`). EmulatorJS puts `ejs_big_screen`
   on the `#game` element itself.
+- A **Speed** button (added by `addSpeedButton()` at game start) sits in the menu bar after the
+  left-hand buttons and cycles 1x > 2x > 3x > 5x via EmulatorJS's `fastForward` / `ff-ratio` settings.
+  It's inserted by hand because custom `EJS_Buttons` entries are rejected in 4.2.3. Every game boots at 1x.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 
 ## Save sync (DS games)

@@ -338,6 +338,7 @@
     window.EJS_onGameStart = () => {
       SaveSync.started();
       pinMenuBar();
+      addSpeedButton();
     };
     // The emulator's Restart is a bare core reset that skips saving and can leave DS games
     // unable to read their save ("A communication error has occurred"). Use ← Library instead.
@@ -365,6 +366,38 @@
     update();
     setTimeout(update, 500);
     window.addEventListener("resize", () => setTimeout(update, 100));
+  }
+
+  // Speed button in the emulator's menu bar: each click steps 1x > 2x > 3x > 5x > 1x.
+  // Added by hand because custom EJS_Buttons are rejected in EmulatorJS 4.2.3. It drives
+  // EmulatorJS's own fast-forward settings, so Settings > Speed Options stay in step.
+  // The ratio is a cap: on a slow device the game may not reach the full 5x.
+  const SPEEDS = [1, 2, 3, 5];
+  let speedIdx = 0;
+  function addSpeedButton() {
+    const emu = window.EJS_emulator, bar = emu && emu.elements && emu.elements.menu;
+    if (!bar || $("speedLabel")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ejs_menu_button";
+    btn.innerHTML = '<svg viewBox="0 0 24 24" role="presentation" focusable="false"><text id="speedLabel" ' +
+      'x="12" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold">1x</text></svg>' +
+      '<span class="ejs_menu_text">Speed</span>';
+    btn.onclick = () => setSpeed(speedIdx + 1);
+    bar.insertBefore(btn, bar.querySelector(".ejs_menu_bar_spacer"));
+    setSpeed(0); // EmulatorJS remembers fast-forward per game; always boot at 1x
+  }
+  function setSpeed(i) {
+    const emu = window.EJS_emulator;
+    speedIdx = i % SPEEDS.length;
+    const x = SPEEDS[speedIdx];
+    if (x > 1) {
+      emu.changeSettingOption("ff-ratio", x.toFixed(1));
+      emu.changeSettingOption("fastForward", "enabled");
+    } else {
+      emu.changeSettingOption("fastForward", "disabled");
+    }
+    $("speedLabel").textContent = x + "x";
   }
 
   // The emulator can't be cleanly torn down, so going back is a page reload.
