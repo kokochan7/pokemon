@@ -15,6 +15,15 @@ py -m http.server 8000    # or: python3 -m http.server 8000
 
 Then open http://localhost:8000.
 
+## Private cloud ROMs
+
+ROMs can live in a private Cloudflare R2 bucket and show up under "My games" after you enter a password.
+
+- `functions/api/*` (Cloudflare Pages Functions) serve the list and the files only to a signed-in session.
+- Pages project settings need an R2 binding named `ROMS` and an encrypted variable `SITE_PASSWORD`.
+- Sessions last 30 days in an HttpOnly cookie. Changing `SITE_PASSWORD` signs out every device.
+- Upload ROMs to the bucket from the Cloudflare dashboard (R2 > bucket > Upload). Never commit them here.
+
 ## Deploy
 
 Static site with no build step. On Cloudflare Pages, use framework preset "None",

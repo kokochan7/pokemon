@@ -51,7 +51,22 @@
   .foot { color: var(--muted); font-size: 13px; margin-top: 36px; line-height: 1.6; }
   .tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 6px; }
   .tips b { color: var(--text); font-weight: 600; }
-  #lib li { border-left: 4px solid var(--tint, var(--line)); }
+  #lib li, #cloudList li { border-left: 4px solid var(--tint, var(--line)); }
+  #cloudList { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  #cloudList li {
+    display: flex; align-items: center; gap: 12px; background: var(--panel);
+    border: 1px solid var(--line); border-left: 4px solid var(--tint, var(--line));
+    border-radius: 10px; padding: 12px 14px;
+  }
+  #cloudList .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #cloudList .meta { color: var(--muted); font-size: 12px; }
+  #login { display: flex; gap: 8px; flex-wrap: wrap; }
+  #login input {
+    font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 12px; flex: 1; min-width: 180px;
+  }
+  .muted { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  button.link { background: none; border: none; color: var(--muted); padding: 0; margin-top: 8px; text-decoration: underline; }
 
   #player { height: 100vh; display: flex; flex-direction: column; }
   #player[hidden], #menu[hidden] { display: none; }
@@ -67,6 +82,18 @@
   <h1>My Pokémon Player</h1>
   <p class="sub">Bring your own ROM. Files stay in your browser and are never uploaded anywhere.</p>
 
+  <h2 style="margin-top:0">My games</h2>
+  <div id="cloud">
+    <form id="login" hidden>
+      <input id="pw" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Unlock</button>
+    </form>
+    <ul id="cloudList"></ul>
+    <div id="cloudMsg" class="muted"></div>
+    <button id="logout" class="link" hidden>Lock</button>
+  </div>
+
+  <h2>Or load a file from this device</h2>
   <div id="drop" tabindex="0">
     <strong>Drop your Pokémon ROM here, or click to choose</strong>
     <span>HeartGold / SoulSilver (.nds). A .zip works too, just pick the system below first.</span>
@@ -269,6 +296,110 @@
     }
   }
   renderLibrary();
+
+  /* ---------- cloud games (private R2 bucket, password protected) ---------- */
+  const cloudList = $("cloudList"), cloudMsg = $("cloudMsg"), loginForm = $("login"), logoutBtn = $("logout");
+
+  function showLogin(msg) {
+    loginForm.hidden = false; logoutBtn.hidden = true;
+    cloudList.innerHTML = "";
+    cloudMsg.textContent = msg || "Enter your password to see your games.";
+  }
+
+  async function loadCloud() {
+    let res;
+    try { res = await fetch("/api/roms", { credentials: "same-origin" }); }
+    catch { cloudMsg.textContent = "Cloud games are only available on the deployed site."; return; }
+    if (res.status === 401) return showLogin();
+    if (res.status === 404) { cloudMsg.textContent = "Cloud games are only available on the deployed site."; return; }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { cloudMsg.textContent = data.error || "Couldn't load your games."; return; }
+
+    loginForm.hidden = true; logoutBtn.hidden = false;
+    cloudList.innerHTML = "";
+    cloudMsg.textContent = data.roms.length ? "" : "Signed in. No ROMs in storage yet. Upload one to the R2 bucket.";
+
+    for (const r of data.roms) {
+      const li = document.createElement("li");
+      const info = document.createElement("div");
+      info.className = "name";
+      info.textContent = r.key.replace(/\.[^.]+$/, "");
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = r.key + " · " + fmtSize(r.size);
+      info.appendChild(meta);
+
+      const play = document.createElement("button");
+      play.className = "primary";
+      play.textContent = "Play";
+      play.onclick = () => playCloud(r, play, info, meta, li);
+
+      li.append(info, play);
+      cloudList.appendChild(li);
+
+      // Use the cached copy (if any) to show the proper game name up front.
+      cachedFor(r).then((rec) => {
+        if (rec && rec.game) {
+          info.firstChild.textContent = rec.game.title + (rec.game.region ? " (" + rec.game.region + ")" : "");
+          li.style.setProperty("--tint", rec.game.tint);
+        }
+      });
+    }
+  }
+
+  async function cachedFor(r) {
+    try { return (await dbAll()).find((x) => x.name === r.key && x.size === r.size) || null; }
+    catch { return null; }
+  }
+
+  async function playCloud(r, btn) {
+    err.textContent = "";
+    const cached = await cachedFor(r);
+    if (cached) {
+      const label = cached.game ? cached.game.title + (cached.game.region ? " (" + cached.game.region + ")" : "") : cached.name;
+      return launch(cached.name, cached.blob, cached.core, label);
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Downloading…";
+    try {
+      const path = r.key.split("/").map(encodeURIComponent).join("/");
+      const res = await fetch("/api/rom/" + path, { credentials: "same-origin" });
+      if (res.status === 401) { btn.disabled = false; btn.textContent = "Play"; return showLogin("Your session expired. Enter your password again."); }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const blob = await res.blob();
+      const file = new File([blob], r.key.split("/").pop());
+      // Cache it locally so next time it starts instantly (keeps the "Keep in library" choice).
+      await handleFile(file);
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Play";
+      cloudMsg.textContent = "Download failed (" + e.message + "). Try again.";
+    }
+  }
+
+  loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    cloudMsg.textContent = "Checking…";
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ password: $("pw").value }),
+    }).catch(() => null);
+    $("pw").value = "";
+    if (!res) { cloudMsg.textContent = "Couldn't reach the site."; return; }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { cloudMsg.textContent = data.error || "Sign-in failed."; return; }
+    loadCloud();
+  };
+
+  logoutBtn.onclick = async () => {
+    await fetch("/api/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+    showLogin("Locked.");
+  };
+
+  loadCloud();
 </script>
 </body>
 </html>
