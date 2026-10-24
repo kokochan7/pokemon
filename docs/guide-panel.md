@@ -56,6 +56,16 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 - To rebuild the data: clone pret/pokeheartgold and run `python3 tools/guide_data.py <path> > guide/hgss.json`.
   Grass rates are the Gen 4 slot rates; rod and Rock Smash rows show levels only.
 
+## Trainers: who you're battling, who's beaten
+
+- hgss.json trainer rows are `[x, z, name, party, trainer id]` (the id is the decomp's `TRAINER_*` number).
+- Beaten trainers are dimmed with a tick: flag 0x550 + id in the save data in RAM (`Story.beaten()`).
+- The trainer you're battling gets a red bar and a BATTLING tag, scrolls into view and is ringed on the map
+  (`opponent()` / `markTrainers()` in guide.js, 4 times a second). It is the trainer map object standing next to the
+  player: map objects sit in one array of 0x12C-byte `LocalMapObject`s with the player's (scriptId +0x20,
+  tile x/z +0x64/+0x6C). A trainer's scriptId is 2999 + trainer id (`std_trainer`), or 4999 + id for the second of a
+  pair. While the player object can't be read the last opponent stays marked. Tested only on fake RAM.
+
 ## NEXT: the story walkthrough
 
 - Order in the left column: location, MAP, NEXT, ITEMS (Kenny wanted the map on top).

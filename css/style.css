@@ -258,6 +258,10 @@ body.playing #scene { display: none; }
 .guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
 .guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
 .guide .who { font-weight: 700; }
+.guide .trainers li.fight { background: var(--paper-2); box-shadow: -4px 0 0 #d83820; padding-left: 6px; }
+.guide .trainers li.fight:not(.beaten) .who::after { content: "BATTLING"; margin-left: 8px; font-size: 11px; color: #f8f8f0; background: #d83820; padding: 1px 5px; }
+.guide .trainers li.beaten { opacity: .55; }
+.guide .trainers li.beaten .who::after { content: " ✓"; color: #389048; }
 .guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
 .guide .pm { display: inline-flex; align-items: center; font-size: 12px; color: #585868; }
 .guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
