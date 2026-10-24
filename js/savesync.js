@@ -12,7 +12,9 @@ const SaveSync = (() => {
     el.textContent = text;
     el.className = "sync" + (cls ? " " + cls : "");
   }
-  const syncedKey = () => "pp_synced_" + id;
+  // Each core keeps its own local save file, so each remembers its own last-synced hash
+  // (DeSmuME keeps the original key name).
+  const syncedKey = () => "pp_synced_" + id + (emuCore === "desmume" ? "" : "_" + emuCore);
   function getSynced() { try { return localStorage.getItem(syncedKey()); } catch { return null; } }
   function setSynced(h) { lastHash = h; try { localStorage.setItem(syncedKey(), h); } catch {} }
 
@@ -249,6 +251,16 @@ const SaveSync = (() => {
 
   document.addEventListener("visibilitychange", () => { if (document.hidden) tick(true, true); });
 
-  return { prepare, started, flush: () => tick(true, true) };
+  // Before leaving the game. melonDS writes its save file itself about 2-3 seconds after the game
+  // saves (the flush request does nothing there), so give it time to land first.
+  async function flush() {
+    if (emuCore === "melonds" && gm()) { // even when cloud sync is off, the local file must land
+      status("Finishing save…");
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+    await tick(true, true);
+  }
+
+  return { prepare, started, flush };
 })();
 
