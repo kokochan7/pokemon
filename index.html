@@ -66,6 +66,14 @@
     border-radius: 8px; padding: 6px 12px; flex: 1; min-width: 180px;
   }
   .muted { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  /* Keep EmulatorJS's menu bar visible on desktop, and give it its own strip under the game
+     so it never covers the DS touch screen. --ejs-bar is set to the bar's height at game start. */
+  #game.ejs_big_screen .ejs_menu_bar_hidden, #game .ejs_big_screen .ejs_menu_bar_hidden {
+    opacity: 1 !important; pointer-events: auto !important; transform: none !important;
+  }
+  #game.ejs_big_screen .ejs_canvas_parent, #game .ejs_big_screen .ejs_canvas_parent {
+    height: calc(100% - var(--ejs-bar, 0px));
+  }
   .sync { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
   .sync.ok { color: #7fd48a; }
   .sync.warn { color: #ffb74d; }
@@ -253,7 +261,10 @@
     window.EJS_pathtodata = DATA_PATH;
     window.EJS_startOnLoaded = true;
     window.EJS_color = "#e3350d";
-    window.EJS_onGameStart = () => SaveSync.started();
+    window.EJS_onGameStart = () => {
+      SaveSync.started();
+      pinMenuBar();
+    };
     // The emulator's Restart is a bare core reset that skips saving and can leave DS games
     // unable to read their save ("A communication error has occurred"). Use ← Library instead.
     window.EJS_Buttons = { restart: false };
@@ -269,6 +280,17 @@
       err.textContent = "Couldn't load the emulator from the CDN. Check your internet connection.";
     };
     document.body.appendChild(s);
+  }
+
+  // Reserve room under the game for the (always-visible) EmulatorJS menu bar.
+  function pinMenuBar() {
+    const update = () => {
+      const bar = window.EJS_emulator && window.EJS_emulator.elements && window.EJS_emulator.elements.menu;
+      if (bar) $("game").style.setProperty("--ejs-bar", bar.offsetHeight + "px");
+    };
+    update();
+    setTimeout(update, 500);
+    window.addEventListener("resize", () => setTimeout(update, 100));
   }
 
   // The emulator can't be cleanly torn down, so going back is a page reload.
