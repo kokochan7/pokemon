@@ -228,7 +228,7 @@
   </section>
 
   <section class="box">
-    <h2>SAVES</h2>
+    <h2>STORED</h2>
     <ul id="lib"></ul>
     <div id="empty" hidden>NO GAMES STORED.</div>
   </section>
@@ -263,7 +263,13 @@
     APA: { title: "Pokémon Pearl", tint: "#e0a0c0" },
     CPU: { title: "Pokémon Platinum", tint: "#9a9a9a" },
   };
-  const REGION = { E: "USA", J: "Japan", P: "Europe", D: "Germany", F: "France", I: "Italy", S: "Spain", K: "Korea" };
+  const REGION = { E: "English", J: "Japan", P: "Europe", D: "Germany", F: "France", I: "Italy", S: "Spain", K: "Korea" };
+
+  // Games stored before the rename have region "USA" saved with them.
+  function gameLabel(g) {
+    const region = g.region === "USA" ? "English" : g.region;
+    return g.title + (region ? " (" + region + ")" : "");
+  }
 
   async function identify(file) {
     if (!/\.nds$/i.test(file.name)) return null;
@@ -640,8 +646,8 @@
       return;
     }
     const game = await identify(file);
-    const label = game ? game.title + (game.region ? " (" + game.region + ")" : "") : file.name;
-    // Keep a copy in this browser's SAVES list so the next launch doesn't re-download it.
+    const label = game ? gameLabel(game) : file.name;
+    // Keep a copy in this browser's STORED list so the next launch doesn't re-download it.
     try { await dbPut({ name: file.name, core, size: file.size, added: Date.now(), blob: file, game }); }
     catch (e) { console.warn("Could not save to library:", e); }
     launch(file.name, file, core, label);
@@ -661,7 +667,7 @@
       const li = document.createElement("li");
 
       const g = it.game;
-      const label = g ? g.title + (g.region ? " (" + g.region + ")" : "") : it.name;
+      const label = g ? gameLabel(g) : it.name;
       if (g) li.style.setProperty("--tint", g.tint);
 
       const info = document.createElement("div");
@@ -678,12 +684,16 @@
 
       const del = document.createElement("button");
       del.textContent = "Remove";
-      del.title = "Removes the ROM from the library. Your save data is kept.";
-      del.onclick = async () => { await dbDel(it.id); renderLibrary(); };
+      del.onclick = async () => {
+        if (!confirm("Are you sure you want to remove " + label + "?")) return;
+        await dbDel(it.id);
+        renderLibrary();
+      };
 
       li.append(info, play, del);
       ul.appendChild(li);
     }
+    hideStoredPlay();
   }
   renderLibrary();
 
@@ -719,6 +729,8 @@
       play.className = "primary";
       play.textContent = "Play";
       play.onclick = () => playCloud(r, play);
+      play.hidden = true;
+      li.rom = r;
 
       li.append(info, play);
       cloudList.appendChild(li);
@@ -730,10 +742,21 @@
         li.style.setProperty("--tint", known.tint);
       } else cachedFor(r).then((rec) => {
         if (rec && rec.game) {
-          info.firstChild.textContent = rec.game.title + (rec.game.region ? " (" + rec.game.region + ")" : "");
+          info.firstChild.textContent = gameLabel(rec.game);
           li.style.setProperty("--tint", rec.game.tint);
         }
       });
+    }
+    hideStoredPlay();
+  }
+
+  // A game already in STORED is played from there, so its Play button here is hidden.
+  async function hideStoredPlay() {
+    let items = [];
+    try { items = await dbAll(); } catch {}
+    for (const li of cloudList.children) {
+      const r = li.rom;
+      if (r) li.querySelector("button").hidden = items.some((x) => x.name === r.key && x.size === r.size);
     }
   }
 
@@ -746,7 +769,7 @@
     err.textContent = "";
     const cached = await cachedFor(r);
     if (cached) {
-      const label = cached.game ? cached.game.title + (cached.game.region ? " (" + cached.game.region + ")" : "") : cached.name;
+      const label = cached.game ? gameLabel(cached.game) : cached.name;
       return launch(cached.name, cached.blob, cached.core, label);
     }
 
