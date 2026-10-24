@@ -1,10 +1,11 @@
 # Builds guide/hgss.json, the per-map data behind the in-game guide panel, from a checkout of the
 # pret/pokeheartgold decompilation (https://github.com/pret/pokeheartgold). Only game facts are
-# extracted: map names, wild encounter tables, item balls, hidden items and trainers.
+# extracted: map names, wild encounter tables, item balls, hidden items, trainers and their parties,
+# exits, and which land-data blocks make up each map (the page reads the terrain itself from the ROM).
 #
 #   git clone --depth 1 https://github.com/pret/pokeheartgold
 #   python3 tools/guide_data.py path/to/pokeheartgold > guide/hgss.json
-import json, re, sys
+import json, re, struct, sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
@@ -48,7 +49,8 @@ headers = {}
 for m in re.finditer(r"\[(MAP_\w+)\] = \{(.*?)\n\s*\},", read("src/data/map_headers.h"), re.S):
     body = m.group(2)
     f = lambda k: re.search(rf"\.{k} = (\w+)", body).group(1)
-    headers[m.group(1)] = {"enc": f("wildEncounterBank"), "events": f("eventsBank"), "mapsec": f("mapsec")}
+    headers[m.group(1)] = {"enc": f("wildEncounterBank"), "events": f("eventsBank"), "mapsec": f("mapsec"),
+                           "matrix": int(re.match(r"NARC_map_matrix_map_matrix_(\d+)", f("matrixId")).group(1))}
 
 enc_index = {}
 for m in re.finditer(r"#define (ENCDATA_\w+)\s+ENCDATA\(_(\d+)\)", read("include/encounter_tables_narc.h")):
@@ -99,10 +101,32 @@ def item_name(script, prefix):
     if const not in items: return None
     return title(const, "ITEM_") + (" " + tm_moves[const] if const in tm_moves else "")
 
+trainer_ids = {k: v[0] for k, v in defines("include/constants/trainers.h", "TRAINER_").items()}
+trainer_data = json.loads(read("files/poketool/trainer/trainers.json"))["trainers"]
 def trainer(script):
+    """[class + name, [[dex, name, level], ...]] for a std_trainer(TRAINER_X) object."""
     if not isinstance(script, str): return None
     m = re.match(r"std_trainer\((TRAINER_\w+)\)", script)
-    return title(m.group(1), "TRAINER_") if m else None
+    if not m or m.group(1) not in trainer_ids: return None
+    t = trainer_data[trainer_ids[m.group(1)]]
+    who = (title(t["class"], "TRAINERCLASS_") + " " + t["name"].replace("{TRNAME}", "")).strip()
+    return who, [[*mon(p["species"])[:2], p["level"]] for p in t["party"]]
+
+# Map matrices: a grid of 32x32-tile blocks, each naming the map header it belongs to and the
+# land-data block (terrain) it uses. Matrix 0 is the whole overworld.
+def matrix(num):
+    path = next((root / "files/fielddata/mapmatrix/map_matrix").glob(f"map_matrix_{num:04d}*.bin"))
+    b = path.read_bytes()
+    w, h, has_headers, has_alts, name_len = b[:5]
+    c, n = 5 + name_len, b[0] * b[1]
+    hdr = list(struct.unpack(f"<{n}H", b[c:c + 2 * n])) if has_headers else None
+    c += 2 * n if has_headers else 0
+    c += n if has_alts else 0
+    models = list(struct.unpack(f"<{n}H", b[c:c + 2 * n]))
+    return w, h, hdr, models
+matrices = {}
+
+DIRS = {(0, -1): "N", (0, 1): "S", (-1, 0): "W", (1, 0): "E"}
 
 out = {}
 for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
@@ -121,12 +145,52 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
     path = root / "files/fielddata/eventdata/zone_event" / (ev.group(1) + ".json") if ev else None
     if path and path.exists() and not h["events"].endswith("DUMMY_bin"):
         z = json.loads(path.read_text())
-        balls = [n for o in z.get("objects", []) if (n := item_name(o["scriptId"], "std_itemball_"))]
-        hidden = [n for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
-        trainers = [n for o in z.get("objects", []) if (n := trainer(o["scriptId"]))]
+        # Positions are global tile coordinates in the map's matrix: [x, z, ...]
+        balls = [[o["x"], o["z"], n] for o in z.get("objects", []) if (n := item_name(o["scriptId"], "std_itemball_"))]
+        hidden = [[b["x"], b["z"], n] for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
+        trainers = [[o["x"], o["z"], *t] for o in z.get("objects", []) if (t := trainer(o["scriptId"]))]
+        warps = []
+        for wp in z.get("warps", []):
+            dest = maps.get(wp["header"])
+            if dest and not any(abs(w[0] - wp["x"]) + abs(w[1] - wp["z"]) <= 1 and w[2] == dest[0] for w in warps):
+                warps.append([wp["x"], wp["z"], dest[0]])
         if balls: entry["items"] = balls
         if hidden: entry["hidden"] = hidden
         if trainers: entry["trainers"] = trainers
+        if warps: entry["warps"] = warps
+
+    # Blocks that make up the map: [bx, bz, landDataId]; exits to neighbouring overworld maps.
+    if h["matrix"] not in matrices: matrices[h["matrix"]] = matrix(h["matrix"])
+    w, hh, hdr, models = matrices[h["matrix"]]
+    mine = [i for i in range(w * hh) if hdr is None or hdr[i] == num]
+    if 0 < len(mine) <= 64:
+        entry["blocks"] = [[i % w, i // w, models[i]] for i in mine]
+        if hdr is not None:
+            exits = {}
+            for i in mine:
+                for (dx, dz), d in DIRS.items():
+                    x, zz = i % w + dx, i // w + dz
+                    if 0 <= x < w and 0 <= zz < hh and hdr[zz * w + x] not in (num, 0):
+                        exits.setdefault(hdr[zz * w + x], d)
+            if exits: entry["exits"] = [[d, m] for m, d in exits.items()]
+            # Blocks next to the map that its events spill into (shown dimmed on the mini map).
+            spill = {(x >> 5, zz >> 5) for x, zz, *_ in entry.get("items", []) + entry.get("hidden", []) + entry.get("trainers", [])}
+            extra = [[bx, bz, models[bz * w + bx]] for bx, bz in sorted(spill)
+                     if 0 <= bx < w and 0 <= bz < hh and hdr[bz * w + bx] != num]
+            if extra: entry["near"] = extra
     out[num] = entry
 
-json.dump({"source": "pret/pokeheartgold", "maps": out}, sys.stdout, ensure_ascii=False, separators=(",", ":"))
+# Terrain colour class per tile behaviour (low byte of each terrain attribute):
+# 1 grass, 2 water, 3 ledge, 4 door/warp, 5 sand/ice.
+behaviors = {m.group(1): i for i, m in enumerate(re.finditer(r"^\s+(TILE_BEHAVIOR_\w+),", read("include/constants/metatile_behavior.h"), re.M))}
+flags = dict(re.findall(r"\[(TILE_BEHAVIOR_\w+)\] = (TILE_BEHAVIOR_FLAG_\w+)", read("src/metatile_behavior.c")))
+tiles = {}
+for name, i in behaviors.items():
+    f = flags.get(name, "")
+    if "SURFABLE" in f or name in ("TILE_BEHAVIOR_WATERFALL", "TILE_BEHAVIOR_SHALLOW_WATER"): tiles[i] = 2
+    elif "ENCOUNTER" in f and "CAVE" not in name: tiles[i] = 1
+    elif name.startswith("TILE_BEHAVIOR_JUMP_"): tiles[i] = 3
+    elif name == "TILE_BEHAVIOR_DOOR" or name.startswith("TILE_BEHAVIOR_WARP"): tiles[i] = 4
+    elif name in ("TILE_BEHAVIOR_SAND", "TILE_BEHAVIOR_ICE"): tiles[i] = 5
+
+json.dump({"source": "pret/pokeheartgold", "tiles": tiles, "maps": out}, sys.stdout, ensure_ascii=False, separators=(",", ":"))

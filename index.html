@@ -217,6 +217,24 @@
   #guide .items li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
   #guide .items img { width: 24px; height: 24px; image-rendering: pixelated; flex: none; }
   #guide .items .h { color: #585868; font-size: 15px; margin-left: auto; }
+  #guide .story { line-height: 1.2; }
+  /* the mini map stays in view while you scroll the lists below it */
+  #guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
+  #guide .mapbox { overflow-x: auto; }
+  #guide .minimap { display: block; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); }
+  #guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
+  #guide .key::before {
+    content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
+    background: var(--c); box-shadow: 0 0 0 1px var(--ink);
+  }
+  #guide .dir { flex: none; width: 48px; color: #585868; }
+  #guide .spot { cursor: pointer; }
+  #guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
+  #guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
+  #guide .who { font-size: 18px; }
+  #guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+  #guide .pm { display: inline-flex; align-items: center; font-size: 15px; color: #585868; }
+  #guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
   #guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
   #guide .src a { color: inherit; }
   @media (max-width: 899px) { #guide { display: none; } #guideBtn { display: none; } }
@@ -689,7 +707,7 @@
     const SPRITE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iv/heartgold-soulsilver/";
     const ITEM_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/";
     const METHODS = { surf: "Surfing", rock: "Rock Smash", oldrod: "Old Rod", goodrod: "Good Rod", superrod: "Super Rod" };
-    let ver = null, header = null, data = null, shown = null, timer = null, scans = 0, tod = null;
+    let ver = null, header = null, data = null, tiles = {}, shown = null, timer = null, scans = 0, tod = null, badges = null;
     const el = () => $("guide");
 
     function visible() { try { return localStorage.getItem("pp_guide") !== "off"; } catch { return true; } }
@@ -708,7 +726,8 @@
       $("guideBtn").onclick = () => setVisible(el().hidden);
       el().hidden = !visible();
       render(null, "Loading…");
-      try { data = (await (await fetch("guide/hgss.json")).json()).maps; }
+      Terrain.open(blob).then(() => { if (shown != null) render(shown); });
+      try { ({ maps: data, tiles } = await (await fetch("guide/hgss.json")).json()); }
       catch { render(null, "Couldn't load the guide data."); ver = null; }
     }
 
@@ -812,8 +831,11 @@
       last = ids;
       const id = ids[pick];
       if (!(id in data) || id <= 1) { cands = []; return; }
-      const t = timeOfDay();
-      if (id !== shown || t !== tod) { tod = t; render(id); }
+      const t = timeOfDay(), b = cands[pick] + TRAINER;
+      const bd = [h[b + 0x1a], h[b + 0x1f]]; // Johto and Kanto badge bits
+      const changed = !badges || bd[0] !== badges[0] || bd[1] !== badges[1];
+      if (id !== shown) highlight = null;
+      if (id !== shown || t !== tod || changed) { tod = t; badges = bd; render(id); }
     }
 
     // HGSS: morning 4-10, day 10-20, night 20-4 (the game uses the console clock).
@@ -845,7 +867,134 @@
       return ul;
     }
 
-    let pickedTime = null;
+    /* --- terrain for the mini map, read from the ROM in this browser (never uploaded) --- */
+    // NitroFS: FNT at header 0x40, FAT at 0x48. Land data is the NARC at a/0/6/5; each member
+    // holds a 32x32 grid of u16 terrain attributes at +0x14 (low byte = behaviour, bit 15 = wall).
+    const Terrain = (() => {
+      let rom = null, narc = null;
+      const cache = new Map();
+      const read = async (off, len) => new DataView(await rom.slice(off, off + len).arrayBuffer());
+      async function fileOffset(path) {
+        const hd = await read(0x40, 0x10);
+        const fnt = hd.getUint32(0, true), fntSize = hd.getUint32(4, true), fat = hd.getUint32(8, true);
+        const t = new Uint8Array(await rom.slice(fnt, fnt + fntSize).arrayBuffer());
+        const dv = new DataView(t.buffer);
+        let dir = 0;
+        for (const [i, part] of path.split("/").entries()) {
+          let p = dv.getUint32(dir * 8, true), id = dv.getUint16(dir * 8 + 4, true), next = -1;
+          for (;;) {
+            const len = t[p++];
+            if (!len) break;
+            const name = String.fromCharCode(...t.subarray(p, p + (len & 0x7f)));
+            p += len & 0x7f;
+            if (len & 0x80) {
+              const sub = dv.getUint16(p, true) & 0xfff; p += 2;
+              if (name === part && i < path.split("/").length - 1) { next = sub; break; }
+            } else if (name === part) { next = id; break; }
+            else id++;
+          }
+          if (next < 0) return null;
+          if (i === path.split("/").length - 1) {
+            const f = await read(fat + next * 8, 8);
+            return [f.getUint32(0, true), f.getUint32(4, true)];
+          }
+          dir = next;
+        }
+        return null;
+      }
+      async function open(blob) {
+        rom = blob; narc = null;
+        try {
+          const f = await fileOffset("a/0/6/5");
+          if (!f) return;
+          const h = await read(f[0], 0x20);
+          if (h.getUint32(0, true) !== 0x4352414e) return; // "NARC"
+          const btaf = f[0] + h.getUint16(0x0c, true);
+          const b = await read(btaf, 12);
+          const size = b.getUint32(4, true), count = b.getUint16(8, true);
+          const table = await read(btaf + 12, count * 8);
+          const btnf = btaf + size;
+          const gmif = btnf + (await read(btnf, 8)).getUint32(4, true);
+          narc = { table, count, data: gmif + 8 };
+        } catch (e) { console.warn("guide terrain", e); }
+      }
+      async function block(id) {
+        if (!narc || id >= narc.count) return null;
+        if (!cache.has(id)) {
+          const start = narc.data + narc.table.getUint32(id * 8, true);
+          cache.set(id, read(start + 0x14, 0x800).then((v) => new Uint16Array(v.buffer.slice(v.byteOffset, v.byteOffset + 0x800))).catch(() => null));
+        }
+        return cache.get(id);
+      }
+      return { open, block, ready: () => !!narc };
+    })();
+
+    // Mini map colours by terrain class (see "tiles" in hgss.json).
+    const TILE = { 0: "#f0f0e0", 1: "#78c050", 2: "#5898f0", 3: "#b07840", 4: "#d83820", 5: "#e8d098" };
+    const WALL = "#4c6450";
+
+    async function drawMap(m, canvas, highlight) {
+      const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
+      if (!blocks.length) return false;
+      const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
+      const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
+      const s = Math.max(1, Math.min(4, Math.floor(268 / (bw * 32)), Math.floor(260 / (bh * 32))));
+      canvas.width = bw * 32 * s; canvas.height = bh * 32 * s;
+      canvas.style.width = canvas.width + "px";
+      const c = canvas.getContext("2d");
+      c.fillStyle = "#181820"; c.fillRect(0, 0, canvas.width, canvas.height);
+      let drew = false;
+      for (const [bx, bz, land, dim] of blocks) {
+        const t = await Terrain.block(land);
+        if (!t) continue;
+        drew = true;
+        const ox = (bx - bx0) * 32 * s, oz = (bz - bz0) * 32 * s;
+        for (let i = 0; i < 1024; i++) {
+          const v = t[i];
+          c.fillStyle = v & 0x8000 ? WALL : TILE[tiles[v & 0xff] || 0];
+          c.fillRect(ox + (i & 31) * s, oz + (i >> 5) * s, s, s);
+        }
+        if (dim) { c.fillStyle = "rgba(24,24,32,.45)"; c.fillRect(ox, oz, 32 * s, 32 * s); }
+      }
+      if (!drew) return false;
+      const dot = (x, z, fill, r, ring) => {
+        const px = (x - bx0 * 32) * s + s / 2, pz = (z - bz0 * 32) * s + s / 2;
+        c.fillStyle = "#181820"; c.fillRect(px - r - 1, pz - r - 1, 2 * r + 2, 2 * r + 2);
+        c.fillStyle = fill; c.fillRect(px - r, pz - r, 2 * r, 2 * r);
+        if (ring) { c.strokeStyle = "#e0b030"; c.lineWidth = 2; c.strokeRect(px - r - 4, pz - r - 4, 2 * r + 8, 2 * r + 8); }
+      };
+      const r = Math.max(2, s);
+      for (const [x, z] of m.warps || []) dot(x, z, "#f8f8f0", r - 1);
+      (m.trainers || []).forEach(([x, z], i) => dot(x, z, "#585868", r, highlight === "t" + i));
+      (m.hidden || []).forEach(([x, z], i) => dot(x, z, "#e0b030", r, highlight === "h" + i));
+      (m.items || []).forEach(([x, z], i) => dot(x, z, "#d83820", r, highlight === "i" + i));
+      return true;
+    }
+
+    // Next step of the story by badges earned (Johto byte, then Kanto byte; bit 0 = first badge).
+    const JOHTO = [
+      "Get your first Pokémon from Prof. Elm, run his errand to Mr. Pokémon's house on Route 30, then go north through Route 31 to Violet City. Gym: Falkner (Flying).",
+      "Go south from Violet City down Route 32, through Union Cave and Route 33 to Azalea Town. Clear Team Rocket out of Slowpoke Well. Gym: Bugsy (Bug).",
+      "Go west into Ilex Forest (herd the charcoal maker's lost Farfetch'd back to get HM01 Cut), then north on Route 34 to Goldenrod City. Gym: Whitney (Normal).",
+      "Go north on Route 35 past the National Park to Route 36. The odd tree there needs the SquirtBottle from the Goldenrod Flower Shop. Then Route 37 to Ecruteak City. Gym: Morty (Ghost).",
+      "Learn Surf at the Ecruteak Dance Theater, head west to Olivine City and check the Lighthouse, then surf Routes 40-41 to Cianwood City. Gym: Chuck (Fighting). Get the medicine at the pharmacy.",
+      "Take the medicine to the sick Ampharos at the top of the Olivine Lighthouse. Gym: Jasmine (Steel).",
+      "Go east from Ecruteak on Route 42 to Mahogany Town, north to the Lake of Rage, then clear Team Rocket's hideout under the Mahogany shop. Gym: Pryce (Ice).",
+      "Free the Goldenrod Radio Tower from Team Rocket, then go east from Mahogany on Route 44 through the Ice Path to Blackthorn City. Gym: Clair (Dragon), then her test in the Dragon's Den.",
+    ];
+    const KANTO = [
+      ["Brock", "Pewter City"], ["Misty", "Cerulean City"], ["Lt. Surge", "Vermilion City"], ["Erika", "Celadon City"],
+      ["Janine", "Fuchsia City"], ["Sabrina", "Saffron City"], ["Blaine", "Seafoam Islands"], ["Blue", "Viridian City (last)"],
+    ];
+    function nextStep(johto, kanto) {
+      for (let i = 0; i < 8; i++) if (!(johto >> i & 1)) return JOHTO[i];
+      if (!kanto) return "On to the Pokémon League: from New Bark Town surf east on Route 27, climb Tohjo Falls (Waterfall, from the Ice Path) and take Route 26 and Victory Road to Indigo Plateau. After that, take the S.S. Aqua from Olivine to Kanto.";
+      const left = KANTO.filter((k, i) => !(kanto >> i & 1));
+      if (!left.length) return "All 16 badges! Talk to Prof. Oak in Pallet Town, then go west from Viridian City on Routes 22 and 28 to Mt. Silver.";
+      return "Kanto badges left: " + left.map(([who, where]) => who + " (" + where + ")").join(", ") + ".";
+    }
+
+    let pickedTime = null, highlight = null;
     function render(id, msg) {
       shown = id;
       const g = el();
@@ -857,6 +1006,42 @@
       const m = data[id];
       g.append(node("div", "loc", m.name || "???"));
       if (m.place) g.append(node("div", "place", m.place));
+
+      if (badges) g.append(node("h3", null, "NEXT"), node("div", "story", nextStep(badges[0], badges[1])));
+
+      let canvas = null;
+      if (m.blocks && Terrain.ready()) {
+        canvas = node("canvas", "minimap");
+        canvas.setAttribute("aria-hidden", "true");
+        const box = node("div", "mapbox");
+        box.append(canvas);
+        const legend = node("div", "legend");
+        for (const [color, label] of [["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"], ["#f8f8f0", "door"]]) {
+          const k = node("span", "key", label);
+          k.style.setProperty("--c", color);
+          legend.append(k);
+        }
+        const wrap = node("div", "mapwrap");
+        wrap.append(node("h3", null, "MAP"), box, legend);
+        g.append(wrap);
+        drawMap(m, canvas, highlight).then((ok) => { if (!ok) { wrap.remove(); canvas = null; } });
+      }
+
+      const exits = (m.exits || []).map(([d, to]) => [{ N: "North", S: "South", E: "East", W: "West" }[d], to])
+        .concat((m.warps || []).map(([, , to]) => ["Door", to]));
+      if (exits.length) {
+        g.append(node("h3", null, "EXITS"));
+        const ul = node("ul", "items");
+        for (const [d, to] of exits) {
+          const t = data[to];
+          if (!t) continue;
+          const li = node("li");
+          const label = t.name === m.name ? t.place || t.name : t.name + (t.place ? " · " + t.place : "");
+          li.append(node("span", "dir", d), node("span", null, label));
+          ul.append(li);
+        }
+        g.append(ul);
+      }
 
       const enc = m[ver];
       if (enc) {
@@ -874,11 +1059,24 @@
         for (const k in METHODS) if (enc[k]) g.append(node("div", "method", METHODS[k]), monList(enc[k]));
       }
 
-      const items = (m.items || []).map((n) => [n, false]).concat((m.hidden || []).map((n) => [n, true]));
+      // Hover or tap a row to ring its spot on the mini map.
+      const spot = (li, key) => {
+        li.classList.add("spot");
+        li.dataset.spot = key;
+        if (highlight === key) li.classList.add("on");
+        li.onmouseenter = li.onclick = () => {
+          if (highlight === key || !canvas) return;
+          highlight = key;
+          for (const x of g.querySelectorAll(".spot")) x.classList.toggle("on", x.dataset.spot === key);
+          drawMap(m, canvas, key);
+        };
+      };
+
+      const items = (m.items || []).map((it, i) => [it[2], false, "i" + i]).concat((m.hidden || []).map((it, i) => [it[2], true, "h" + i]));
       if (items.length) {
         g.append(node("h3", null, "ITEMS"));
         const ul = node("ul", "items");
-        for (const [name, hidden] of items) {
+        for (const [name, hidden, key] of items) {
           const li = node("li");
           const img = node("img");
           img.src = ITEM_ICON + slug(name.replace(/^([TH]M)\d+ .*/, (x, tm) => tm.toLowerCase() + "-normal")) + ".png";
@@ -886,6 +1084,7 @@
           img.onerror = () => { img.style.visibility = "hidden"; };
           li.append(img, node("span", null, name));
           if (hidden) li.append(node("span", "h", "hidden"));
+          spot(li, key);
           ul.append(li);
         }
         g.append(ul);
@@ -893,8 +1092,23 @@
 
       if (m.trainers) {
         g.append(node("h3", null, "TRAINERS"));
-        const ul = node("ul", "items");
-        for (const t of m.trainers) ul.append(node("li", null, t));
+        const ul = node("ul", "trainers");
+        m.trainers.forEach(([, , who, party], i) => {
+          const li = node("li");
+          li.append(node("div", "who", who));
+          const p = node("div", "party");
+          for (const [dex, name, lv] of party) {
+            const mon = node("span", "pm");
+            const img = node("img");
+            img.src = SPRITE + dex + ".png"; img.alt = name; img.title = name; img.loading = "lazy";
+            img.onerror = () => { img.style.visibility = "hidden"; };
+            mon.append(img, node("span", null, name + " " + lv));
+            p.append(mon);
+          }
+          li.append(p);
+          spot(li, "t" + i);
+          ul.append(li);
+        });
         g.append(ul);
       }
       if (!enc && !items.length && !m.trainers) g.append(node("div", "note", "Nothing to catch or pick up here."));

@@ -29,7 +29,8 @@ functions/api/romfile.js GET ?key=<R2 key> -> stream a ROM (auth required)
 functions/api/save.js   GET/PUT ?id=<save id> -> in-game save; PUT keeps backups; ?backup=1 = backup only
 tools/scene.py          Generates the pixel-art background SVG
 tools/guide_data.py     Builds guide/hgss.json (per-map guide data) from the pret/pokeheartgold decomp
-guide/hgss.json         Map names, wild encounters (HG and SS), item balls, hidden items, trainers by map id
+guide/hgss.json         Per map id: names, wild encounters (HG and SS), item/trainer/door positions, trainer
+                        teams, exits, land-data blocks; plus the terrain colour table
 README.md               Short public overview
 ```
 
@@ -121,8 +122,18 @@ npx wrangler pages dev . --r2 ROMS=roms-test --binding SITE_PASSWORD=testpw123 -
 
 ## Guide panel (HeartGold / SoulSilver)
 
-- A panel on the right of the game (desktop, 900px+ wide) shows the current map's wild Pokémon
-  (grass by MORN/DAY/NITE, surfing, rods, Rock Smash), item balls, hidden items and trainers.
+- A panel on the right of the game (desktop, 900px+ wide) shows, for the current map: NEXT (the story
+  step for the badges you have, read live from the save data in RAM: trainer block +0x1A Johto,
+  +0x1F Kanto; the step text is written by us in `JOHTO`/`KANTO`/`nextStep()`), a MAP, EXITS (neighbouring
+  overworld maps by direction, plus doors), wild Pokémon (grass by MORN/DAY/NITE, surfing, rods, Rock
+  Smash), items with hidden ones marked, and trainers with their teams. Hovering or tapping an item or
+  trainer rings its spot on the map; the map sticks to the top while scrolling.
+- The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
+  file `a/0/6/5` is the land-data NARC, each member has 32x32 u16 terrain attributes at +0x14 (low byte
+  = tile behaviour, bit 15 = wall). hgss.json says which land-data blocks make up each map (`blocks`,
+  plus dimmed `near` blocks that its events spill into) and the colour class per behaviour (`tiles`).
+  Nothing from the ROM is uploaded or committed. There's no "you are here" dot yet: the saved position
+  (+0x123C/+0x1240) only updates on warps.
   The **Guide** button in the top bar hides/shows it (localStorage `pp_guide`). Only for game codes IPK/IPG.
 - Live position: the game keeps its save data in DS RAM with the same layout as the save file, and its
   current position lives there (general block +0x1234 = map id, u32; trainer name/ID at +0x64).
