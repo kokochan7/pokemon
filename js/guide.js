@@ -588,15 +588,13 @@ const Guide = (() => {
       return;
     }
     const m = data[id];
-    // main: next step, map (with its exits), items. side: wild Pokémon, trainers. On wide screens main
+    // main: map (with its exits), next step, items. side: wild Pokémon, trainers. On wide screens main
     // goes in its own panel on the left of the game.
     const main = node("div", "gcol"), side = node("div", "gcol");
     if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
     g.append(side);
     main.append(node("div", "loc", m.name || "???"));
     if (m.place) main.append(node("div", "place", m.place));
-
-    if (story != null) main.append(...Story.nodes(heap(), storyBase, data, SPRITE));
 
     let canvas = null;
     if (m.blocks && Terrain.ready()) {
@@ -618,6 +616,8 @@ const Guide = (() => {
       main.append(wrap);
       drawMap(m, canvas, highlight).then((ok) => { if (!ok) { wrap.remove(); canvas = null; } });
     }
+
+    if (story != null) main.append(...Story.nodes(heap(), storyBase, SPRITE));
 
     const enc = m[ver];
     if (enc) {

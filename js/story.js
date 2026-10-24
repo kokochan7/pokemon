@@ -8,7 +8,7 @@ const Story = (() => {
   const BADGES = [0x64 + 0x1a, 0x64 + 0x1f]; // trainer block: Johto, Kanto badge bits
   const STARTER = 0x4030;                // VAR_PLAYER_STARTER: species of the player's starter
   const STARTERS = [152, 155, 158];      // Chikorita, Cyndaquil, Totodile: index into a rival's t list
-  let steps = null, bosses = {}, ver = "hg";
+  let steps = null, bosses = { teams: {}, dex: {} }, ver = "hg";
 
   async function load(v) {
     ver = v;
@@ -71,83 +71,65 @@ const Story = (() => {
     return p;
   }
 
-  // Strongest trainers on the step's maps (by their top level), from hgss.json.
-  function toughest(specs, maps) {
-    const out = [];
-    for (const spec of specs) {
-      const [name, place] = spec.split("/");
-      for (const m of Object.values(maps)) {
-        if (m.name !== name || (place && m.place !== place)) continue;
-        for (const [, , who, party] of m.trainers || []) {
-          out.push({ who, where: m.place ? m.name + " · " + m.place : m.name, party, top: Math.max(...party.map((p) => p[2])) });
-        }
-      }
+  // Game-style type icons (PokeAPI sprites, hot-linked like the Pokémon sprites).
+  const TYPE_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-iv/heartgold-soulsilver/";
+  const TYPES = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
+    "grass", "electric", "psychic", "ice", "dragon", "dark"];
+  function icons(types) {
+    const row = el("span", "types");
+    for (const t of types) {
+      const img = el("img");
+      img.src = TYPE_ICON + (TYPES.indexOf(t) + 1) + ".png"; img.alt = img.title = t;
+      img.onerror = () => { img.replaceWith(el("span", "tname", t)); };
+      row.append(img);
     }
-    return out.sort((a, b) => b.top - a.top).slice(0, 3);
+    return row;
   }
 
-  // The NEXT section: step title, what to do, then (folded) the boss, what to catch and the
-  // toughest trainers on the way.
-  function nodes(h, base, maps, sprite) {
+  // The NEXT section, all at a glance: the step's to-do bullets (ticked from the save data), the
+  // boss teams with type and weakness icons, and what to catch nearby.
+  function nodes(h, base, sprite) {
     if (!steps) return [];
     const i = current(h, base), s = steps[i];
     const box = el("div", "story");
     box.append(el("div", "step", "Step " + (i + 1) + " of " + steps.length), el("div", "stitle", s.title));
-    if (s.where) box.append(el("div", "where", s.where));
-    box.append(el("p", null, s.text));
-    if (s.todo) {
-      const ul = el("ul", "todo");
-      for (const [text, cond] of s.todo) {
-        const ok = test(h, base, cond);
-        const li = el("li", ok ? "ok" : cond ? "" : "info", text);
-        ul.append(li);
-      }
-      box.append(ul);
-    }
+    const ul = el("ul", "todo");
+    for (const [text, cond] of s.todo) ul.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
+    box.append(ul);
 
-    const more = el("details", "more");
-    try { more.open = localStorage.getItem("pp_next_more") === "open"; } catch {}
-    more.ontoggle = () => { try { localStorage.setItem("pp_next_more", more.open ? "open" : "shut"); } catch {} };
-    const parts = [];
     const starter = STARTERS.indexOf(getVar(h, base, STARTER));
     for (const b of s.boss || []) {
       const ids = Array.isArray(b.t) ? b.t : [b.t];
-      const shown = /^Rival/.test(b.name) && ids.length === 3 ? [ids[Math.max(starter, 0)]] : ids;
-      const div = el("div", "boss");
+      const shown = b.name === "Rival" && ids.length === 3 ? [ids[Math.max(starter, 0)]] : ids;
       const beaten = shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
-      div.append(el("div", "who", b.name + (beaten ? " ✓" : "")), el("div", "type", b.type + (b.weak ? " · weak to " + b.weak : "")));
-      for (const t of shown) if (bosses[t]) div.append(team(bosses[t], sprite));
-      if (b.tip) div.append(el("p", "tip", b.tip));
-      more.append(div);
-      parts.push(b.name.replace(/^Gym Leader |^Elite Four |^Executive /, "").replace(/ \(.*/, ""));
+      const div = el("div", "boss" + (beaten ? " beaten" : ""));
+      const head = el("div", "bhead");
+      head.append(el("b", null, b.name + (beaten ? " ✓" : "")));
+      if (b.types.length) head.append(icons(b.types));
+      div.append(head);
+      if (b.weak.length) {
+        const w = el("div", "weak");
+        w.append(el("span", null, "Weak"), icons(b.weak));
+        div.append(w);
+      }
+      for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
+      box.append(div);
     }
     if (s.catch) {
-      more.append(el("div", "method", "Catch nearby"));
-      const ul = el("ul", "catch");
-      for (const [who, where, why] of s.catch) {
-        const li = el("li");
-        li.append(el("b", null, who), el("span", "where", " · " + where), el("div", null, why));
-        ul.append(li);
+      const c = el("div", "catch");
+      c.append(el("div", "method", "Catch"));
+      const grid = el("ul", "cgrid");
+      for (const [who, where] of s.catch) {
+        const name = pick(who), li = el("li"), img = el("img");
+        img.src = sprite + bosses.dex[name] + ".png"; img.alt = ""; img.loading = "lazy";
+        img.onerror = () => { img.style.visibility = "hidden"; };
+        const t = el("span");
+        t.append(el("b", null, name), el("span", "where", where));
+        li.append(img, t);
+        grid.append(li);
       }
-      more.append(ul);
-      parts.push("what to catch");
-    }
-    const tough = toughest(s.maps || [], maps);
-    if (tough.length) {
-      more.append(el("div", "method", "Toughest trainers on the way"));
-      const ul = el("ul", "trainers");
-      for (const t of tough) {
-        const li = el("li");
-        li.append(el("div", "who", t.who), el("div", "where", t.where), team(t.party, sprite));
-        ul.append(li);
-      }
-      more.append(ul);
-      parts.push("trainers");
-    }
-    if (s.watch) { more.append(el("p", "tip", s.watch)); parts.push("tips"); }
-    if (parts.length) {
-      more.prepend(el("summary", null, parts.join(" · ")));
-      box.append(more);
+      c.append(grid);
+      box.append(c);
     }
     return [el("h3", null, "NEXT"), box];
   }
