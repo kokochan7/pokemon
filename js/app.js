@@ -36,8 +36,8 @@ function ndsCore() {
 // build wrote HeartGold/SoulSilver saves but couldn't read them back, so it carries a warning.
 const CORE_NOTE = {
   desmume: "",
-  melonds: "melonDS loads and keeps saves like DeSmuME, but hasn't been tried with your game yet. " +
-    "If Continue shows \"communication error\", switch back to DeSmuME. Don't start a new game over it.",
+  melonds: "HeartGold/SoulSilver saves made in melonDS don't load back here (Continue shows \"communication error\"). " +
+    "Use DeSmuME to play HGSS.",
 };
 (() => {
   const sel = $("ndsCore");

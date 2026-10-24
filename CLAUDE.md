@@ -53,7 +53,7 @@ file is visible in the others. Keep the load order in `index.html`.
 
 ## Must-know gotchas
 
-- DS core defaults to DeSmuME; keep it the default. A main-page picker offers melonDS (saves work in dummy-ROM tests, see docs/emulator.md).
+- DS core defaults to DeSmuME; keep it the default. A main-page picker offers melonDS, but real HGSS saves made in it don't load back (see docs/emulator.md).
 - Never call `gameManager.loadSaveFiles()` or write saves mid-game. Saves go in before boot (`SaveSync.prepare()`).
 - The built-in Restart skips saving, so it's disabled (`EJS_Buttons = { restart: false }`).
 
