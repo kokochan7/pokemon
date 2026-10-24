@@ -22,9 +22,13 @@ index.html              The whole front end (UI, EmulatorJS launcher, local libr
 lib/auth.js             Password check, HMAC-signed session cookie (pp_session, 30 days, HttpOnly)
 functions/api/login.js  POST {password} -> sets cookie (1s delay on failure)
 functions/api/logout.js POST -> clears cookie
-functions/api/roms.js   GET -> list ROMs in R2 (hides the saves/ prefix)
+functions/api/roms.js   GET -> list ROMs in R2 (hides the saves/ prefix); for .nds files also returns the
+                        4-char header `code` via a 4-byte ranged read, so titles show before download
+
 functions/api/romfile.js GET ?key=<R2 key> -> stream a ROM (auth required)
 functions/api/save.js   GET/PUT ?id=<save id> -> in-game save; PUT keeps backups; ?backup=1 = backup only
+tools/scene.py          Generates the pixel-art background SVG
+README.md               Short public overview
 ```
 
 Cloudflare config (dashboard, not in the repo):
@@ -35,6 +39,11 @@ Cloudflare config (dashboard, not in the repo):
 
 - Games come only from the R2 bucket (CONTINUE list). There is no load-from-device UI. Playing a
   cloud game caches it in this browser's PC list (IndexedDB `rom-library`) so later launches are instant.
+- To add a game, Kenny uploads the ROM to the `pokemon-roms` bucket in the Cloudflare dashboard. It shows
+  up after a page reload with no code change. Known DS codes in `NDS_GAMES` (IPK HeartGold, IPG
+  SoulSilver, ADA Diamond, APA Pearl, CPU Platinum) get a proper title and color tag; anything else shows
+  its file name.
+- Game rows show only the color tag, the title and the buttons. No file name or size subtitle.
 
 Gen 2 (Gold/Silver/Crystal) Game Boy Color look. No instructional copy on the page, keep labels terse.
 - Fonts: Press Start 2P (UI) and VT323 (secondary text), from Google Fonts.
@@ -77,7 +86,7 @@ Gen 2 (Gold/Silver/Crystal) Game Boy Color look. No instructional copy on the pa
   and differs from the cloud, the page asks which to keep. The loser is uploaded as a backup.
 - Server keeps the previous version on every overwrite in `saves/backups/<id>/` (last 20).
 - `SaveSync.started()` checks `getSaveFilePath()` matches the expected path and pauses sync if not.
-- Periodic sync reads passively every 30s, and also syncs on tab hide and on "← Library".
+- Periodic sync reads passively every 30s, and also syncs on tab hide and on "Exit".
 - Save states are not synced (core-specific, browser-only).
 
 HGSS save sanity check: 512 KB, two 256 KB slots. General block 0xF628 bytes, storage block at
@@ -103,3 +112,10 @@ npx wrangler pages dev . --r2 ROMS=roms-test --binding SITE_PASSWORD=testpw123 -
 - Gen 5 / GBA games: add header codes to `NDS_GAMES`, and handle save paths for non-DS cores.
 - Sync save states.
 - Cloudflare Access instead of the password (needs Zero Trust onboarding).
+
+## Working on this project
+
+- Kenny works on Windows, with the repo cloned to `Documents\pokemon` and Claude Code started there.
+- Keep this file current: when behavior, layout or setup changes, update `CLAUDE.md` in the same commit.
+- Kenny keeps a copy of this file as project knowledge in his Claude project ("Pokémon Player"). After
+  changing it, remind him to replace that copy so the two stay in sync.

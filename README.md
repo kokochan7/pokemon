@@ -3,8 +3,8 @@
 A single-page, bring-your-own-ROM player for Pokémon games, built on [EmulatorJS](https://emulatorjs.org).
 Currently focused on Gen 4 (HeartGold / SoulSilver), with Diamond, Pearl and Platinum also recognized.
 
-- No ROMs are included in this repo or uploaded anywhere. You load your own file in the browser.
-- ROMs you choose to keep, plus saves and save states, are stored in your browser (IndexedDB).
+- No ROMs are included in this repo. Games come from a private, password-protected Cloudflare R2 bucket.
+- Played games are cached in the browser (IndexedDB) and in-game saves sync to the bucket.
 - The emulator and cores load from the EmulatorJS CDN.
 
 ## Run locally
