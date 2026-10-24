@@ -30,11 +30,19 @@ In-game saves sync to the same bucket under `saves/<game id>.sav` while you're u
 The game id comes from the DS header (for example `nds-IPGE` for SoulSilver USA), so the same game
 shares one save no matter what the ROM file is called.
 
-- Loaded at game start, then uploaded every 30 seconds when the save changed, when the tab is hidden,
-  and when you go back to the library.
+- Before the emulator boots, the cloud save is written straight into the emulator's save database
+  (IndexedDB `/data/saves`, per-core folder `DeSmuME/` or `melonDS/`), so the game reads it at power-on.
+- The cloud keeps the raw save. DeSmuME's `.dsv` footer is stripped on upload, and a cloud save is handed
+  to DeSmuME as a `.sav` that it converts at boot.
+- Uploaded every 30 seconds when the save changed, when the tab is hidden, and when you go back to the library.
 - If this browser has an unsynced save that differs from the cloud, the page asks which to keep.
 - Every overwrite keeps the previous version in `saves/backups/<game id>/` (last 20).
 - Save states (quick-save slots) are not synced.
+
+## DS core
+
+DeSmuME is the default for DS games. melonDS in this EmulatorJS build failed to read back
+HeartGold/SoulSilver saves ("A communication error has occurred"). You can switch cores on the main page.
 
 ## Deploy
 

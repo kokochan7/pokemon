@@ -119,6 +119,12 @@
       </select>
     </label>
     <label><input type="checkbox" id="remember" checked> Keep in library on this device</label>
+    <label>DS core
+      <select id="ndsCore">
+        <option value="desmume">DeSmuME (best for HeartGold / SoulSilver)</option>
+        <option value="melonds">melonDS</option>
+      </select>
+    </label>
   </div>
   <div id="err" role="alert"></div>
 
@@ -181,6 +187,15 @@
   }
 
   const $ = (id) => document.getElementById(id);
+
+  function ndsCore() {
+    try { return localStorage.getItem("pp_nds_core") || "desmume"; } catch { return "desmume"; }
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    const sel = $("ndsCore");
+    sel.value = ndsCore();
+    sel.onchange = () => { try { localStorage.setItem("pp_nds_core", sel.value); } catch {} };
+  });
   const menu = $("menu"), player = $("player"), err = $("err");
 
   /* ---------- tiny IndexedDB library ---------- */
@@ -217,20 +232,28 @@
   const fmtSize = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
 
   /* ---------- launch ---------- */
-  function launch(name, blob, core, label) {
+  async function launch(name, blob, core, label) {
     document.body.classList.add("playing");
     menu.hidden = true;
     player.hidden = false;
     $("title").textContent = label || name;
 
     window.EJS_player = "#game";
-    window.EJS_core = core;
-    window.EJS_gameName = name.replace(/\.[^.]+$/, "");
+    // DS games: use the chosen core. melonDS in this EmulatorJS build can fail to read
+    // HeartGold/SoulSilver saves ("A communication error has occurred"); DeSmuME handles them.
+    const emuCore = core === "nds" ? ndsCore() : core;
+    window.EJS_core = emuCore;
+
+    // Put the right save in place BEFORE the emulator boots (DS games), so the game reads it
+    // at power-on like a real cartridge. Returns the fixed save name to use as the game name.
+    const saveName = await SaveSync.prepare(name, blob, core, emuCore);
+    window.EJS_gameName = saveName || name.replace(/\.[^.]+$/, "");
+
     window.EJS_gameUrl = new Blob([blob]);
     window.EJS_pathtodata = DATA_PATH;
     window.EJS_startOnLoaded = true;
     window.EJS_color = "#e3350d";
-    window.EJS_onGameStart = () => SaveSync.start(name, blob);
+    window.EJS_onGameStart = () => SaveSync.started();
     // The emulator's Restart is a bare core reset that skips saving and can leave DS games
     // unable to read their save ("A communication error has occurred"). Use ← Library instead.
     window.EJS_Buttons = { restart: false };
@@ -257,13 +280,15 @@
   };
 
   /* ---------- cloud save sync ---------- */
+  // DS games only. The cloud keeps the plain (raw) save; DeSmuME's .dsv footer is stripped on
+  // upload, and a cloud save is handed to DeSmuME as a .sav it converts at boot.
   const SaveSync = (() => {
     const INTERVAL_MS = 30000;
-    let id = null, lastHash = null, timer = null, busy = false, paused = false;
-    const statusEl = () => $("sync");
+    const IDB_NAME = "/data/saves", STORE = "FILE_DATA"; // EmulatorJS/Emscripten IDBFS layout
+    let id = null, emuCore = null, lastHash = null, timer = null, busy = false;
 
     function status(text, cls) {
-      const el = statusEl();
+      const el = $("sync");
       el.textContent = text;
       el.className = "sync" + (cls ? " " + cls : "");
     }
@@ -279,75 +304,94 @@
 
     // Same game = same save, whatever the file is called: use the DS game code (e.g. IPGE).
     async function idFor(name, blob) {
-      if (/\.nds$/i.test(name)) {
-        const b = new Uint8Array(await blob.slice(12, 16).arrayBuffer());
-        const code = String.fromCharCode(...b);
-        if (/^[A-Z0-9]{4}$/.test(code)) return "nds-" + code;
+      const b = new Uint8Array(await blob.slice(12, 16).arrayBuffer());
+      const code = String.fromCharCode(...b);
+      if (/^[A-Z0-9]{4}$/.test(code)) return "nds-" + code;
+      return "nds-" + (name.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 56) || "game");
+    }
+
+    // DeSmuME .dsv = raw save + text/info footer ending in "|-DESMUME SAVE-|".
+    const enc = new TextEncoder();
+    const TAIL = enc.encode("|-DESMUME SAVE-|"), SNIP = enc.encode("|<--Snip above here");
+    function toRaw(bytes) {
+      if (!bytes) return null;
+      const n = bytes.length;
+      if (n < 64 || !TAIL.every((c, i) => bytes[n - 16 + i] === c)) return bytes;
+      for (let i = n - 16 - SNIP.length; i >= 0 && i > n - 4096; i--) {
+        let ok = true;
+        for (let j = 0; j < SNIP.length; j++) if (bytes[i + j] !== SNIP[j]) { ok = false; break; }
+        if (ok) return bytes.slice(0, i);
       }
-      return name.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 60) || "game";
+      return bytes;
     }
 
-    async function waitForManager() {
-      for (let i = 0; i < 100; i++) {
-        const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
-        if (gm && gm.FS) return gm;
-        await new Promise((r) => setTimeout(r, 100));
-      }
-      throw new Error("emulator not ready");
-    }
-
-    function readLocal(gm, flush) {
-      try { return gm.getSaveFile(flush) || null; } catch { return null; }
-    }
-
-    // Mirrors EmulatorJS's own "Load save file" button.
-    function writeLocal(gm, bytes) {
-      const path = gm.getSaveFilePath();
-      const parts = path.split("/");
-      let cp = "";
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!parts[i]) continue;
-        cp += "/" + parts[i];
-        if (!gm.FS.analyzePath(cp).exists) gm.FS.mkdir(cp);
-      }
-      if (gm.FS.analyzePath(path).exists) gm.FS.unlink(path);
-      gm.FS.writeFile(path, bytes);
-      gm.loadSaveFiles();
-    }
-
-    async function upload(bytes, hash) {
-      const res = await fetch("/api/save?id=" + encodeURIComponent(id), {
-        method: "PUT", credentials: "same-origin", body: bytes,
+    /* --- direct access to the emulator's save database (before it starts) --- */
+    function idbOpen() {
+      return new Promise((resolve, reject) => {
+        const r = indexedDB.open(IDB_NAME);
+        r.onupgradeneeded = () => {
+          const store = r.result.objectStoreNames.contains(STORE)
+            ? r.transaction.objectStore(STORE) : r.result.createObjectStore(STORE);
+          if (!store.indexNames.contains("timestamp")) store.createIndex("timestamp", "timestamp", { unique: false });
+        };
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
       });
+    }
+    async function idb(mode, fn) {
+      const db = await idbOpen();
+      try {
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE, mode);
+          const req = fn(tx.objectStore(STORE));
+          tx.oncomplete = () => resolve(req && req.result);
+          tx.onerror = () => reject(tx.error);
+        });
+      } finally { db.close(); }
+    }
+    const idbGet = (p) => idb("readonly", (s) => s.get(p)).then((v) => (v && v.contents ? new Uint8Array(v.contents) : null));
+    const idbPut = (p, bytes) => idb("readwrite", (s) => s.put({ timestamp: new Date(), mode: 33206, contents: bytes }, p));
+    const idbDel = (p) => idb("readwrite", (s) => s.delete(p));
+
+    // Each core keeps its saves in its own subfolder of the IDBFS mount.
+    const dir = () => "/data/saves/" + (emuCore === "desmume" ? "DeSmuME" : "melonDS");
+    const path = (ext) => `${dir()}/${id}.${ext}`;
+    const nativeExt = () => (emuCore === "desmume" ? "dsv" : "sav");
+    async function ensureDir() {
+      const has = await idb("readonly", (s) => s.get(dir()));
+      if (!has) await idb("readwrite", (s) => s.put({ timestamp: new Date(), mode: 16893 }, dir()));
+    }
+
+    async function readLocalRaw() {
+      const native = await idbGet(path(nativeExt())).catch(() => null);
+      if (native && native.length) return toRaw(native);
+      if (emuCore === "desmume") { // a .sav waiting to be converted counts too
+        const pending = await idbGet(path("sav")).catch(() => null);
+        if (pending && pending.length) return pending;
+      }
+      return null;
+    }
+
+    async function installLocal(raw) {
+      await ensureDir();
+      if (emuCore === "desmume") {
+        await idbDel(path("dsv")); // DeSmuME imports a .sav only when no .dsv exists
+        await idbPut(path("sav"), raw);
+      } else {
+        await idbPut(path("sav"), raw);
+      }
+    }
+
+    async function upload(raw, hash, backupOnly) {
+      const url = "/api/save?" + (backupOnly ? "backup=1&" : "") + "id=" + encodeURIComponent(id);
+      const res = await fetch(url, { method: "PUT", credentials: "same-origin", body: raw });
       if (res.status === 401) { stop(); status("Locked: saves stay in this browser", "warn"); return false; }
       if (!res.ok) throw new Error("HTTP " + res.status);
+      if (backupOnly) return true;
       const data = await res.json();
       setSynced(hash);
       status("Saved to cloud " + time(data.uploaded), "ok");
       return true;
-    }
-
-    async function tick(flush = true) {
-      if (!id || busy || paused) return;
-      busy = true;
-      try {
-        const gm = await waitForManager();
-        const local = readLocal(gm, flush);
-        if (!local || !local.length) return;
-        const h = await sha(local);
-        if (h === lastHash) return;
-        status("Syncing save…");
-        await upload(local, h);
-      } catch (e) {
-        status("Save sync failed, will retry", "warn");
-        console.warn("save sync", e);
-      } finally { busy = false; }
-    }
-
-    function stop() { if (timer) clearInterval(timer); timer = null; }
-    function run() {
-      stop();
-      timer = setInterval(() => tick(false), INTERVAL_MS); // passive read, no forced flush
     }
 
     function askConflict(cloudWhen) {
@@ -361,32 +405,30 @@
       });
     }
 
-    async function start(name, blob) {
+    // Runs before the emulator loads. Returns the save name to use as EJS_gameName (or null).
+    async function prepare(name, blob, system, core) {
+      if (system !== "nds") { id = null; status(""); return null; }
+      emuCore = core;
       id = await idFor(name, blob);
       lastHash = getSynced();
       status("Checking cloud save…");
-      let gm;
-      try { gm = await waitForManager(); } catch { status("Save sync unavailable", "warn"); return; }
-      await new Promise((r) => setTimeout(r, 500)); // let the core settle
 
       let res;
       try { res = await fetch("/api/save?id=" + encodeURIComponent(id), { credentials: "same-origin", cache: "no-store" }); }
-      catch { status("Offline: saves stay in this browser", "warn"); return; }
-      if (res.status === 401) { status("Locked: unlock My games to sync saves", "warn"); return; }
-      if (res.status === 404 && !(res.headers.get("content-type") || "").includes("json")) {
-        status("Cloud saves only work on the deployed site", "warn"); return;
-      }
+      catch { status("Offline: saves stay in this browser", "warn"); return id; }
+      if (res.status === 401) { status("Locked: unlock My games to sync saves", "warn"); return id; }
+      const isJson = (res.headers.get("content-type") || "").includes("json");
+      if (res.status === 404 && !isJson) { status("Cloud saves only work on the deployed site", "warn"); id = null; return null; }
 
-      const local = readLocal(gm, false);
-      const localHash = local && local.length ? await sha(local) : null;
+      const local = await readLocalRaw();
+      const localHash = local ? await sha(local) : null;
 
       if (res.status === 404) {
-        // Nothing in the cloud yet: upload what this browser has, if anything.
-        if (localHash) { status("Uploading save…"); await upload(local, localHash).catch(() => status("Save sync failed, will retry", "warn")); }
+        if (localHash) await upload(local, localHash).catch(() => status("Save sync failed, will retry", "warn"));
         else status("No save yet. It will sync after you save in-game.");
-        return run();
+        return id;
       }
-      if (!res.ok) { status("Save sync failed", "warn"); return run(); }
+      if (!res.ok) { status("Save sync failed", "warn"); return id; }
 
       const cloud = new Uint8Array(await res.arrayBuffer());
       const cloudHash = await sha(cloud);
@@ -394,37 +436,67 @@
 
       let choice;
       if (localHash === cloudHash) choice = "same";
-      else if (!localHash || localHash === lastHash) choice = "cloud"; // nothing new here since last sync
-      else {
-        paused = true;
-        choice = await askConflict(cloudWhen);
-        paused = false;
-      }
+      else if (!localHash || localHash === lastHash) choice = "cloud";
+      else choice = await askConflict(cloudWhen);
 
       if (choice === "cloud") {
-        if (localHash && localHash !== lastHash) {
-          // This browser's version was never synced: keep it as a backup before replacing it.
-          await fetch("/api/save?backup=1&id=" + encodeURIComponent(id), {
-            method: "PUT", credentials: "same-origin", body: local,
-          }).catch(() => {});
-        }
-        writeLocal(gm, cloud);
+        if (localHash && localHash !== lastHash) await upload(local, localHash, true).catch(() => {});
+        await installLocal(cloud);
         setSynced(cloudHash);
         status("Loaded cloud save from " + time(cloudWhen), "ok");
       } else if (choice === "local") {
-        status("Uploading this browser's save…");
         await upload(local, localHash).catch(() => status("Save sync failed, will retry", "warn"));
       } else {
         setSynced(cloudHash);
         status("Save in sync (" + time(cloudWhen) + ")", "ok");
       }
-      run();
+      return id;
     }
 
-    // Sync right away when you switch tabs or minimize, and before going back to the library.
-    document.addEventListener("visibilitychange", () => { if (document.hidden) tick(true); });
+    function gm() { return window.EJS_emulator && window.EJS_emulator.gameManager; }
 
-    return { start, flush: () => tick(true) };
+    async function tick(flush) {
+      if (!id || busy) return;
+      const g = gm();
+      if (!g || !g.FS) return;
+      busy = true;
+      try {
+        let bytes = null;
+        try { bytes = g.getSaveFile(flush); } catch {}
+        const raw = toRaw(bytes);
+        if (!raw || !raw.length) return;
+        const h = await sha(raw);
+        if (h === lastHash) return;
+        status("Syncing save…");
+        await upload(raw, h);
+      } catch (e) {
+        status("Save sync failed, will retry", "warn");
+        console.warn("save sync", e);
+      } finally { busy = false; }
+    }
+
+    function stop() { if (timer) clearInterval(timer); timer = null; }
+
+    // Called once the game is running: sanity-check the save path, then sync periodically.
+    function started() {
+      if (!id) return;
+      const g = gm();
+      try {
+        const p = g.getSaveFilePath();
+        if (p !== path(nativeExt())) {
+          console.warn("Unexpected save path", p, "expected", path(nativeExt()));
+          status("Save path mismatch (" + p + "): cloud sync paused", "warn");
+          id = null;
+          return;
+        }
+      } catch {}
+      stop();
+      timer = setInterval(() => tick(false), INTERVAL_MS); // passive read, no forced flush
+    }
+
+    document.addEventListener("visibilitychange", () => { if (document.hidden) tick(false); });
+
+    return { prepare, started, flush: () => tick(true) };
   })();
 
   /* ---------- picking a file ---------- */
