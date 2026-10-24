@@ -47,7 +47,17 @@ async function renderLibrary() {
     const del = document.createElement("button");
     del.textContent = "Remove";
     del.onclick = async () => {
-      if (!confirm("Are you sure you want to remove " + label + "?")) return;
+      const rec = await dbGet(it.id);
+      const ds = it.core === "nds" && rec;
+      const msg = ds
+        ? "Remove " + label + "?\n\nThis deletes the game from this browser AND its save data on this device, " +
+          "both here and in the cloud. Other devices keep their own saves. This can't be undone from the site."
+        : "Are you sure you want to remove " + label + "?";
+      if (!confirm(msg)) return;
+      if (ds) {
+        try { await SaveSync.removeSaves(rec.name, rec.blob); }
+        catch (e) { alert(((e && e.message) || "Couldn't delete the cloud save.") + " Nothing was removed."); return; }
+      }
       await dbDel(it.id);
       renderLibrary();
     };

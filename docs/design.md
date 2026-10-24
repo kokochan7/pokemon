@@ -4,7 +4,9 @@ Code: `index.html` (markup), `css/style.css`, `js/library.js` (GAMES / STORED li
 
 - Games come only from the R2 bucket (GAMES list). There is no load-from-device UI. Playing a
   cloud game caches it in this browser's STORED list (IndexedDB `rom-library`) so later launches are instant.
-  A game that is in STORED has its Play button hidden in GAMES. Remove in STORED asks for confirmation.
+  A game that is in STORED has its Play button hidden in GAMES. Remove in STORED asks for confirmation. For a DS game it
+  also deletes that game's saves on this device (both cores' local files and this device's cloud slot, see
+  docs/save-sync.md); if the cloud delete fails, nothing is removed.
 - To add a game, Kenny uploads the ROM to the `pokemon-roms` bucket in the Cloudflare dashboard. It shows
   up after a page reload with no code change. Known DS codes in `NDS_GAMES` (IPK HeartGold, IPG
   SoulSilver, ADA Diamond, APA Pearl, CPU Platinum) get a proper title and color tag; anything else shows

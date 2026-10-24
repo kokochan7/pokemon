@@ -261,6 +261,24 @@ const SaveSync = (() => {
     await tick(true, true);
   }
 
-  return { prepare, started, flush };
+  // Remove button: delete this game's save from this browser (both cores) and from this device's
+  // cloud slot. Throws, leaving everything in place, if the cloud copy couldn't be deleted.
+  async function removeSaves(name, blob) {
+    if (timer) return; // never while a game is running
+    const sid = await idFor(name, blob);
+    const res = await fetch("/api/save?device=" + deviceId() + "&id=" + encodeURIComponent(sid),
+      { method: "DELETE", credentials: "same-origin" });
+    const isJson = (res.headers.get("content-type") || "").includes("json");
+    if (res.status === 401) throw new Error("Unlock My games first so the cloud save can be deleted too.");
+    if (!res.ok && isJson) throw new Error("Couldn't delete the cloud save (HTTP " + res.status + ").");
+    // (No API, e.g. a local test server: there is no cloud save to delete.)
+    for (const p of [`/data/saves/DeSmuME/${sid}.dsv`, `/data/saves/DeSmuME/${sid}.sav`, `/data/saves/melonDS/${sid}.sav`]) {
+      await idbDel(p).catch(() => {});
+    }
+    // Forget the sync history too, or the next launch would bring back the old shared save.
+    try { for (const c of ["", "_melonds"]) localStorage.removeItem("pp_synced_" + sid + c); } catch {}
+  }
+
+  return { prepare, started, flush, removeSaves };
 })();
 

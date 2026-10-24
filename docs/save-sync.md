@@ -26,6 +26,10 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
 - Conflict rule: if the local save changed since the last sync (hash in localStorage `pp_synced_<id>`)
   and differs from the cloud, the page asks which to keep. The loser is uploaded as a backup.
 - Server keeps the previous version on every overwrite in the slot's backups folder (last 20).
+- Remove (STORED) calls `SaveSync.removeSaves()`: `DELETE /api/save?device=&id=` copies the slot to
+  `<backups>/<stamp>-removed.sav` and deletes it (requires `device=`; the old shared save is never deleted), then
+  the local IDBFS files for both cores and the `pp_synced_` keys go, so the next launch starts empty instead of
+  migrating the shared save again.
 - `SaveSync.started()` checks `getSaveFilePath()` matches the expected path and pauses sync if not.
 - While the game runs, every 2s the page makes the core flush its save to the file
   (`gameManager.functions.saveSaveFiles()` = `cmd_savefiles`, then `getSaveFile(false)`, which reads it once;
