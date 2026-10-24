@@ -14,6 +14,10 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
 - EmulatorJS saves live in IndexedDB database `/data/saves`, store `FILE_DATA` (Emscripten IDBFS),
   keyed by full path, value `{timestamp, mode, contents}`. Each core uses its own folder:
   `/data/saves/DeSmuME/<id>.dsv` and `/data/saves/melonDS/<id>.sav`.
+  The last-synced hash is per core (`pp_synced_<id>` for DeSmuME, `pp_synced_<id>_melonds`), so switching cores
+  doesn't mistake the other core's stale local file for a conflict.
+- melonDS writes its save file itself about 2-3 s after the game saves; `getSaveFile(true)` (`cmd_savefiles`)
+  does nothing there. The 2 s check picks the file up when it lands, and Exit waits 4 s with melonDS first.
 - `SaveSync.prepare()` runs **before** the emulator loads: it fetches the cloud save, compares it with the
   local one, and writes the chosen save straight into IDBFS. For DeSmuME it deletes the `.dsv` and writes
   a raw `.sav`, which DeSmuME converts at boot.
