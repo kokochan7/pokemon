@@ -4,12 +4,12 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 
 - A panel on the right of the game (desktop, 900px+ wide) shows, for the current map: NEXT (the story
   step for the badges you have, read live from the save data in RAM: trainer block +0x1A Johto,
-  +0x1F Kanto; the step text is written by us in `JOHTO`/`KANTO`/`nextStep()`), a MAP, EXITS (neighbouring
+  +0x1F Kanto; the step text is written by us in `JOHTO`/`KANTO`/`nextStep()`), a MAP with its exits drawn on it (neighbouring
   overworld maps by direction, plus doors), items with hidden ones marked, wild Pokémon (grass by MORN/DAY/NITE, surfing, rods, Rock
   Smash), and trainers with their teams. Hovering or tapping an item or
   trainer rings its spot on the map; the map sticks to the top while scrolling.
 - Layout: one 300px panel on the right from 900px wide. From 1300px wide it splits around the game:
-  `#guideL` on the left (location, next, map, items, exits) and `#guide` on the right (wild Pokémon,
+  `#guideL` on the left (location, next, map, items) and `#guide` on the right (wild Pokémon,
   trainers), 320px each. Both have class `.guide`. The map is scaled to the column width, up to ~55%
   of the screen height, keeping its shape.
 - The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
@@ -26,6 +26,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   with windows), and a lone blocked tile as a boulder. The terrain is painted once per map and cached;
   item balls, trainers and doors go on top. Tiles are shown at least 6px: a map that doesn't fit
   scrolls in its box and follows the player (paused 4s after you scroll it or pick a row).
+- Exits are HTML tags over the map (`placeExits()`), not a list. Each edge exit (`exits` in hgss.json) is an
+  arrow tag at the widest walkable gap on the edge it shares with the neighbour's blocks; edge tags stay
+  pinned inside the visible part of the map while it scrolls (`clampExits()`). Each warp gets a name tag
+  over its door, moved under the door if it would cover an edge tag. Names come from `exitName()`.
 - The panel's text uses Nunito (Google Fonts) for readability; the rest of the site keeps the pixel fonts.
 - A blinking blue "you" dot shows the player live (5 reads a second). The saved position (+0x123C/+0x1240)
   only updates on warps, so it reads the player's map object (`LocalMapObject` in the decomp) in DS RAM
