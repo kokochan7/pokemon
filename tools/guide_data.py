@@ -101,6 +101,11 @@ def item_name(script, prefix):
     if const not in items: return None
     return title(const, "ITEM_") + (" " + tm_moves[const] if const in tm_moves else "")
 
+# Each item's "picked up" flag, so the map can drop it once taken: an item ball's object hides on its
+# own event flag (FLAG_HIDE_ITEMBALL_*), a hidden item's flag is 800 + (script number - 8000).
+flag_ids = {m.group(1): int(m.group(2), 0) for m in re.finditer(r"#define (FLAG_\w+)\s+(0x[0-9A-Fa-f]+|\d+)", read("include/constants/flags.h"))}
+hidden_scripts = {k: v[0] for k, v in defines("include/constants/std_script.h", "std_hiddenitem_").items()}
+
 trainer_ids = {k: v[0] for k, v in defines("include/constants/trainers.h", "TRAINER_").items()}
 trainer_data = json.loads(read("files/poketool/trainer/trainers.json"))["trainers"]
 def trainer(script):
@@ -147,8 +152,11 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
     if path and path.exists() and not h["events"].endswith("DUMMY_bin"):
         z = json.loads(path.read_text())
         # Positions are global tile coordinates in the map's matrix: [x, z, ...]
-        balls = [[o["x"], o["z"], n] for o in z.get("objects", []) if (n := item_name(o["scriptId"], "std_itemball_"))]
-        hidden = [[b["x"], b["z"], n] for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
+        # [x, z, name, flag set once picked up]
+        balls = [[o["x"], o["z"], n, flag_ids.get(o.get("eventFlag"), 0)] for o in z.get("objects", [])
+                 if (n := item_name(o["scriptId"], "std_itemball_"))]
+        hidden = [[b["x"], b["z"], n, hidden_scripts[b["scriptId"]] - 8000 + 800 if b["scriptId"] in hidden_scripts else 0]
+                  for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
         trainers = [[o["x"], o["z"], *t] for o in z.get("objects", []) if (t := trainer(o["scriptId"]))]
         warps = []
         for wp in z.get("warps", []):

@@ -115,7 +115,7 @@ const Story = (() => {
       for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
       box.append(div);
     }
-    return [el("h3", null, "NEXT"), box];
+    return [box];
   }
 
   // RECOMMEND CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
@@ -138,5 +138,5 @@ const Story = (() => {
 
   const beaten = (h, base, tid) => flag(h, base, TRAINER_FLAGS + tid);
 
-  return { load, key, nodes, catches, beaten };
+  return { load, key, nodes, catches, beaten, flag };
 })();

@@ -12,6 +12,7 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   of the screen height, keeping its shape.
 - Kept compact so the panels need little scrolling (Kenny's ask): 13px text, tight spacing, wild Pokémon
   as three small tiles per row, 32px party sprites. NEXT shows only the step title, no "Step N of 40".
+  The map and the next step have no MAP / NEXT headings (Kenny: they're implied).
 - The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
   file `a/0/6/5` is the land-data NARC. Each member starts with four u32 section sizes, then (HGSS only)
   a background-sound section `0x1234, u16 length, data`; the 32x32 u16 terrain attributes follow it at
@@ -24,7 +25,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   map: trees outdoors (headbutt trees marked), rock in caves (cave-floor tiles > 10%), plain walls indoors
   (no exits). Outdoors, the wall rectangle sitting on a door or warp is drawn as a house (roof + front
   with windows), and a lone blocked tile as a boulder. The terrain is painted once per map and cached;
-  item balls, trainers and doors go on top. Tiles are shown at least 6px: a map that doesn't fit
+  item balls, trainers and doors go on top. Trainers are big purple squares with a white outline; a
+  beaten one (trainer flag) is dimmed with a green tick. Items already picked up are left off the map and
+  struck through in ITEMS: hgss.json gives each item its flag as a 4th value ([x, z, name, flag]), an item
+  ball's `eventFlag` (FLAG_HIDE_ITEMBALL_*) or, for a hidden item, 800 + (script number - 8000). `poll()`
+  redraws when those flags change for the current map (`mapState()`). Tiles are shown at least 6px: a map that doesn't fit
   scrolls in its box and keeps the player's dot in the middle (stopping at the map's edges; paused 4s
   after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
   centred in it), and the map section is built once and reused by each render, so the previous map stays
