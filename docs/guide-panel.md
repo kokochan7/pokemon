@@ -35,7 +35,12 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   id (`Story` takes a list of bases: a flag counts if any copy has it, a var is the highest). Kenny's game
   has two 95% matches in RAM: the live block and a buffer the game only fills when you save. After a save
   the picker switches to that buffer (its map id just changed), so reading only it showed trainers beaten
-  since the save as not beaten (seen in Union Cave, 2026-10-24). Tiles are shown at least 6px: a map that doesn't fit
+  since the save as not beaten (seen in Union Cave, 2026-10-24).
+- Stuck guide (Kenny, Route 33, 2026-10-24: map stayed on Union Cave, ticks and NEXT frozen; not reproduced
+  with fake RAM). Two safety nets: `poll()` catches errors and rescans, and when the player's position jumps
+  (a warp) but the map id hasn't changed 3s later, the copies are taken as stale and DS RAM is scanned again.
+  Tapping the location name shows a debug line: scan summary, picked copy, every copy's current map id,
+  time since the last warp and the last poll error. Ask Kenny for a screenshot of it if the guide sticks. Tiles are shown at least 6px: a map that doesn't fit
   scrolls in its box and keeps the player's dot in the middle (stopping at the map's edges; paused 4s
   after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
   centred in it), and the map section is built once and reused by each render, so the previous map stays
