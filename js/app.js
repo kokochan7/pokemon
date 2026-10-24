@@ -120,6 +120,13 @@ async function launch(name, blob, core, label) {
   // the cloud sync just reads that file. DeSmuME's advanced bus-level timing costs speed that
   // HGSS doesn't need (also forced at game start, in case an older setting was remembered).
   window.EJS_defaultOptions = { "save-save-interval": "30", "desmume_advanced_timing": "disabled" };
+  // Multi-core: the threaded core build needs SharedArrayBuffer, which the browser only gives a
+  // cross-origin isolated page (COOP/COEP headers in _headers). Without it, the normal build loads.
+  window.EJS_threads = !!window.crossOriginIsolated && typeof SharedArrayBuffer === "function";
+  // With threads, DeSmuME's 3D renderer can draw on several cores (the core keeps 4 worker threads).
+  if (window.EJS_threads && emuCore === "desmume") {
+    window.EJS_defaultOptions.desmume_num_cores = String(Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 2) - 1)));
+  }
 
   const s = document.createElement("script");
   s.src = DATA_PATH + "loader.js";
