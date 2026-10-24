@@ -23,7 +23,7 @@ Pages Functions. Focused on Gen 4 DS (HeartGold / SoulSilver).
 ```
 index.html          Markup only; loads css/style.css, scene.svg and the js/ files below (in this order)
 js/app.js           Constants (NDS_GAMES, CORES), IndexedDB helpers, launch(), menu bar, Speed button
-js/savesync.js      SaveSync: cloud save sync for DS games
+js/savesync.js      SaveSync: per-device cloud save backup for DS games
 js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM flags/vars
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
 js/expshare.js      ExpShare: always-on full-EXP Exp. Share for the whole party, patches the battle code in DS RAM
