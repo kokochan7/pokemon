@@ -723,17 +723,28 @@
       return m && m.HEAPU8;
     }
 
-    // Trainer name + ID (20 bytes) from whichever save slot has one.
-    function signature() {
+    // The newest save slot's general block. Its last 0x14 bytes are a footer: save counters
+    // (major, minor) at -0x14 / -0x10 and the magic at -8.
+    const GENERAL = 0xF628, MAGIC = 0x20060623;
+    function general() {
       let save = null;
       try { save = window.EJS_emulator.gameManager.getSaveFile(false); } catch {}
       if (!save || save.length < 0x80000) return null;
+      const u32 = (o) => (save[o] | save[o + 1] << 8 | save[o + 2] << 16 | save[o + 3] << 24) >>> 0;
+      let best = null, bestKey = -1;
       for (const slot of SLOTS) {
-        const sig = save.slice(slot + TRAINER, slot + TRAINER + 0x14);
-        const id = sig[16] | sig[17] << 8 | sig[18] << 16 | sig[19] << 24;
-        if (sig[0] !== 0xff && (sig[0] | sig[1]) && id) return sig;
+        const end = slot + GENERAL;
+        if (u32(end - 8) !== MAGIC || u32(end - 0x14) === 0xffffffff) continue;
+        const key = u32(end - 0x14) * 2 ** 32 + u32(end - 0x10);
+        if (key > bestKey) { bestKey = key; best = save.slice(slot, end); }
       }
-      return null;
+      return best;
+    }
+    // Trainer name + ID (20 bytes).
+    function signature(gen) {
+      const sig = gen.slice(TRAINER, TRAINER + 0x14);
+      const id = sig[16] | sig[17] << 8 | sig[18] << 16 | sig[19] << 24;
+      return sig[0] !== 0xff && (sig[0] | sig[1]) && id ? sig : null;
     }
 
     function matches(h, at, bytes) {
@@ -741,7 +752,7 @@
       for (let i = 0; i < bytes.length; i++) if (h[at + i] !== bytes[i]) return false;
       return true;
     }
-    // Every 4-byte aligned spot in the heap where `bytes` occurs, using its first word as a key.
+    // Every 4-byte aligned spot in the heap where `bytes` occurs, using the word at keyAt as a key.
     function findAll(h, bytes, keyAt) {
       const u32 = new Uint32Array(h.buffer, h.byteOffset, h.length >> 2);
       const key = (bytes[keyAt] | bytes[keyAt + 1] << 8 | bytes[keyAt + 2] << 16 | bytes[keyAt + 3] << 24) >>> 0;
@@ -751,18 +762,31 @@
       }
       return out;
     }
+    // Share of the save's non-zero general-block bytes that are the same at heap offset b. The game's
+    // live copy is mostly unchanged since the last save; other copies of the trainer card are not.
+    function score(h, b, gen) {
+      if (b < 0 || b + GENERAL > h.length) return 0;
+      let same = 0, n = 0;
+      for (let i = 0; i < GENERAL; i += 4) if (gen[i]) { n++; if (h[b + i] === gen[i]) same++; }
+      return n ? same / n : 0;
+    }
 
     // The emulator also holds a copy of the save file (the cartridge's memory), which only
     // changes when you save. Use the copy that sits inside DS main RAM, found via the ROM header
     // the console copies to the end of RAM at boot. If that header can't be found, follow every
     // copy and show whichever changed last.
+    let debug = "";
     function scan() {
-      const h = heap(), sig = signature();
-      if (!h || !sig) return [];
-      const found = findAll(h, sig, 16).map((t) => t - TRAINER).filter((b) => mapAt(h, b) in data);
+      const h = heap(), gen = general(), sig = gen && signature(gen);
+      if (!h || !sig) { debug = gen ? "no trainer in save" : "no save"; return []; }
+      const all = findAll(h, sig, 16).map((t) => t - TRAINER).map((b) => [b, score(h, b, gen)]);
+      const found = all.filter(([b, sc]) => sc > 0.5 && mapAt(h, b) > 1 && mapAt(h, b) in data).map(([b]) => b);
       const rams = findAll(h, header, 12).map((x) => x - HEADER_IN_RAM);
-      if (!rams.length) return found;
-      return found.filter((b) => rams.some((r) => b >= r && b < r + RAM_SIZE));
+      const inRam = found.filter((b) => rams.some((r) => b >= r && b < r + RAM_SIZE));
+      // e.g. "3 RAM · 97%:33 r, 12%:0" = match score : map id, r = inside DS RAM
+      debug = rams.length + " RAM · " + (all.map(([b, sc]) => Math.round(sc * 100) + "%:" + mapAt(h, b) +
+        (rams.some((r) => b >= r && b < r + RAM_SIZE) ? " r" : "")).join(", ") || "no match");
+      return rams.length ? inRam : found;
     }
 
     function mapAt(h, b) {
@@ -778,13 +802,16 @@
       if (!cands.length) {
         if (scans++ % 5) return; // full scan every 5s until the save is loaded in game
         cands = scan(); last = cands.map((b) => mapAt(h, b)); pick = 0;
-        if (!cands.length) { render(null, signature() ? "Waiting for the game…" : "Save in-game once to start the guide."); return; }
+        if (!cands.length) {
+          render(null, general() ? "Waiting for the game…" : "Save in-game once to start the guide.");
+          return;
+        }
       }
       const ids = cands.map((b) => mapAt(h, b));
       ids.forEach((v, i) => { if (v !== last[i]) pick = i; });
       last = ids;
       const id = ids[pick];
-      if (!(id in data)) { cands = []; return; }
+      if (!(id in data) || id <= 1) { cands = []; return; }
       const t = timeOfDay();
       if (id !== shown || t !== tod) { tod = t; render(id); }
     }
@@ -823,7 +850,10 @@
       shown = id;
       const g = el();
       g.replaceChildren();
-      if (id == null) { g.append(node("h3", null, "GUIDE"), node("div", "note", msg || "")); return; }
+      if (id == null) {
+        g.append(node("h3", null, "GUIDE"), node("div", "note", msg || ""), node("div", "src", debug));
+        return;
+      }
       const m = data[id];
       g.append(node("div", "loc", m.name || "???"));
       if (m.place) g.append(node("div", "place", m.place));
@@ -873,7 +903,7 @@
       const a = node("a", null, "More on Bulbapedia");
       a.href = "https://bulbapedia.bulbagarden.net/w/index.php?search=" + encodeURIComponent(m.name);
       a.target = "_blank"; a.rel = "noopener";
-      src.append(a, node("div", null, "Map " + id));
+      src.append(a, node("div", null, "Map " + id + " · " + debug));
       g.append(src);
     }
 

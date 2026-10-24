@@ -128,13 +128,18 @@ npx wrangler pages dev . --r2 ROMS=roms-test --binding SITE_PASSWORD=testpw123 -
   current position lives there (general block +0x1234 = map id, u32; trainer name/ID at +0x64).
   EmulatorJS 4.2.3's DeSmuME core has no memory API, but `EJS_emulator.gameManager.Module.HEAPU8` (the
   whole wasm heap) is readable. `Guide` scans it (4-byte aligned) for the trainer name + ID taken from
-  the current save file, every 5s until found, then reads the map id every second.
+  the newest slot of the current save file, every 5s until found, then reads the map id every second.
+- The trainer name + ID also turns up in other structs (first live test locked onto one and showed
+  "Mystery Zone, Map 0"). Each match is scored by how much of the save's general block it reproduces;
+  only matches above 50% with a map id above 1 count.
+- The panel footer shows a debug line, e.g. `Map 33 · 1 RAM · 97%:33 r, 3%:0 r` (header copies found in
+  RAM, then each match as score:map id, r = inside DS RAM). Ask Kenny for a screenshot if it misbehaves.
 - The emulator also keeps the cartridge's save memory in the heap, which holds the same bytes but only
   changes on save. `Guide` keeps the match that lies inside DS main RAM: boot copies the ROM header to
   0x027FFE00, i.e. RAM base + 0x3FFE00 (checked in the real core with a stub ROM). If that can't be
   found it follows whichever match changed last.
 - A brand-new game with no save yet shows "Save in-game once to start the guide."
-- Map ids are the decomp's `MAP_*` constants (0-539). The panel footer shows "Map N" for checking.
+- Map ids are the decomp's `MAP_*` constants (0-539).
 - To rebuild the data: clone pret/pokeheartgold and run `python3 tools/guide_data.py <path> > guide/hgss.json`.
   Grass rates are the Gen 4 slot rates; rod and Rock Smash rows show levels only.
 
