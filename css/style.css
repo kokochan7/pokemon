@@ -218,7 +218,21 @@ body.playing #scene { display: none; }
   content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
   background: var(--c); box-shadow: 0 0 0 1px var(--ink);
 }
-.guide .dir { flex: none; width: 48px; color: #585868; }
+/* exits on the mini map: arrows at the edges, name tags over doors */
+.guide .exit {
+  position: absolute; z-index: 1; pointer-events: none; white-space: nowrap;
+  font: 800 11px/1 var(--read); padding: 3px 5px; border-radius: 3px;
+  background: var(--ink); color: var(--paper); box-shadow: 0 0 0 1px var(--paper);
+}
+.guide .exit.N { transform: translate(-50%, 3px); }
+.guide .exit.S { transform: translate(-50%, calc(-100% - 3px)); }
+.guide .exit.W { transform: translate(3px, -50%); }
+.guide .exit.E { transform: translate(calc(-100% - 3px), -50%); }
+.guide .exit.door {
+  transform: translate(-50%, calc(-100% - 2px)); font-size: 10px; padding: 2px 4px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 0 0 1px var(--ink); opacity: .92;
+}
+.guide .exit.door.below { transform: translate(-50%, 2px); }
 .guide .spot { cursor: pointer; }
 .guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
 .guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }

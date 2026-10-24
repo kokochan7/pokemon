@@ -428,7 +428,89 @@ const Guide = (() => {
     }
     c.fillStyle = "rgba(24,24,32,.45)";
     for (let i = 0; i < dim.length; i++) if (dim[i] && grid[i] >= 0) c.fillRect((i % W) * T, ((i / W) | 0) * T, T, T);
+    cv.grid = grid;
     return cv;
+  }
+
+  // Name of the map an exit leads to, as short as it can be: "Route 31", or just "Mart" for a
+  // building in the same town.
+  function exitName(m, to) {
+    const t = data[to];
+    if (!t) return null;
+    return t.name === m.name ? t.place || t.name : t.place && !t.blocks ? t.place : t.name;
+  }
+
+  // Exits as labels on the map: one at each edge that leads to a neighbouring map (placed at the
+  // widest walkable gap on that edge), and one over each door.
+  const DIR = { N: [0, -1, "▲"], S: [0, 1, "▼"], W: [-1, 0, "◀"], E: [1, 0, "▶"] };
+  function placeExits(m, canvas, base, bx0, bz0) {
+    const box = canvas.parentElement;
+    if (!box) return;
+    for (const el of box.querySelectorAll(".exit")) el.remove();
+    const g = canvas.geo, W = g.w, H = g.h, grid = base.grid;
+    const ox = canvas.offsetLeft + canvas.clientLeft, oy = canvas.offsetTop + canvas.clientTop;
+    const open = (x, z) => x >= 0 && z >= 0 && x < W && z < H && grid[z * W + x] >= 0 && !(grid[z * W + x] & 0x8000);
+    const own = new Set((m.blocks || []).map(([bx, bz]) => bx + "," + bz));
+    const label = (cls, text, x, z, title) => {
+      const el = node("div", "exit " + cls, text);
+      if (title) el.title = title;
+      el.x = ox + x * g.k; el.y = oy + z * g.k;
+      el.style.left = el.x + "px";
+      el.style.top = el.y + "px";
+      box.append(el);
+      return el;
+    };
+    for (const [d, to] of m.exits || []) {
+      const name = exitName(m, to), t = data[to], [dx, dz, arrow] = DIR[d] || [];
+      if (!name || !t || !t.blocks || dx == null) continue;
+      const theirs = new Set(t.blocks.map(([bx, bz]) => bx + "," + bz));
+      // Our blocks with one of theirs on that side, and the longest open run along the shared edge.
+      let best = null, edge = null;
+      for (const [bx, bz] of m.blocks) {
+        if (!theirs.has(bx + dx + "," + (bz + dz)) || !own.has(bx + "," + bz)) continue;
+        const lx = (bx - bx0) * 32, lz = (bz - bz0) * 32;
+        const along = (i) => dz ? [lx + i, dz < 0 ? lz : lz + 31] : [dx < 0 ? lx : lx + 31, lz + i];
+        edge = edge || along(16);
+        for (let i = 0, run = 0; i <= 32; i++) {
+          if (i < 32 && open(...along(i))) { run++; continue; }
+          if (run && (!best || run > best[0])) best = [run, along(i - run / 2)];
+          run = 0;
+        }
+      }
+      const at = best ? best[1] : edge;
+      if (!at) continue;
+      // Keep the label just inside the map on that side.
+      const x = dx ? (dx < 0 ? 0 : W) : at[0], z = dz ? (dz < 0 ? 0 : H) : at[1];
+      label("edge " + d, d === "E" ? name + " " + arrow : arrow + " " + name, x, z).side = d;
+    }
+    for (const [x, z, to] of m.warps || []) {
+      const name = exitName(m, to);
+      if (name) label("door", name, x - bx0 * 32 + 0.5, z - bz0 * 32, name).k = g.k;
+    }
+    clampExits(box);
+    if (!box.clamps) { box.clamps = true; box.addEventListener("scroll", () => clampExits(box), { passive: true }); }
+  }
+  // Edge arrows stay in view while the map scrolls, pinned to the side they point to.
+  function clampExits(box) {
+    const L = box.scrollLeft, T0 = box.scrollTop, R = L + box.clientWidth, B = T0 + box.clientHeight;
+    for (const el of box.querySelectorAll(".exit.edge")) {
+      const w = el.offsetWidth / 2 + 4, h = el.offsetHeight / 2 + 4;
+      let x = el.x, y = el.y;
+      if (el.side === "N" || el.side === "S") x = Math.max(L + w, Math.min(R - w, x));
+      else y = Math.max(T0 + h, Math.min(B - h, y));
+      if (el.side === "N") y = Math.max(y, T0); if (el.side === "S") y = Math.min(y, B);
+      if (el.side === "W") x = Math.max(x, L); if (el.side === "E") x = Math.min(x, R);
+      el.style.left = x + "px"; el.style.top = y + "px";
+    }
+    // A door tag that would cover an edge arrow goes under its door instead.
+    const edges = [...box.querySelectorAll(".exit.edge")].map((e) => e.getBoundingClientRect());
+    for (const el of box.querySelectorAll(".exit.door")) {
+      el.classList.remove("below"); el.style.top = el.y + "px";
+      const r = el.getBoundingClientRect();
+      if (edges.some((q) => r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
+        el.classList.add("below"); el.style.top = el.y + el.k + "px";
+      }
+    }
   }
 
   const painted = new Map();
@@ -490,6 +572,7 @@ const Guide = (() => {
         followPause = Date.now() + 4000;
       }
     }
+    placeExits(m, canvas, base, bx0, bz0);
     return true;
   }
 
@@ -527,7 +610,7 @@ const Guide = (() => {
       return;
     }
     const m = data[id];
-    // main: next step, map, items, exits. side: wild Pokémon, trainers. On wide screens main
+    // main: next step, map (with its exits), items. side: wild Pokémon, trainers. On wide screens main
     // goes in its own panel on the left of the game.
     const main = node("div", "gcol"), side = node("div", "gcol");
     if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
@@ -547,7 +630,7 @@ const Guide = (() => {
       box.append(canvas, dot);
       for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
       const legend = node("div", "legend");
-      for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"], ["#f8f8f0", "door"]]) {
+      for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"]]) {
         const k = node("span", "key", label);
         k.style.setProperty("--c", color);
         legend.append(k);
@@ -600,22 +683,6 @@ const Guide = (() => {
         li.append(img, node("span", null, name));
         if (hidden) li.append(node("span", "h", "hidden"));
         spot(li, key);
-        ul.append(li);
-      }
-      main.append(ul);
-    }
-
-    const exits = (m.exits || []).map(([d, to]) => [{ N: "North", S: "South", E: "East", W: "West" }[d], to])
-      .concat((m.warps || []).map(([, , to]) => ["Door", to]));
-    if (exits.length) {
-      main.append(node("h3", null, "EXITS"));
-      const ul = node("ul", "items");
-      for (const [d, to] of exits) {
-        const t = data[to];
-        if (!t) continue;
-        const li = node("li");
-        const label = t.name === m.name ? t.place || t.name : t.name + (t.place ? " · " + t.place : "");
-        li.append(node("span", "dir", d), node("span", null, label));
         ul.append(li);
       }
       main.append(ul);
