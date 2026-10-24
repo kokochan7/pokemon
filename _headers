@@ -1,0 +1,6 @@
+# Cross-origin isolation, so the browser allows SharedArrayBuffer and EmulatorJS can use its
+# multi-core (threaded) DeSmuME build. "credentialless" (not "require-corp") keeps the hot-linked
+# PokeAPI sprites, Google Fonts and the EmulatorJS CDN loading as before. See docs/emulator.md.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless

@@ -40,5 +40,14 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
   to Kenny. Pitch-preserving time-stretch isn't available in this RetroArch build, and true 1x audio
   at 2x game speed can't exist (the game makes twice the sound per second). Muting at 2x is
   `audio_fastforward_mute = "true"`.
+- **Multi-core (threads).** `_headers` serves every page with `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Embedder-Policy: credentialless`, so the page is cross-origin isolated and gets SharedArrayBuffer.
+  `launch()` then sets `EJS_threads`, EmulatorJS loads `desmume-thread-wasm.data`, and `desmume_num_cores`
+  (DeSmuME's 3D rasterizer threads) defaults to cores - 1, at most 3 (the core's thread pool is 4).
+  `credentialless` lets no-cors requests through without cookies, so the hot-linked PokeAPI sprites and type icons,
+  Google Fonts and the EmulatorJS CDN keep working without being hosted here (checked in Chromium, 2026-10-24).
+  Browsers without credentialless COEP (Safari) aren't isolated and silently get the normal single-thread build.
+  Guide, Exp. Share and save sync work the same on the shared heap. The speed gain could only be checked with a stub ROM
+  (no 3D), which showed no change. The gain is in HGSS's 3D overworld on a real game, so it is unmeasured here.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 

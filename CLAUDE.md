@@ -21,6 +21,7 @@ Pages Functions. Focused on Gen 4 DS (HeartGold / SoulSilver).
 ## Where things are
 
 ```
+_headers            COOP/COEP (credentialless) so the threaded multi-core emulator can run
 index.html          Markup only; loads css/style.css, scene.svg and the js/ files below (in this order)
 js/app.js           Constants (NDS_GAMES, CORES), IndexedDB helpers, launch(), menu bar, Speed button
 js/savesync.js      SaveSync: per-device cloud save backup for DS games
