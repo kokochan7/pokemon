@@ -92,7 +92,7 @@ const Story = (() => {
     if (!steps) return [];
     const i = current(h, base), s = steps[i];
     const box = el("div", "story");
-    box.append(el("div", "step", "Step " + (i + 1) + " of " + steps.length), el("div", "stitle", s.title));
+    box.append(el("div", "stitle", s.title));
     const ul = el("ul", "todo");
     for (const [text, cond] of s.todo) ul.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
     box.append(ul);
