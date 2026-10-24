@@ -19,8 +19,11 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
   Kenny's PC it felt no faster than 2x.
   It's inserted by hand because custom `EJS_Buttons` entries are rejected in 4.2.3. Every game boots at 2x.
 - `tuneRetroArch()` (set as `EJS_ready`) patches `EJS_GameManager.prototype.getRetroArchCfg` to append
-  `notification_show_fast_forward = "false"` (no "Fast-Forward." on-screen message) and
-  `audio_fastforward_speedup = "true"` (at 2x the sound plays faster and higher-pitched instead of
-  crackling). Pitch-preserving time-stretch isn't available in this RetroArch build.
+  `notification_show_fast_forward = "false"` (no "Fast-Forward." on-screen message).
+- 2x audio uses RetroArch's default: normal pitch, with chunks dropped to keep up, so it can
+  crackle. `audio_fastforward_speedup = "true"` (faster, higher-pitched) was tried and sounded worse
+  to Kenny. Pitch-preserving time-stretch isn't available in this RetroArch build, and true 1x audio
+  at 2x game speed can't exist (the game makes twice the sound per second). Muting at 2x is
+  `audio_fastforward_mute = "true"`.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 

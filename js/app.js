@@ -126,10 +126,10 @@ function pinMenuBar() {
 }
 
 // Extra RetroArch settings, appended to the retroarch.cfg EmulatorJS writes before the core
-// boots (4.2.3 has no option for this). No "Fast-Forward." on-screen message, and at 2x the
-// sound is played faster (higher pitch) instead of being chopped up, which crackled.
-const RETROARCH_CFG = 'notification_show_fast_forward = "false"\n' +
-  'audio_fastforward_speedup = "true"\n';
+// boots (4.2.3 has no option for this): no "Fast-Forward." on-screen message.
+// Audio at 2x is left as RetroArch's default (normal pitch, chunks dropped to keep up);
+// audio_fastforward_speedup = "true" was tried and Kenny found it sounded worse.
+const RETROARCH_CFG = 'notification_show_fast_forward = "false"\n';
 function tuneRetroArch() {
   const GM = window.EJS_GameManager;
   if (!GM || GM.prototype.ppTuned) return;
