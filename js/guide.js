@@ -76,6 +76,8 @@ const Guide = (() => {
     const h = heap(), dot = document.querySelector(".guide .me"), c = dot && dot.parentElement.querySelector("canvas");
     if (!h || !dot || !c || !c.geo) return;
     const p = player(h), g = c.geo;
+    if (p && lastPos && Math.abs(p[0] - lastPos[0]) + Math.abs(p[1] - lastPos[1]) > 3 && !warpAt) { warpAt = Date.now(); warpFrom = shown; }
+    if (p) lastPos = p;
     const inside = p && p[0] >= g.x0 && p[1] >= g.z0 && p[0] < g.x0 + g.w && p[1] < g.z0 + g.h;
     dot.hidden = !inside;
     if (!inside) return;
@@ -89,7 +91,7 @@ const Guide = (() => {
     box.scrollLeft = x - box.clientWidth / 2;
     box.scrollTop = y - box.clientHeight / 2;
   }
-  let followPause = 0;
+  let followPause = 0, lastPos = null;
 
   // The trainer you're battling: the one standing next to you. The field's map objects sit in one array
   // (0x12C bytes each) with the player's; a trainer's script id is 3000 + trainer id - 1 (std_trainer, or
@@ -204,8 +206,19 @@ const Guide = (() => {
     return (h[a] | h[a + 1] << 8 | h[a + 2] << 16 | h[a + 3] << 24) >>> 0;
   }
 
-  let cands = [], last = [], pick = 0, mstate = null;
+  let cands = [], last = [], pick = 0, mstate = null, pollError = "", warpAt = 0, warpFrom = null;
   function poll() {
+    try { pollOnce(); pollError = ""; } catch (e) { pollError = String(e && e.message || e); cands = []; scans = 0; }
+    const d = document.querySelector(".guide .dbg");
+    if (d) d.textContent = debugLine();
+  }
+  // Shown under the location name when you tap it: what the guide is reading, for screenshots.
+  function debugLine() {
+    const h = heap();
+    return (debug || "no scan") + " · pick " + pick + " · now " + (h ? cands.map((b) => mapAt(h, b)).join("/") : "-") +
+      (warpAt ? " · warp " + Math.round((Date.now() - warpAt) / 1000) + "s" : "") + (pollError ? " · ERR " + pollError : "");
+  }
+  function pollOnce() {
     const h = heap();
     if (!h || !data) return;
     if (!cands.length) {
@@ -220,6 +233,13 @@ const Guide = (() => {
     ids.forEach((v, i) => { if (v !== last[i]) pick = i; });
     last = ids;
     const id = ids[pick];
+    // The player jumped (a door, a cave exit) but no copy's map id changed: the copies we follow have gone
+    // stale, so look for the save data again.
+    if (warpAt && Date.now() - warpAt > 3000) {
+      const stuck = id === warpFrom;
+      warpAt = 0;
+      if (stuck) { cands = []; scans = 0; return; }
+    }
     if (!(id in data) || id <= 1) { cands = []; return; }
     const t = timeOfDay(), st = Story.key(h, cands); // story progress from flags, vars and badges
     if (id !== shown) highlight = null;
@@ -639,7 +659,7 @@ const Guide = (() => {
     return true;
   }
 
-  let pickedTime = null, highlight = null, mapWrap = null;
+  let pickedTime = null, highlight = null, mapWrap = null, showDebug = false;
   function render(id, msg) {
     shown = id;
     const g = el(), gl = $("guideL");
@@ -655,7 +675,10 @@ const Guide = (() => {
     const main = node("div", "gcol"), side = node("div", "gcol");
     if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
     g.append(side);
-    main.append(node("div", "loc", m.name || "???"));
+    const loc = node("div", "loc", m.name || "???"), dbg = node("div", "dbg", debugLine());
+    dbg.hidden = !showDebug;
+    loc.onclick = () => { showDebug = !showDebug; dbg.hidden = !showDebug; };
+    main.append(loc, dbg);
     main.append(node("div", "place", m.place || "\u00a0")); // always there, so the map below doesn't shift
 
     let canvas = null;
