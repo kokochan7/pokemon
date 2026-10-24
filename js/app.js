@@ -30,8 +30,22 @@ async function identify(file) {
 const $ = (id) => document.getElementById(id);
 
 function ndsCore() {
-  try { return localStorage.getItem("pp_nds_core") || "desmume"; } catch { return "desmume"; }
+  try { return localStorage.getItem("pp_nds_core") === "melonds" ? "melonds" : "desmume"; } catch { return "desmume"; }
 }
+// DS CORE picker on the main page (GAMES box). DeSmuME is the default: melonDS in this EmulatorJS
+// build wrote HeartGold/SoulSilver saves but couldn't read them back, so it carries a warning.
+const CORE_NOTE = {
+  desmume: "",
+  melonds: "melonDS can fail to load HeartGold/SoulSilver saves (\"communication error\"). " +
+    "If that happens, switch back to DeSmuME. Don't start a new game over it.",
+};
+(() => {
+  const sel = $("ndsCore");
+  const note = () => { $("coreNote").textContent = CORE_NOTE[sel.value]; };
+  sel.value = ndsCore();
+  note();
+  sel.onchange = () => { try { localStorage.setItem("pp_nds_core", sel.value); } catch {} note(); };
+})();
 const menu = $("menu"), player = $("player"), err = $("err");
 
 /* ---------- tiny IndexedDB library ---------- */
@@ -167,7 +181,7 @@ function setSpeed(i) {
   const emu = window.EJS_emulator;
   speedIdx = i % SPEEDS.length;
   const x = SPEEDS[speedIdx];
-  emu.changeSettingOption("desmume_frameskip", FRAMESKIP[x]);
+  if (window.EJS_core === "desmume") emu.changeSettingOption("desmume_frameskip", FRAMESKIP[x]);
   if (x > 1) {
     emu.changeSettingOption("ff-ratio", x.toFixed(1));
     emu.changeSettingOption("fastForward", "enabled");

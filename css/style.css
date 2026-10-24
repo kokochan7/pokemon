@@ -142,6 +142,8 @@ label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; fo
 #empty { font: 18px/1.2 var(--term); color: #585868; }
 
 #err { font: 18px/1.2 var(--term); color: var(--red); margin-top: 10px; }
+.core { margin-top: 14px; }
+.core select { padding: 7px 8px 6px; font-size: 9px; }
 #err:empty { display: none; }
 
 /* ---------- player ---------- */

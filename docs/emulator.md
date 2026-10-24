@@ -4,8 +4,11 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
 
 - Loaded from `https://cdn.emulatorjs.org/stable/data/` (v4.2.3 at time of writing).
 - **DS core defaults to DeSmuME.** melonDS in this build wrote HGSS saves but could not read them back
-  ("A communication error has occurred" on Continue). There is no picker in the UI any more; the core
-  comes from localStorage `pp_nds_core` (default `desmume`).
+  ("A communication error has occurred" on Continue). A **DS CORE** picker in the GAMES box
+  (back at Kenny's request, 2026-10-24) stores the choice in localStorage `pp_nds_core` (default `desmume`).
+  Choosing melonDS shows a warning that HGSS saves may not load. The Speed button's frameskip and the
+  advanced-timing option apply only to DeSmuME. The guide and Exp. Share find DS RAM through the ROM header
+  copy, which should work with either core, but they have only been tested with DeSmuME.
 - `EJS_Buttons = { restart: false }`: the built-in Restart is a bare core reset that skips saving.
   Restart = "Exit" then Play (page reload).
 - `EJS_defaultOptions = { "save-save-interval": "30", "desmume_advanced_timing": "disabled" }`: EmulatorJS
