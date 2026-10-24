@@ -26,7 +26,9 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   with windows), and a lone blocked tile as a boulder. The terrain is painted once per map and cached;
   item balls, trainers and doors go on top. Tiles are shown at least 6px: a map that doesn't fit
   scrolls in its box and keeps the player's dot in the middle (stopping at the map's edges; paused 4s
-  after you scroll it or pick a row).
+  after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
+  centred in it), and the map section is built once and reused by each render, so the previous map stays
+  on screen until the new one is painted: no resizing or flicker when you change area.
 - Exits are HTML tags over the map (`placeExits()`), not a list. Each edge exit (`exits` in hgss.json) is an
   arrow tag at the widest walkable gap on the edge it shares with the neighbour's blocks; edge tags stay
   pinned inside the visible part of the map while it scrolls (`clampExits()`). Each warp gets a name tag
