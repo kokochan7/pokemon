@@ -24,6 +24,7 @@ Pages Functions. Focused on Gen 4 DS (HeartGold / SoulSilver).
 index.html          Markup only; loads css/style.css, scene.svg and the js/ files below (in this order)
 js/app.js           Constants (NDS_GAMES, CORES), IndexedDB helpers, launch(), menu bar, Speed button
 js/savesync.js      SaveSync: cloud save sync for DS games
+js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM flags/vars
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
 js/library.js       GAMES (cloud) and STORED (local) lists, login, clock; runs the page start-up
 css/style.css       All styles
@@ -31,7 +32,8 @@ scene.svg           Generated background art. Don't read it; regenerate with pyt
 lib/auth.js         Password check + HMAC-signed session cookie
 functions/api/      login, logout, roms (list), romfile (?key=), save (?id=, backups)
 guide/hgss.json     Generated guide data (220 KB). Don't read it whole; query it with python or jq
-tools/              scene.py (background art), guide_data.py (builds hgss.json from pret/pokeheartgold)
+guide/story.json    Hand-written story steps for NEXT; guide/bosses.json = their teams (tools/story_data.py)
+tools/              scene.py (background art), guide_data.py (builds hgss.json from pret/pokeheartgold), story_data.py
 ```
 
 The js/ files are classic scripts sharing one global scope (no modules), so a top-level name in one

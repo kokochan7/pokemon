@@ -12,7 +12,7 @@ const Guide = (() => {
   const SPRITE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iv/heartgold-soulsilver/";
   const ITEM_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/";
   const METHODS = { surf: "Surfing", rock: "Rock Smash", oldrod: "Old Rod", goodrod: "Good Rod", superrod: "Super Rod" };
-  let ver = null, header = null, data = null, tiles = {}, shown = null, timer = null, scans = 0, tod = null, badges = null;
+  let ver = null, header = null, data = null, tiles = {}, shown = null, timer = null, scans = 0, tod = null, story = null, storyBase = null;
   const el = () => $("guide");
   const wide = matchMedia("(min-width: 1300px)");
 
@@ -35,6 +35,7 @@ const Guide = (() => {
     wide.addEventListener("change", () => { if (shown != null) render(shown); });
     render(null, "Loading…");
     Terrain.open(blob).then(() => { if (shown != null) render(shown); });
+    Story.load(ver).then(() => { if (shown != null) render(shown); });
     try { ({ maps: data, tiles } = await (await fetch("guide/hgss.json")).json()); }
     catch { render(null, "Couldn't load the guide data."); ver = null; }
   }
@@ -183,11 +184,9 @@ const Guide = (() => {
     last = ids;
     const id = ids[pick];
     if (!(id in data) || id <= 1) { cands = []; return; }
-    const t = timeOfDay(), b = cands[pick] + TRAINER;
-    const bd = [h[b + 0x1a], h[b + 0x1f]]; // Johto and Kanto badge bits
-    const changed = !badges || bd[0] !== badges[0] || bd[1] !== badges[1];
+    const t = timeOfDay(), st = Story.key(h, cands[pick]); // story progress from flags, vars and badges
     if (id !== shown) highlight = null;
-    if (id !== shown || t !== tod || changed) { tod = t; badges = bd; render(id); }
+    if (id !== shown || t !== tod || st !== story || cands[pick] !== storyBase) { tod = t; story = st; storyBase = cands[pick]; render(id); }
   }
 
   // HGSS: morning 4-10, day 10-20, night 20-4 (the game uses the console clock).
@@ -578,29 +577,6 @@ const Guide = (() => {
     return true;
   }
 
-  // Next step of the story by badges earned (Johto byte, then Kanto byte; bit 0 = first badge).
-  const JOHTO = [
-    "Get your first Pokémon from Prof. Elm, run his errand to Mr. Pokémon's house on Route 30, then go north through Route 31 to Violet City. Gym: Falkner (Flying).",
-    "Go south from Violet City down Route 32, through Union Cave and Route 33 to Azalea Town. Clear Team Rocket out of Slowpoke Well. Gym: Bugsy (Bug).",
-    "Go west into Ilex Forest (herd the charcoal maker's lost Farfetch'd back to get HM01 Cut), then north on Route 34 to Goldenrod City. Gym: Whitney (Normal).",
-    "Go north on Route 35 past the National Park to Route 36. The odd tree there needs the SquirtBottle from the Goldenrod Flower Shop. Then Route 37 to Ecruteak City. Gym: Morty (Ghost).",
-    "Learn Surf at the Ecruteak Dance Theater, head west to Olivine City and check the Lighthouse, then surf Routes 40-41 to Cianwood City. Gym: Chuck (Fighting). Get the medicine at the pharmacy.",
-    "Take the medicine to the sick Ampharos at the top of the Olivine Lighthouse. Gym: Jasmine (Steel).",
-    "Go east from Ecruteak on Route 42 to Mahogany Town, north to the Lake of Rage, then clear Team Rocket's hideout under the Mahogany shop. Gym: Pryce (Ice).",
-    "Free the Goldenrod Radio Tower from Team Rocket, then go east from Mahogany on Route 44 through the Ice Path to Blackthorn City. Gym: Clair (Dragon), then her test in the Dragon's Den.",
-  ];
-  const KANTO = [
-    ["Brock", "Pewter City"], ["Misty", "Cerulean City"], ["Lt. Surge", "Vermilion City"], ["Erika", "Celadon City"],
-    ["Janine", "Fuchsia City"], ["Sabrina", "Saffron City"], ["Blaine", "Seafoam Islands"], ["Blue", "Viridian City (last)"],
-  ];
-  function nextStep(johto, kanto) {
-    for (let i = 0; i < 8; i++) if (!(johto >> i & 1)) return JOHTO[i];
-    if (!kanto) return "On to the Pokémon League: from New Bark Town surf east on Route 27, climb Tohjo Falls (Waterfall, from the Ice Path) and take Route 26 and Victory Road to Indigo Plateau. After that, take the S.S. Aqua from Olivine to Kanto.";
-    const left = KANTO.filter((k, i) => !(kanto >> i & 1));
-    if (!left.length) return "All 16 badges! Talk to Prof. Oak in Pallet Town, then go west from Viridian City on Routes 22 and 28 to Mt. Silver.";
-    return "Kanto badges left: " + left.map(([who, where]) => who + " (" + where + ")").join(", ") + ".";
-  }
-
   let pickedTime = null, highlight = null;
   function render(id, msg) {
     shown = id;
@@ -620,7 +596,7 @@ const Guide = (() => {
     main.append(node("div", "loc", m.name || "???"));
     if (m.place) main.append(node("div", "place", m.place));
 
-    if (badges) main.append(node("h3", null, "NEXT"), node("div", "story", nextStep(badges[0], badges[1])));
+    if (story != null) main.append(...Story.nodes(heap(), storyBase, data, SPRITE));
 
     let canvas = null;
     if (m.blocks && Terrain.ready()) {
