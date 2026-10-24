@@ -131,6 +131,7 @@
     <li><b>Touch screen:</b> the bottom screen is your stylus. Click it with the mouse (or tap on a touch device) for the Pokégear, Pokétch, Pokéathlon and menus.</li>
     <li><b>Controls:</b> open the emulator's control settings from its menu bar to see or remap the keyboard bindings.</li>
     <li><b>Saving:</b> save in-game from the Start menu as usual. While you're unlocked, the save syncs to your private storage within about 30 seconds (watch the status at the top right), and the last 20 versions are kept as backups.</li>
+    <li><b>Restarting:</b> use <b>&larr; Library</b> then <b>Play</b>. It saves and syncs first, then boots the game cleanly. (The emulator's own Restart button is hidden because it can cause "A communication error has occurred".)</li>
     <li><b>Won't work:</b> the Pokéwalker (needs infrared hardware) and anything over Wi-Fi, including the GTS and wireless trading.</li>
     <li><b>Slow?</b> DS is the most demanding system here. Close other tabs and keep the window from being resized mid-game.</li>
   </ul>
@@ -230,6 +231,12 @@
     window.EJS_startOnLoaded = true;
     window.EJS_color = "#e3350d";
     window.EJS_onGameStart = () => SaveSync.start(name, blob);
+    // The emulator's Restart is a bare core reset that skips saving and can leave DS games
+    // unable to read their save ("A communication error has occurred"). Use ← Library instead.
+    window.EJS_Buttons = { restart: false };
+    // Let EmulatorJS write the in-game save to its file every 30s (its own supported path);
+    // the cloud sync just reads that file.
+    window.EJS_defaultOptions = { "save-save-interval": "30" };
 
     const s = document.createElement("script");
     s.src = DATA_PATH + "loader.js";
@@ -340,7 +347,7 @@
     function stop() { if (timer) clearInterval(timer); timer = null; }
     function run() {
       stop();
-      timer = setInterval(() => tick(true), INTERVAL_MS);
+      timer = setInterval(() => tick(false), INTERVAL_MS); // passive read, no forced flush
     }
 
     function askConflict(cloudWhen) {
