@@ -679,10 +679,6 @@
       const info = document.createElement("div");
       info.className = "name";
       info.textContent = label;
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = (g ? it.name + " \u00b7 " : "") + (LABEL[it.core] || it.core) + " \u00b7 " + fmtSize(it.size);
-      info.appendChild(meta);
 
       const play = document.createElement("button");
       play.className = "primary";
@@ -730,15 +726,11 @@
       const info = document.createElement("div");
       info.className = "name";
       info.textContent = r.key.replace(/\.[^.]+$/, "");
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = r.key + " · " + fmtSize(r.size);
-      info.appendChild(meta);
 
       const play = document.createElement("button");
       play.className = "primary";
       play.textContent = "Play";
-      play.onclick = () => playCloud(r, play, info, meta, li);
+      play.onclick = () => playCloud(r, play);
 
       li.append(info, play);
       cloudList.appendChild(li);
