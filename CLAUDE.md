@@ -53,7 +53,7 @@ file is visible in the others. Keep the load order in `index.html`.
 
 ## Must-know gotchas
 
-- DS core is DeSmuME (melonDS couldn't read HGSS saves back). Don't switch it.
+- DS core defaults to DeSmuME (melonDS couldn't read HGSS saves back). A main-page picker offers melonDS with a warning; keep DeSmuME the default.
 - Never call `gameManager.loadSaveFiles()` or write saves mid-game. Saves go in before boot (`SaveSync.prepare()`).
 - The built-in Restart skips saving, so it's disabled (`EJS_Buttons = { restart: false }`).
 
