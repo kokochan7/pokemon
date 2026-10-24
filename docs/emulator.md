@@ -18,5 +18,9 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
   sets `desmume_frameskip` to 1 so less time goes to drawing. A 5x step was tried and removed: on
   Kenny's PC it felt no faster than 2x.
   It's inserted by hand because custom `EJS_Buttons` entries are rejected in 4.2.3. Every game boots at 2x.
+- `tuneRetroArch()` (set as `EJS_ready`) patches `EJS_GameManager.prototype.getRetroArchCfg` to append
+  `notification_show_fast_forward = "false"` (no "Fast-Forward." on-screen message) and
+  `audio_fastforward_speedup = "true"` (at 2x the sound plays faster and higher-pitched instead of
+  crackling). Pitch-preserving time-stretch isn't available in this RetroArch build.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 

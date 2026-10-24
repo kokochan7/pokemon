@@ -90,6 +90,7 @@ async function launch(name, blob, core, label) {
   window.EJS_pathtodata = DATA_PATH;
   window.EJS_startOnLoaded = true;
   window.EJS_color = "#e3350d";
+  window.EJS_ready = tuneRetroArch;
   window.EJS_onGameStart = () => {
     SaveSync.started();
     Guide.started();
@@ -122,6 +123,19 @@ function pinMenuBar() {
   update();
   setTimeout(update, 500);
   window.addEventListener("resize", () => setTimeout(update, 100));
+}
+
+// Extra RetroArch settings, appended to the retroarch.cfg EmulatorJS writes before the core
+// boots (4.2.3 has no option for this). No "Fast-Forward." on-screen message, and at 2x the
+// sound is played faster (higher pitch) instead of being chopped up, which crackled.
+const RETROARCH_CFG = 'notification_show_fast_forward = "false"\n' +
+  'audio_fastforward_speedup = "true"\n';
+function tuneRetroArch() {
+  const GM = window.EJS_GameManager;
+  if (!GM || GM.prototype.ppTuned) return;
+  const base = GM.prototype.getRetroArchCfg;
+  GM.prototype.getRetroArchCfg = function () { return base.call(this) + RETROARCH_CFG; };
+  GM.prototype.ppTuned = true;
 }
 
 // Speed button in the emulator's menu bar: each click toggles 1x / 2x.
