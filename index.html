@@ -214,7 +214,7 @@
   </header>
 
   <section class="box">
-    <h2>CONTINUE</h2>
+    <h2>GAMES</h2>
     <div id="cloud">
       <form id="login" hidden>
         <input id="pw" type="password" placeholder="PASSWORD" autocomplete="current-password" aria-label="Password" required>
@@ -228,7 +228,7 @@
   </section>
 
   <section class="box">
-    <h2>PC</h2>
+    <h2>SAVES</h2>
     <ul id="lib"></ul>
     <div id="empty" hidden>NO GAMES STORED.</div>
   </section>
@@ -605,7 +605,7 @@
     }
     const game = await identify(file);
     const label = game ? game.title + (game.region ? " (" + game.region + ")" : "") : file.name;
-    // Keep a copy in this browser's PC so the next launch doesn't re-download it.
+    // Keep a copy in this browser's SAVES list so the next launch doesn't re-download it.
     try { await dbPut({ name: file.name, core, size: file.size, added: Date.now(), blob: file, game }); }
     catch (e) { console.warn("Could not save to library:", e); }
     launch(file.name, file, core, label);
