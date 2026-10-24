@@ -217,11 +217,10 @@ body.playing #scene { display: none; }
 .guide .story .types { display: inline-flex; flex-wrap: wrap; gap: 3px; }
 .guide .story .types img { width: 48px; height: 16px; image-rendering: pixelated; }
 .guide .story .tname { font-size: 11px; text-transform: uppercase; border: 1px solid var(--ink); padding: 0 3px; }
-.guide .story .catch { margin-top: 8px; }
-.guide .story .cgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
-.guide .story .cgrid li { display: flex; align-items: center; gap: 2px; font-size: 12px; line-height: 1.2; min-width: 0; }
-.guide .story .cgrid img { width: 48px; height: 48px; margin: -6px -4px -6px -8px; image-rendering: pixelated; flex: none; }
-.guide .story .cgrid .where { display: block; }
+.guide .cgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.guide .cgrid li { display: flex; align-items: center; gap: 2px; font-size: 12px; line-height: 1.2; min-width: 0; }
+.guide .cgrid img { width: 48px; height: 48px; margin: -6px -4px -6px -8px; image-rendering: pixelated; flex: none; }
+.guide .cgrid .where { display: block; }
 /* the mini map stays in view while you scroll the lists below it */
 .guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
 .guide .mapbox { overflow: auto; position: relative; scrollbar-width: thin; }
