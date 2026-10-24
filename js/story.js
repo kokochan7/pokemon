@@ -109,7 +109,7 @@ const Story = (() => {
       div.append(head);
       if (b.weak.length) {
         const w = el("div", "weak");
-        w.append(el("span", null, "Weak"), icons(b.weak));
+        w.append(el("span", null, "Weakness"), icons(b.weak));
         div.append(w);
       }
       for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
@@ -118,7 +118,7 @@ const Story = (() => {
     return [el("h3", null, "NEXT"), box];
   }
 
-  // CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
+  // RECOMMEND CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
   function catches(h, base, sprite) {
     if (!steps) return [];
     const s = steps[current(h, base)];
@@ -133,7 +133,7 @@ const Story = (() => {
       li.append(img, t);
       grid.append(li);
     }
-    return [el("h3", null, "CATCH"), grid];
+    return [el("h3", null, "RECOMMEND CATCH"), grid];
   }
 
   const beaten = (h, base, tid) => flag(h, base, TRAINER_FLAGS + tid);
