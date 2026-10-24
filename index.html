@@ -363,8 +363,7 @@
     btn.disabled = true;
     btn.textContent = "Downloading…";
     try {
-      const path = r.key.split("/").map(encodeURIComponent).join("/");
-      const res = await fetch("/api/rom/" + path, { credentials: "same-origin" });
+      const res = await fetch("/api/romfile?key=" + encodeURIComponent(r.key), { credentials: "same-origin" });
       if (res.status === 401) { btn.disabled = false; btn.textContent = "Play"; return showLogin("Your session expired. Enter your password again."); }
       if (!res.ok) throw new Error("HTTP " + res.status);
       const blob = await res.blob();
