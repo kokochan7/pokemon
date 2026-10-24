@@ -1,61 +1,67 @@
 {
- "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. done/todo conditions are read from the save data in DS RAM: f:N event flag, t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is never checked off. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. Boss teams come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). maps lists where the 'trainers on the way' come from (name or name/place in hgss.json).",
+ "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition]; conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons.",
  "steps": [
   {
    "title": "Get your first Pokémon",
-   "where": "New Bark Town",
    "done": "f:0x6A",
-   "text": "Head next door to Prof. Elm's Lab and pick your partner. Cyndaquil (Fire) has the easiest start: it handles Bugsy, Jasmine and Pryce well. Totodile (Water) is solid all game. Chikorita (Grass) is the hard mode for the first gyms.",
    "todo": [
     [
-     "Talk to Prof. Elm and choose a starter",
+     "Go next door to Prof. Elm's Lab and pick a starter",
      "f:0x6A"
+    ],
+    [
+     "Cyndaquil is the easiest start; Chikorita is the hard mode",
+     ""
     ]
-   ],
-   "watch": "Before you leave, Mom sets up your Pokégear. The phone matters: Elm will call you when the story moves on."
+   ]
   },
   {
    "title": "Run Elm's errand to Mr. Pokémon",
-   "where": "Route 29 → Cherrygrove City → Route 30",
    "done": "v:4108>=3",
-   "text": "Elm wants you to visit Mr. Pokémon, who lives at the far north end of Route 30. Walk west on Route 29 to Cherrygrove City, then north up Route 30 to the house past the berry trees.",
    "todo": [
     [
-     "Let the old man in Cherrygrove show you around (free Map card)",
+     "Walk west on Route 29 to Cherrygrove City",
+     "f:0x9bc"
+    ],
+    [
+     "Let the old man show you around town (Map card)",
      "v:4073>=2"
     ],
     [
-     "Reach Mr. Pokémon's house on Route 30: you get the Mystery Egg and Prof. Oak gives you the Pokédex",
+     "Go north on Route 30 to Mr. Pokémon's house",
+     "v:4108>=3"
+    ],
+    [
+     "Get the Mystery Egg, and the Pokédex from Prof. Oak",
      "f:0x6B"
     ]
    ],
    "catch": [
     [
-     "Pidgey or Hoothoot",
-     "Route 29-30",
-     "Flying types you'll want against Bugsy's bugs and Chuck's fighters"
+     "Pidgey",
+     "Route 29-30"
     ],
     [
-     "Sentret / Rattata",
-     "Route 29",
-     "fast early hitters; Rattata learns Bite early, handy for Morty later"
+     "Sentret",
+     "Route 29"
     ]
-   ],
-   "maps": [
-    "Route 29",
-    "Route 30"
-   ],
-   "watch": "You can't catch yet (no Poké Balls until you get back to Elm). Heal at the Cherrygrove Pokémon Center on the way."
+   ]
   },
   {
    "title": "Beat your rival in Cherrygrove",
-   "where": "Cherrygrove City",
    "done": "v:4073>=4",
-   "text": "On your way back, Elm calls in a panic: something was stolen from his lab. When you walk back into Cherrygrove, the red-haired boy who was lurking outside the lab stops you and battles. He has the starter that is strong against yours.",
    "todo": [
     [
-     "Beat the rival in Cherrygrove",
+     "Take Elm's panic call and head back south",
+     "f:0xEE|v:4073>=3"
+    ],
+    [
+     "Beat the red-haired rival in Cherrygrove",
      "v:4073>=4"
+    ],
+    [
+     "Train your starter to level 7-8 first",
+     ""
     ]
    ],
    "boss": [
@@ -66,203 +72,215 @@
       265
      ],
      "name": "Rival",
-     "type": "One Pokémon, the starter with the type advantage over yours",
-     "tip": "Only one Pokémon at level 5. Get your starter to level 7-8 on Route 29-30 first and spam its damaging move; heal with your Potion when you drop under half."
+     "types": [],
+     "weak": []
     }
    ]
   },
   {
    "title": "Report back to Prof. Elm",
-   "where": "New Bark Town",
    "done": "v:4108>=4",
-   "text": "Go back east on Route 29 to Elm's Lab. A police officer asks about the thief: this is where you name your rival. Elm takes the Mystery Egg to study it and sends you on your way to Violet City.",
    "todo": [
     [
-     "Give the rival's name to the officer",
+     "Walk back east to New Bark Town",
+     ""
+    ],
+    [
+     "Tell the police officer the thief's name",
      "f:0x79"
     ],
     [
-     "Talk to Elm about the Egg",
+     "Hand Elm the Egg and hear what's next",
      "v:4108>=4"
     ]
    ]
   },
   {
    "title": "Head to Violet City and climb Sprout Tower",
-   "where": "Route 29 → Route 30 → Route 31 → Violet City",
    "done": "f:0x76",
-   "text": "On Route 29 your friend shows you how to catch Pokémon and hands you 5 Poké Balls. Then go back through Cherrygrove and up Routes 30 and 31 to Violet City. The Gym won't open until you prove yourself in Sprout Tower, the swaying wooden tower in the north of town.",
    "todo": [
     [
-     "Watch the catching lesson on Route 29 (5 Poké Balls)",
+     "Catching lesson on Route 29 (5 Poké Balls)",
      "f:0x9A"
     ],
     [
-     "Climb Sprout Tower and beat Elder Li at the top (TM70 Flash)",
+     "Go north via Routes 30 and 31 to Violet City",
+     "f:0x9bd"
+    ],
+    [
+     "Trade a Bellsprout for Onix in Violet (optional)",
+     "f:0x71"
+    ],
+    [
+     "Climb Sprout Tower and beat Elder Li (TM70 Flash)",
      "f:0x76"
-    ]
-   ],
-   "catch": [
-    [
-     "Geodude",
-     "Dark Cave (entrance on Route 31)",
-     "Rock/Ground, walls Falkner's birds and learns Rock Throw; good vs Whitney too"
-    ],
-    [
-     "Mareep",
-     "Route 32 (just south of Violet)",
-     "Electric: great vs Falkner, later vs Chuck's Poliwrath and Clair's Gyarados"
-    ],
-    [
-     "Bellsprout",
-     "Route 31",
-     "trade it to the kid in the Violet house for an Onix (Rock)"
-    ],
-    [
-     "{Spinarak|Ledyba}",
-     "Route 30-31",
-     "a Bug-type option if you want variety"
     ]
    ],
    "boss": [
     {
      "t": 290,
      "name": "Elder Li",
-     "type": "Grass/Flying",
-     "weak": "Fire, Flying, Rock, Ice",
-     "tip": "Two Bellsprout and a level 10 Hoothoot. Fire or Flying moves clear it fast; Geodude walls the Hoothoot."
+     "types": [
+      "grass",
+      "flying"
+     ],
+     "weak": [
+      "fire",
+      "flying",
+      "ice",
+      "rock"
+     ]
     }
    ],
-   "maps": [
-    "Route 30",
-    "Route 31",
-    "Sprout Tower"
-   ],
-   "watch": "The sages in Sprout Tower all use Bellsprout plus Hoothoot or Rattata. Kill some time leveling here: aim for level 12-14 before Falkner."
+   "catch": [
+    [
+     "Geodude",
+     "Dark Cave (Route 31)"
+    ],
+    [
+     "Mareep",
+     "Route 32"
+    ],
+    [
+     "Bellsprout",
+     "Route 31"
+    ]
+   ]
   },
   {
    "title": "Gym 1: Falkner",
-   "where": "Violet City Gym",
    "done": "b:0",
-   "text": "Falkner's Pidgeotto is the real fight: it hits with Gust and heals with Roost. His Pidgey uses Sand-Attack to lower your accuracy.",
    "todo": [
     [
-     "Beat Falkner for the Zephyr Badge (and TM51 Roost)",
+     "Beat Falkner: Zephyr Badge and TM51 Roost",
      "b:0"
+    ],
+    [
+     "Aim for level 12-14; Rock or Electric types make it easy",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 20,
-     "name": "Gym Leader Falkner",
-     "type": "Flying",
-     "weak": "Electric, Rock, Ice",
-     "tip": "Geodude, Onix or Mareep make this easy. Chikorita users: catch one of those first."
+     "name": "Falkner",
+     "types": [
+      "flying"
+     ],
+     "weak": [
+      "electric",
+      "rock",
+      "ice"
+     ]
     }
-   ],
-   "maps": [
-    "Violet City/Gym"
    ]
   },
   {
    "title": "Collect the Egg from Elm's aide",
-   "where": "Violet City Poké Mart",
    "done": "v:4074>=3",
-   "text": "Elm calls after your first badge: his assistant is waiting for you at the Violet City Poké Mart with the Egg. Walk around with it in your party and it hatches into Togepi.",
    "todo": [
     [
-     "Talk to Elm's aide in the Violet Poké Mart",
+     "Answer Elm's call and visit the Violet Poké Mart",
      "v:4074>=3"
+    ],
+    [
+     "Keep the Egg in your party: it hatches into Togepi",
+     ""
     ]
    ]
   },
   {
    "title": "Go south to Azalea Town",
-   "where": "Route 32 → Union Cave → Route 33 → Azalea Town",
    "done": "f:0x7B",
-   "text": "Take Route 32 south from Violet (the Ruins of Alph to the west are optional). Go through Union Cave to Route 33 and Azalea Town. Team Rocket is cutting the tails off the Slowpoke in Slowpoke Well. Follow Kurt into the well and drive them out.",
    "todo": [
     [
-     "Get the Old Rod from the fisher in the Route 32 Pokémon Center",
+     "Get the Old Rod in the Route 32 Pokémon Center",
      "f:0x75"
     ],
     [
-     "Clear Team Rocket out of Slowpoke Well and beat Proton",
+     "Go through Union Cave",
+     "f:0x9cb"
+    ],
+    [
+     "Reach Azalea Town via Route 33",
+     "f:0x9be"
+    ],
+    [
+     "Chase Team Rocket out of Slowpoke Well, beat Proton",
      "f:0x7B"
-    ]
-   ],
-   "catch": [
-    [
-     "Onix",
-     "Union Cave",
-     "Rock: strong defence vs Bugsy and Whitney"
-    ],
-    [
-     "Wooper",
-     "Route 32 / Union Cave",
-     "Water/Ground, only weak to Grass. Great all-rounder"
-    ],
-    [
-     "Zubat",
-     "Union Cave",
-     "evolves into Crobat, one of the best Johto Flying types"
-    ],
-    [
-     "Hoppip",
-     "Route 32-33",
-     "Grass/Flying: resists Fighting, so it's handy against Chuck later"
     ]
    ],
    "boss": [
     {
      "t": 486,
-     "name": "Executive Proton",
-     "type": "Poison",
-     "weak": "Psychic, Ground",
-     "tip": "Zubat and Koffing. Geodude/Onix shrug off their attacks; watch out for poison and pack Antidotes."
+     "name": "Proton",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     }
    ],
-   "maps": [
-    "Route 32",
-    "Union Cave",
-    "Route 33",
-    "Slowpoke Well"
-   ],
-   "watch": "Route 32 has the most trainers so far. Bring Antidotes for Union Cave and the well."
+   "catch": [
+    [
+     "Onix",
+     "Union Cave"
+    ],
+    [
+     "Wooper",
+     "Route 32"
+    ],
+    [
+     "Zubat",
+     "Union Cave"
+    ],
+    [
+     "Hoppip",
+     "Route 32-33"
+    ]
+   ]
   },
   {
    "title": "Gym 2: Bugsy",
-   "where": "Azalea Town Gym",
    "done": "b:1",
-   "text": "Ride the Spinarak carts across the gym. Bugsy's level 17 Scyther is the danger: it boosts with Focus Energy, hits first with Quick Attack and uses U-turn. Kakuna and Metapod are easy.",
    "todo": [
     [
-     "Beat Bugsy for the Hive Badge (and TM89 U-turn)",
+     "Beat Bugsy: Hive Badge and TM89 U-turn",
      "b:1"
+    ],
+    [
+     "Level 17-18; take Scyther out fast",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 21,
-     "name": "Gym Leader Bugsy",
-     "type": "Bug",
-     "weak": "Fire, Flying, Rock",
-     "tip": "Level 17-18 recommended. Onix, Geodude, Pidgeotto or Cyndaquil all do well. Take Scyther down quickly before Focus Energy pays off."
+     "name": "Bugsy",
+     "types": [
+      "bug"
+     ],
+     "weak": [
+      "fire",
+      "flying",
+      "rock"
+     ]
     }
-   ],
-   "maps": [
-    "Azalea Town"
    ]
   },
   {
    "title": "Rival battle at the Azalea exit",
-   "where": "Azalea Town, west side",
    "done": "t:266|t:269|t:1",
-   "text": "Walk west toward Ilex Forest and your rival jumps you again, now with three Pokémon.",
    "todo": [
     [
-     "Beat the rival",
+     "Walk west toward Ilex Forest and beat the rival",
      "t:266|t:269|t:1"
+    ],
+    [
+     "Normal and Fighting moves can't hit his Gastly",
+     ""
     ]
    ],
    "boss": [
@@ -273,455 +291,483 @@
       1
      ],
      "name": "Rival",
-     "type": "Mixed",
-     "weak": "Gastly: Psychic, Ghost, Dark. Zubat: Electric, Rock, Psychic, Ice",
-     "tip": "Normal and Fighting moves can't touch Gastly. Bite or a Psychic move handles it; save your best counter for his starter."
+     "types": [],
+     "weak": []
     }
    ]
   },
   {
    "title": "Ilex Forest: herd the Farfetch'd, get Cut",
-   "where": "Ilex Forest",
    "done": "f:0x80",
-   "text": "The charcoal maker's Farfetch'd ran off into the forest. Find it and walk up behind it so it runs back toward the entrance (twice). His father then gives you HM01 Cut, which you need for the tree blocking the forest's exit.",
    "todo": [
     [
-     "Find both of the charcoal maker's Farfetch'd",
+     "Find the first lost Farfetch'd and scare it home",
+     "f:0x7D"
+    ],
+    [
+     "Find the second one",
      "f:0x7E"
     ],
     [
      "Get HM01 Cut from the charcoal man",
      "f:0x80"
+    ],
+    [
+     "Cut the tree blocking the north exit",
+     ""
     ]
    ],
    "catch": [
     [
      "Oddish",
-     "Ilex Forest (night)",
-     "Grass/Poison: good against Chuck's Poliwrath and the many Water types later"
+     "Ilex Forest (night)"
     ],
     [
      "Paras",
-     "Ilex Forest",
-     "learns Spore later: sleep is great for catching"
+     "Ilex Forest"
     ]
-   ],
-   "maps": [
-    "Ilex Forest"
    ]
   },
   {
    "title": "Gym 3: Whitney",
-   "where": "Route 34 → Goldenrod City Gym",
    "done": "b:2",
-   "text": "North of the forest, Route 34 leads to Goldenrod City, the big city. Grab the free Bicycle at the Bike Shop, the Radio Card from the Radio Tower quiz and an Eevee from Bill at his house. Then take on Whitney, whose Miltank is famous for wiping teams.",
    "todo": [
     [
-     "Get the Radio Card (answer the quiz on Radio Tower 1F)",
+     "Go north on Route 34 to Goldenrod City",
+     "f:0x9bf"
+    ],
+    [
+     "Free Bicycle at the Bike Shop",
+     ""
+    ],
+    [
+     "Radio Card from the Radio Tower 1F quiz",
      "f:0x8A"
     ],
     [
-     "Get Eevee from Bill at his Goldenrod house",
+     "Eevee from Bill at his house",
      "f:0x95"
     ],
     [
-     "Trade a Drowzee (Route 34) for Machop on Department Store 5F (optional but strongly recommended)",
+     "Trade a Drowzee for Machop (Dept. Store 5F)",
      "f:0x8D"
     ],
     [
-     "Beat Whitney. If she cries after the battle, talk to her again for the Plain Badge",
+     "Beat Whitney (talk to her again if she cries)",
      "b:2"
-    ]
-   ],
-   "catch": [
-    [
-     "Drowzee",
-     "Route 34",
-     "trade it for Machop: Fighting is the answer to Miltank"
     ],
     [
-     "Abra",
-     "Route 34-35",
-     "teleports away; put it to sleep or catch it on the first ball. Kadabra is a top Psychic attacker"
-    ],
-    [
-     "Ditto",
-     "Route 34-35",
-     "for breeding later"
+     "Use Fighting moves; female Pokémon dodge Attract",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 30,
-     "name": "Gym Leader Whitney",
-     "type": "Normal",
-     "weak": "Fighting",
-     "tip": "Miltank uses Rollout (gets stronger every turn), Milk Drink and Stomp, plus Attract on male Pokémon. Use female or Rock/Steel Pokémon to take Rollout, and hit it with Fighting moves. Geodude/Onix resist Rollout. Level 20+ helps."
+     "name": "Whitney",
+     "types": [
+      "normal"
+     ],
+     "weak": [
+      "fighting"
+     ]
     }
    ],
-   "maps": [
-    "Route 34",
-    "Goldenrod City/Gym"
+   "catch": [
+    [
+     "Drowzee",
+     "Route 34"
+    ],
+    [
+     "Abra",
+     "Route 34-35"
+    ],
+    [
+     "Ditto",
+     "Route 34-35"
+    ]
    ]
   },
   {
    "title": "Water the odd tree on Route 36",
-   "where": "Goldenrod Flower Shop → Route 35 → Route 36",
    "done": "f:0x1C2",
-   "text": "A strange tree blocks Route 36. With the Plain Badge, the Goldenrod Flower Shop gives you the SquirtBottle. Go north on Route 35, then east past the National Park to the tree and water it. It's a Sudowoodo (Rock, level 20). Afterwards a man nearby gives you HM06 Rock Smash.",
    "todo": [
     [
-     "Get the SquirtBottle from the Goldenrod Flower Shop",
+     "Get the SquirtBottle at the Goldenrod Flower Shop",
      ""
     ],
     [
-     "Water the odd tree: Sudowoodo battle (catch it if you like)",
+     "Go north on Route 35, then east on Route 36",
      "f:0x1C2"
+    ],
+    [
+     "Water the odd tree: Sudowoodo battle (level 20)",
+     "f:0x1C2"
+    ],
+    [
+     "Get HM06 Rock Smash from the man nearby",
+     ""
     ]
    ],
    "catch": [
     [
      "Sudowoodo",
-     "Route 36 (one chance)",
-     "Rock: good defender; Water/Grass/Fighting beat it"
+     "Route 36"
     ],
     [
      "{Growlithe|Vulpix}",
-     "Route 36-37",
-     "Fire: needed vs Jasmine and Pryce if you didn't pick Cyndaquil"
+     "Route 36-37"
     ],
     [
      "Yanma",
-     "Route 35",
-     "Bug/Flying"
+     "Route 35"
     ],
     [
      "Stantler",
-     "Route 36-37",
-     "bulky Normal type"
+     "Route 36-37"
     ]
-   ],
-   "maps": [
-    "Route 35",
-    "Route 36",
-    "National Park"
-   ],
-   "watch": "The National Park Bug-Catching Contest runs Tuesday, Thursday and Saturday: a good way to catch Scyther or Pinsir."
+   ]
   },
   {
    "title": "Ecruteak: the Burned Tower",
-   "where": "Route 37 → Ecruteak City → Burned Tower",
    "done": "v:4079>=2",
-   "text": "Route 37 leads north to Ecruteak City. Morty isn't in his Gym: the man inside says he went to the Burned Tower. Inside, your rival battles you, then you fall to the basement and wake the three legendary beasts (Raikou, Entei and Suicune), who run off. Morty and Eusine are there too.",
    "todo": [
     [
+     "Go north on Route 37 to Ecruteak City",
+     "f:0x9c0"
+    ],
+    [
+     "Try the Gym: Morty is out at the Burned Tower",
+     "v:4079>=1"
+    ],
+    [
      "Beat the rival in the Burned Tower",
-     "t:8|t:11|t:4"
+     "t:267|t:270|t:263"
     ],
     [
-     "Go down to the basement and see the legendary beasts",
+     "Drop to the basement and wake the legendary beasts",
      "v:4079>=2"
-    ]
-   ],
-   "catch": [
-    [
-     "Gastly",
-     "Sprout/Bell Tower (night)",
-     "Ghost: evolves into Haunter, good vs Morty's team"
-    ],
-    [
-     "Koffing",
-     "Burned Tower",
-     "Poison; learns Sludge and SmokeScreen, a sturdy pick for the Rocket fights later"
     ]
    ],
    "boss": [
     {
      "t": [
-      8,
-      11,
-      4
+      267,
+      270,
+      263
      ],
      "name": "Rival",
-     "type": "Mixed",
-     "weak": "Gastly/Zubat: Psychic, Electric; Magnemite: Fire, Ground, Fighting",
-     "tip": "Four Pokémon around level 20-22. Bring Potions and a counter for his starter."
+     "types": [],
+     "weak": []
     }
    ],
-   "maps": [
-    "Route 37",
-    "Burned Tower"
+   "catch": [
+    [
+     "Gastly",
+     "Bell Tower (night)"
+    ],
+    [
+     "Koffing",
+     "Burned Tower"
+    ]
    ]
   },
   {
    "title": "Gym 4: Morty",
-   "where": "Ecruteak City Gym",
    "done": "b:3",
-   "text": "The gym is pitch black: only the hidden path across the floor is safe. Fall off and you start again. Normal and Fighting moves can't hit his Ghosts. Gengar and Haunter use Hypnosis (Haunter follows up with Dream Eater), and Mean Look plus Curse traps and drains you.",
    "todo": [
     [
-     "Beat Morty for the Fog Badge (and TM30 Shadow Ball)",
+     "Beat Morty: Fog Badge and TM30 Shadow Ball",
      "b:3"
+    ],
+    [
+     "Walk the hidden path; bring Awakenings, level 25+",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 31,
-     "name": "Gym Leader Morty",
-     "type": "Ghost/Poison",
-     "weak": "Ghost, Dark, Psychic, Ground",
-     "tip": "Normal and Fighting moves don't hit at all. Kadabra (Psychic), Haunter (Ghost), Raticate with Bite, or Geodude/Graveler with Magnitude all work. Bring Awakenings for Hypnosis. Aim for level 25+."
+     "name": "Morty",
+     "types": [
+      "ghost",
+      "poison"
+     ],
+     "weak": [
+      "ghost",
+      "dark",
+      "psychic",
+      "ground"
+     ]
     }
-   ],
-   "maps": [
-    "Ecruteak City/Gym"
    ]
   },
   {
    "title": "Win Surf at the Dance Theater",
-   "where": "Ecruteak Dance Theater",
    "done": "f:0xA2",
-   "text": "A Team Rocket grunt is pestering one of the Kimono Girls on the Dance Theater stage. Beat him and the gentleman watching from the audience gives you HM03 Surf, which you can use outside battle now that you have the Fog Badge.",
    "todo": [
     [
-     "Chase off the Rocket grunt in the Dance Theater and get HM03 Surf",
+     "Beat the Rocket grunt bothering a Kimono Girl",
+     "f:0xA2"
+    ],
+    [
+     "Get HM03 Surf from the gentleman",
      "f:0xA2"
     ]
-   ],
-   "watch": "Teach Surf to a Water type (Totodile line, Wooper, Poliwag). It opens up most of the rest of Johto."
+   ]
   },
   {
    "title": "Olivine City, then surf to Cianwood",
-   "where": "Route 38 → Route 39 → Olivine → Routes 40-41 → Cianwood City",
    "done": "b:4",
-   "text": "Head west on Routes 38-39 (Moomoo Farm) to the port of Olivine City. The Gym is empty: Jasmine is at the top of the Lighthouse looking after the sick Ampharos that lights it, and asks you to fetch medicine from Cianwood. Surf west across Routes 40-41 to Cianwood City and beat Chuck while you're there.",
    "todo": [
     [
-     "Climb the Olivine Lighthouse and meet Jasmine",
+     "Go west on Routes 38-39 to Olivine City",
+     "f:0x9c1"
+    ],
+    [
+     "Meet Jasmine at the top of the Lighthouse",
      "v:40A5>=1"
     ],
     [
-     "Surf to Cianwood City",
-     "b:4|f:0xB9"
+     "Surf west across Routes 40-41 to Cianwood City",
+     "f:0x9c2"
     ],
     [
-     "Beat Chuck for the Storm Badge (and TM01 Focus Punch)",
+     "Beat Chuck: Storm Badge and TM01 Focus Punch",
      "b:4"
-    ]
-   ],
-   "catch": [
-    [
-     "Magnemite",
-     "Route 38-39",
-     "Electric/Steel, great vs Chuck's Poliwrath and Pryce's Seel"
-    ],
-    [
-     "Miltank / Tauros",
-     "Route 38-39",
-     "bulky Normal types"
-    ],
-    [
-     "Tentacool",
-     "Routes 40-41 (surfing)",
-     "Water/Poison, learns useful HMs"
-    ],
-    [
-     "{Mantine|Shellder}",
-     "Route 41 (surfing)",
-     "{Water/Flying, HeartGold only|Water, learns Ice moves later}"
     ]
    ],
    "boss": [
     {
      "t": 34,
-     "name": "Gym Leader Chuck",
-     "type": "Fighting",
-     "weak": "Flying, Psychic",
-     "tip": "Both of his Pokémon know Focus Punch (it fails if you hit them first that turn). Primeape has Rock Slide for your birds, Poliwrath has Hypnosis and Surf. Kadabra or Haunter are ideal; Electric or Grass for Poliwrath. Level 30 recommended."
+     "name": "Chuck",
+     "types": [
+      "fighting"
+     ],
+     "weak": [
+      "flying",
+      "psychic"
+     ]
     }
    ],
-   "maps": [
-    "Route 38",
-    "Route 39",
-    "Lighthouse",
-    "Route 40",
-    "Route 41",
-    "Cianwood City/Gym"
+   "catch": [
+    [
+     "Magnemite",
+     "Route 38-39"
+    ],
+    [
+     "Miltank",
+     "Route 38-39"
+    ],
+    [
+     "Tentacool",
+     "Route 40-41"
+    ],
+    [
+     "{Mantine|Shellder}",
+     "Route 41"
+    ]
    ]
   },
   {
    "title": "Get the medicine (and Fly)",
-   "where": "Cianwood City",
    "done": "f:0xB9",
-   "text": "The Cianwood Pharmacy gives you the SecretPotion. Chuck's wife, waiting outside in town, gives you HM02 Fly once you have his badge, and a man in a house nearby lends you a Shuckle. Suicune and Eusine show up on the coast here too.",
    "todo": [
     [
      "Get HM02 Fly from Chuck's wife",
      "f:0xBB"
     ],
     [
-     "Get the SecretPotion at the Cianwood Pharmacy",
+     "Get the SecretPotion at the Pharmacy",
      "f:0xB9"
+    ],
+    [
+     "Borrow Kirk's Shuckle (optional)",
+     "f:0xBF"
     ]
    ]
   },
   {
    "title": "Gym 5: Jasmine",
-   "where": "Olivine Lighthouse → Olivine Gym",
    "done": "b:5",
-   "text": "Fly back to Olivine, climb the Lighthouse and give Amphy the SecretPotion. Jasmine then returns to her Gym (no other trainers inside).",
    "todo": [
     [
-     "Give the SecretPotion to Amphy at the top of the Lighthouse",
+     "Give the SecretPotion to Amphy at the Lighthouse top",
      "v:40A5>=2|b:5"
     ],
     [
-     "Beat Jasmine for the Mineral Badge (and TM23 Iron Tail)",
+     "Beat Jasmine: Mineral Badge and TM23 Iron Tail",
      "b:5"
     ]
    ],
    "boss": [
     {
      "t": 33,
-     "name": "Gym Leader Jasmine",
-     "type": "Steel",
-     "weak": "Fire, Fighting, Ground (Magnemite takes 4x Ground)",
-     "tip": "Magnemite use Thunderbolt and Thunder Wave, and fall to Ground or Fire. Steelix (35) sets up Sandstorm and hits with Iron Tail: Fire, Water (Surf), Fighting or Ground moves. Machoke and Quilava/Typhlosion shine here."
+     "name": "Jasmine",
+     "types": [
+      "steel"
+     ],
+     "weak": [
+      "fire",
+      "fighting",
+      "ground"
+     ]
     }
-   ],
-   "maps": [
-    "Olivine City/Gym"
    ]
   },
   {
    "title": "Lake of Rage and the red Gyarados",
-   "where": "Route 42 → Mahogany Town → Route 43 → Lake of Rage",
    "done": "f:0xC9",
-   "text": "Fly to Ecruteak and go east on Route 42 (through Mt. Mortar) to Mahogany Town. The Gym guy says Pryce is busy, and something weird is happening up north: go up Route 43 (Rocket grunts charge a toll in the gate) to the Lake of Rage, where a red Gyarados is rampaging. Battle it (level 30) and you get the Red Scale. Lance is waiting on the shore.",
    "todo": [
     [
-     "Battle the red Gyarados at the Lake of Rage (catch it!)",
+     "Get HM04 Strength from the man on Route 42",
+     ""
+    ],
+    [
+     "Go east on Route 42 to Mahogany Town",
+     "f:0x9c3"
+    ],
+    [
+     "Go north on Route 43 to the Lake of Rage",
+     "f:0x9c4"
+    ],
+    [
+     "Battle the red Gyarados (level 30) for the Red Scale",
      "f:0xC9"
     ],
     [
-     "Get HM04 Strength from the man on Route 42 (you need it in the Ice Path later)",
-     ""
+     "Meet Lance on the shore",
+     "f:0xC9"
     ]
    ],
    "catch": [
     [
-     "Red Gyarados",
-     "Lake of Rage (one chance)",
-     "Water/Flying, a top attacker. Weak only to Electric (4x) and Rock"
+     "Gyarados",
+     "Lake of Rage"
     ],
     [
-     "Mareep/Flaaffy",
-     "Route 42-43",
-     "Electric, if you don't have one yet"
+     "Mareep",
+     "Route 42-43"
     ],
     [
      "Girafarig",
-     "Route 43",
-     "Normal/Psychic"
+     "Route 43"
     ],
     [
      "Machop",
-     "Mt. Mortar",
-     "Fighting for Pryce and Karen later"
+     "Mt. Mortar"
     ]
-   ],
-   "maps": [
-    "Route 42",
-    "Mt Mortar",
-    "Route 43",
-    "Lake of Rage"
-   ],
-   "watch": "Mt. Mortar is optional now, but the Karate King deep inside gives you a Tyrogue."
+   ]
   },
   {
    "title": "Raid the Team Rocket hideout",
-   "where": "Mahogany Town souvenir shop",
    "done": "f:0xCA",
-   "text": "Lance meets you at the Mahogany souvenir shop: the hideout is underneath. Avoid the Persian statues (they set off alarms), find the passwords from the grunts, and team up with Lance against Ariana. On the bottom floor, beat Petrel and knock out the three Electrode powering the radio signal. Lance gives you HM05 Whirlpool.",
    "todo": [
     [
-     "Beat Petrel in the hideout",
+     "Go under the Mahogany souvenir shop with Lance",
+     "t:479|f:0xCA"
+    ],
+    [
+     "Beat Ariana with Lance",
+     "t:479"
+    ],
+    [
+     "Beat Petrel",
      "t:488"
     ],
     [
-     "Shut down the Electrode generator",
+     "Knock out the three Electrode",
      "f:0xCA"
-    ]
-   ],
-   "catch": [
+    ],
     [
-     "Electrode",
-     "Rocket Hideout B3F (three chances, level 23)",
-     "Electric; very fast"
+     "Get HM05 Whirlpool from Lance",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 488,
-     "name": "Executive Petrel",
-     "type": "Poison/Normal",
-     "weak": "Psychic, Ground, Fighting",
-     "tip": "Zubat, Raticate and Koffing in the low 20s: an easy fight."
+     "name": "Petrel",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     },
     {
      "t": 479,
-     "name": "Executive Ariana (double battle with Lance)",
-     "type": "Poison/Dark",
-     "weak": "Psychic, Ground, Fighting",
-     "tip": "Lance's Dragonite does most of the work."
+     "name": "Ariana",
+     "types": [
+      "poison",
+      "dark"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     }
    ],
-   "maps": [
-    "Team Rocket Hq"
-   ],
-   "watch": "Bring Repels and Full Heals; the hideout is long and full of poison users."
+   "catch": [
+    [
+     "Electrode",
+     "Hideout B3F"
+    ]
+   ]
   },
   {
    "title": "Gym 6: Pryce",
-   "where": "Mahogany Town Gym",
    "done": "b:6",
-   "text": "Slide across the ice floor to reach Pryce. Seel and Dewgong stall with Rest; Piloswine is part Ground (Electric moves won't touch it) and has Blizzard.",
    "todo": [
     [
-     "Beat Pryce for the Glacier Badge (and TM07 Hail)",
+     "Beat Pryce: Glacier Badge and TM07 Hail",
      "b:6"
+    ],
+    [
+     "Slide across the ice; level 32-35",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 32,
-     "name": "Gym Leader Pryce",
-     "type": "Ice (Seel/Dewgong Water, Piloswine Ground)",
-     "weak": "Fire, Fighting, Rock, Steel",
-     "tip": "Fire and Fighting moves hit all three. Electric or Grass for Seel and Dewgong; Water or Grass for Piloswine. Level 32-35 recommended."
+     "name": "Pryce",
+     "types": [
+      "ice"
+     ],
+     "weak": [
+      "fire",
+      "fighting",
+      "rock",
+      "steel"
+     ]
     }
-   ],
-   "maps": [
-    "Mahogany Town"
    ]
   },
   {
    "title": "Free the Radio Tower",
-   "where": "Goldenrod City",
    "done": "f:0xC6",
-   "text": "Team Rocket has taken over the Goldenrod Radio Tower. Fight up to the 5F, where the \"Director\" is Petrel in disguise: he hands you the Basement Key. The real Director is locked in the warehouse at the end of the Goldenrod Tunnel (enter from the north or south underground entrance, then the basement door). Your rival is down there too. The Director gives you the Card Key; go back up the tower, beat Ariana, and finally Archer on the Observation Deck. The Director rewards you with the {Rainbow Wing|Silver Wing}.",
    "todo": [
     [
-     "Get the Basement Key from Petrel on Radio Tower 5F",
+     "Fight up the Goldenrod Radio Tower",
+     "v:4077>=3"
+    ],
+    [
+     "Beat Petrel on 5F for the Basement Key",
      "v:4077>=3"
     ],
     [
      "Beat the rival in the Goldenrod Tunnel",
-     "t:18|t:12|t:17"
+     "t:289|t:271|t:288"
     ],
     [
-     "Rescue the Director in the underground warehouse (Card Key)",
+     "Free the Director in the warehouse (Card Key)",
      "v:4077>=4"
+    ],
+    [
+     "Beat Ariana on 5F",
+     "t:478"
     ],
     [
      "Beat Archer on the Observation Deck",
@@ -731,141 +777,171 @@
    "boss": [
     {
      "t": [
-      18,
-      12,
-      17
+      289,
+      271,
+      288
      ],
      "name": "Rival",
-     "type": "Mixed",
-     "weak": "Golbat: Electric, Psychic, Ice, Rock; Sneasel: Fighting (4x)",
-     "tip": "Five Pokémon in the low 30s. A Fighting move erases Sneasel."
+     "types": [],
+     "weak": []
     },
     {
      "t": 706,
-     "name": "Executive Proton (4F)",
-     "type": "Poison",
-     "weak": "Psychic, Ground",
-     "tip": "Golbat confuses you, Weezing lowers your accuracy with SmokeScreen."
+     "name": "Proton",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     },
     {
      "t": 487,
-     "name": "Executive Petrel (5F)",
-     "type": "Poison",
-     "weak": "Psychic, Ground",
-     "tip": "Five Koffing and a Weezing: watch for explosions."
+     "name": "Petrel",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     },
     {
      "t": 478,
-     "name": "Executive Ariana",
-     "type": "Poison/Grass/Dark",
-     "weak": "Psychic, Ground, Fire, Fighting",
-     "tip": "Vileplume can put you to sleep."
+     "name": "Ariana",
+     "types": [
+      "poison",
+      "dark"
+     ],
+     "weak": [
+      "psychic",
+      "ground"
+     ]
     },
     {
      "t": 485,
-     "name": "Executive Archer",
-     "type": "Dark/Fire/Poison",
-     "weak": "Water, Ground, Fighting",
-     "tip": "Houndoom is the threat: Water or Ground moves."
+     "name": "Archer",
+     "types": [
+      "dark",
+      "fire"
+     ],
+     "weak": [
+      "water",
+      "ground",
+      "fighting"
+     ]
     }
-   ],
-   "maps": [
-    "Radio Tower",
-    "Goldenrod Tunnel"
    ]
   },
   {
    "title": "Ice Path to Blackthorn and Clair",
-   "where": "Route 44 → Ice Path → Blackthorn City",
    "done": "t:35",
-   "text": "Go east from Mahogany on Route 44 into the Ice Path. You'll need Strength for the boulders, and you pick up HM07 Waterfall inside. Slide across the ice puzzles to reach Blackthorn City, then cross the Gym's lava floor to Clair.",
    "todo": [
     [
-     "Beat Clair in the Blackthorn Gym",
+     "Go east on Route 44 into the Ice Path",
+     ""
+    ],
+    [
+     "Pick up HM07 Waterfall inside",
+     ""
+    ],
+    [
+     "Reach Blackthorn City",
+     "f:0x9c5"
+    ],
+    [
+     "Beat Clair",
      "t:35"
-    ]
-   ],
-   "catch": [
-    [
-     "Jynx",
-     "Ice Path",
-     "Ice/Psychic: Ice moves are what you need vs Clair and Lance"
     ],
     [
-     "Swinub",
-     "Ice Path",
-     "Ice/Ground; Piloswine is a good Ice attacker"
-    ],
-    [
-     "{Phanpy / Gligar|Teddiursa / Skarmory}",
-     "Route 45 (south of Blackthorn)",
-     "Ground and Steel/Flying options"
-    ],
-    [
-     "Lapras",
-     "Union Cave B2F (Fridays only)",
-     "Water/Ice: one of the best answers to the Dragon users"
+     "Level 38-40; bring Ice moves and Paralyze Heals",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 35,
-     "name": "Gym Leader Clair",
-     "type": "Dragon",
-     "weak": "Ice, Dragon (Gyarados: Electric 4x, Rock; Kingdra only Dragon)",
-     "tip": "Every one knows Dragon Pulse. The Dragonair use Thunder Wave (bring Paralyze Heals) and one has Fire Blast. Kingdra (41) uses Hydro Pump and Hyper Beam and only Dragon moves hit it super-effectively: use your strongest attacker. Ice moves crush the Dragonair. Aim for level 38-40."
+     "name": "Clair",
+     "types": [
+      "dragon"
+     ],
+     "weak": [
+      "ice",
+      "dragon"
+     ]
     }
    ],
-   "maps": [
-    "Route 44",
-    "Blackthorn City/Gym"
+   "catch": [
+    [
+     "Jynx",
+     "Ice Path"
+    ],
+    [
+     "Swinub",
+     "Ice Path"
+    ],
+    [
+     "Lapras",
+     "Union Cave B2F (Fri)"
+    ],
+    [
+     "{Phanpy|Teddiursa}",
+     "Route 45"
+    ]
    ]
   },
   {
    "title": "Pass Clair's test in the Dragon's Den",
-   "where": "Dragon's Den (behind the Blackthorn Gym)",
    "done": "b:7",
-   "text": "Clair won't hand over the badge until you pass the Dragon Master's test. Surf through the Dragon's Den to the shrine in the middle and answer the elder's questions about how you treat Pokémon (be kind). Then Clair gives you the Rising Badge.",
    "todo": [
     [
-     "Pass the Dragon Master's quiz in the shrine",
+     "Surf to the shrine in the Dragon's Den",
+     ""
+    ],
+    [
+     "Answer the Dragon Master kindly: Rising Badge",
      "b:7"
+    ],
+    [
+     "All kind answers earn a Dratini with ExtremeSpeed",
+     ""
     ]
-   ],
-   "watch": "Answer every question the kind way and the elder gives you a Dratini that knows ExtremeSpeed."
+   ]
   },
   {
    "title": "Elm's Master Ball",
-   "where": "New Bark Town",
    "done": "v:4108>=9",
-   "text": "With all eight Johto badges, Fly back to New Bark Town. Elm gives you the Master Ball and says the Kimono Girls are looking for you.",
    "todo": [
     [
-     "Get the Master Ball from Prof. Elm",
+     "Fly to New Bark and get the Master Ball from Elm",
      "v:4108>=9"
     ]
    ]
   },
   {
    "title": "The Kimono Girls and {Ho-Oh|Lugia}",
-   "where": "Ecruteak Dance Theater → {Bell Tower|Whirl Islands}",
    "done": "f:0x108|f:0x109|f:0x964",
-   "text": "In Ecruteak your rival confronts you, then the Kimono Girls at the Dance Theater give you the {Clear Bell. Take it and the Rainbow Wing to the top of the Bell Tower, where they dance to call Ho-Oh (level 45)|Tidal Bell. Take it and the Silver Wing to the bottom of the Whirl Islands, where they dance to call Lugia (level 45)}. Save before the battle; the Master Ball is an option.",
    "todo": [
     [
-     "Get the {Clear Bell|Tidal Bell} from the Kimono Girls",
+     "Face your rival in Ecruteak",
+     "v:410C>=4"
+    ],
+    [
+     "Beat the five Kimono Girls at the Dance Theater",
      "v:410C>=6|f:0x103|f:0x104"
     ],
     [
-     "Meet {Ho-Oh at the Bell Tower summit|Lugia in the Whirl Islands}",
-     "f:0x108|f:0x109"
-    ]
-   ],
-   "catch": [
+     "Get the {Clear Bell|Tidal Bell}",
+     "v:410C>=6|f:0x103|f:0x104"
+    ],
     [
-     "{Ho-Oh|Lugia}",
-     "{Bell Tower|Whirl Islands}",
-     "level 45, one chance: save first. Use False Swipe and a sleep move, or the Master Ball"
+     "Meet {Ho-Oh at the Bell Tower top|Lugia deep in the Whirl Islands}",
+     "f:0x108|f:0x109"
+    ],
+    [
+     "Save first: it's level 45, one chance",
+     ""
     ]
    ],
    "boss": [
@@ -878,21 +954,40 @@
       164
      ],
      "name": "Kimono Girls",
-     "type": "Eeveelutions",
-     "weak": "Each one's own type",
-     "tip": "Before handing over the bell, the five Kimono Girls test you one after another, each with one level 38 Eeveelution (Espeon, Jolteon, Umbreon, Vaporeon, Flareon). Bring a mixed team and heal between battles."
+     "types": [],
+     "weak": []
     }
+   ],
+   "catch": [
+    [
+     "{Ho-Oh|Lugia}",
+     "{Bell Tower|Whirl Islands}"
+    ]
    ]
   },
   {
    "title": "The Pokémon League",
-   "where": "Route 27 → Tohjo Falls → Route 26 → Victory Road → Indigo Plateau",
    "done": "f:0x964",
-   "text": "Surf east from New Bark Town onto Route 27, climb Tohjo Falls with Waterfall and walk up Route 26 to the League Reception Gate, which checks your badges. Your rival waits near the end of Victory Road. At Indigo Plateau, stock up (Full Restores, Revives) and face the Elite Four back to back with no healing in between, then Champion Lance.",
    "todo": [
     [
+     "Surf east from New Bark to Route 27",
+     ""
+    ],
+    [
+     "Climb Tohjo Falls with Waterfall",
+     ""
+    ],
+    [
+     "Show your badges at the Route 26 gate",
+     "f:0x9d1"
+    ],
+    [
      "Beat the rival in Victory Road",
-     "t:9|t:13|t:5"
+     "t:268|t:272|t:264"
+    ],
+    [
+     "Reach Indigo Plateau and stock up",
+     "f:0x9b9"
     ],
     [
      "Beat Will",
@@ -915,360 +1010,409 @@
      "f:0x964"
     ]
    ],
-   "catch": [
-    [
-     "{Sandslash|Arbok}",
-     "Route 26-27",
-     "Ground vs Koga"
-    ],
-    [
-     "Ponyta / Doduo",
-     "Route 26-27",
-     "fast attackers"
-    ]
-   ],
    "boss": [
     {
      "t": [
-      9,
-      13,
-      5
+      268,
+      272,
+      264
      ],
-     "name": "Rival (Victory Road)",
-     "type": "Mixed",
-     "weak": "Sneasel: Fighting; Golbat/Magneton: Electric/Fire/Ground",
-     "tip": "Six Pokémon up to level 40."
+     "name": "Rival",
+     "types": [],
+     "weak": []
     },
     {
      "t": 245,
-     "name": "Elite Four Will",
-     "type": "Psychic",
-     "weak": "Dark, Ghost, Bug",
-     "tip": "Xatu are Psychic/Flying: Electric, Ice, Rock, Ghost, Dark."
+     "name": "Will",
+     "types": [
+      "psychic"
+     ],
+     "weak": [
+      "dark",
+      "ghost",
+      "bug"
+     ]
     },
     {
      "t": 247,
-     "name": "Elite Four Koga",
-     "type": "Poison",
-     "weak": "Ground, Psychic",
-     "tip": "Crobat is fast; Forretress is Bug/Steel (Fire 4x)."
+     "name": "Koga",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "ground",
+      "psychic"
+     ]
     },
     {
      "t": 418,
-     "name": "Elite Four Bruno",
-     "type": "Fighting",
-     "weak": "Flying, Psychic",
-     "tip": "Onix is Rock/Ground: Water or Grass."
+     "name": "Bruno",
+     "types": [
+      "fighting"
+     ],
+     "weak": [
+      "flying",
+      "psychic"
+     ]
     },
     {
      "t": 246,
-     "name": "Elite Four Karen",
-     "type": "Dark",
-     "weak": "Fighting, Bug",
-     "tip": "Vileplume and Gengar break the theme: Psychic, Fire, Flying for those."
+     "name": "Karen",
+     "types": [
+      "dark"
+     ],
+     "weak": [
+      "fighting",
+      "bug"
+     ]
     },
     {
      "t": 244,
-     "name": "Champion Lance",
-     "type": "Dragon",
-     "weak": "Ice, Dragon, Rock",
-     "tip": "Three Dragonite (Ice 4x), Gyarados (Electric 4x), Aerodactyl and Charizard (Rock, Water). Bring an Ice user and an Electric user, level 45-50."
+     "name": "Lance",
+     "types": [
+      "dragon"
+     ],
+     "weak": [
+      "ice",
+      "dragon",
+      "rock"
+     ]
     }
    ],
-   "maps": [
-    "Route 27",
-    "Route 26"
+   "catch": [
+    [
+     "{Sandslash|Arbok}",
+     "Route 26-27"
+    ],
+    [
+     "Ponyta",
+     "Route 26-27"
+    ]
    ]
   },
   {
    "title": "Sail to Kanto",
-   "where": "New Bark Town → Olivine Port",
    "done": "k:0|k:1|k:2|k:3|k:4|k:5|k:6|k:7",
-   "text": "After the credits, wake up at home and visit Elm: he gives you the S.S. Ticket. Fly to Olivine and take the S.S. Aqua to Vermilion City in Kanto.",
    "todo": [
     [
      "Get the S.S. Ticket from Elm",
      "f:0xF2"
     ],
     [
-     "Ride the S.S. Aqua to Vermilion",
-     "k:0|k:1|k:2|k:3|k:4|k:5|k:6|k:7"
+     "Ride the S.S. Aqua from Olivine to Vermilion",
+     "f:0x9b5"
     ]
-   ],
-   "maps": [
-    "S.S. Aqua"
    ]
   },
   {
    "title": "Kanto gym: Lt. Surge",
-   "where": "Vermilion City",
    "done": "k:2",
-   "text": "Kanto's eight gyms can be done in any order; this is a smooth route. Lt. Surge is right where the boat docks. Solve the hidden-switch trash can puzzle to reach him.",
    "todo": [
     [
-     "Beat Lt. Surge for the Thunder Badge",
+     "Kanto gyms work in any order",
+     ""
+    ],
+    [
+     "Solve the trash-can switches and beat Lt. Surge",
      "k:2"
     ]
    ],
    "boss": [
     {
      "t": 255,
-     "name": "Gym Leader Lt. Surge",
-     "type": "Electric",
-     "weak": "Ground",
-     "tip": "A Ground type stops the whole team; Electrode are fast and can explode."
+     "name": "Lt. Surge",
+     "types": [
+      "electric"
+     ],
+     "weak": [
+      "ground"
+     ]
     }
-   ],
-   "maps": [
-    "Vermilion City"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Sabrina",
-   "where": "Route 6 → Saffron City",
    "done": "k:5",
-   "text": "Walk north from Vermilion to Saffron City. The Gym is a teleport-pad maze.",
    "todo": [
     [
-     "Beat Sabrina for the Marsh Badge",
+     "Walk north to Saffron City",
+     "f:0x9ba"
+    ],
+    [
+     "Beat Sabrina",
      "k:5"
     ]
    ],
    "boss": [
     {
      "t": 258,
-     "name": "Gym Leader Sabrina",
-     "type": "Psychic",
-     "weak": "Dark, Ghost, Bug",
-     "tip": "Tyranitar, Umbreon, Houndoom or Gengar. Alakazam is very fast but fragile."
+     "name": "Sabrina",
+     "types": [
+      "psychic"
+     ],
+     "weak": [
+      "dark",
+      "ghost",
+      "bug"
+     ]
     }
-   ],
-   "maps": [
-    "Saffron City",
-    "Route 6"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Erika",
-   "where": "Route 7 → Celadon City",
    "done": "k:3",
-   "text": "West of Saffron is Celadon City. Cut the small tree to get into Erika's flower Gym.",
    "todo": [
     [
-     "Beat Erika for the Rainbow Badge",
+     "Go west to Celadon City",
+     "f:0x9b6"
+    ],
+    [
+     "Beat Erika",
      "k:3"
     ]
    ],
    "boss": [
     {
      "t": 256,
-     "name": "Gym Leader Erika",
-     "type": "Grass",
-     "weak": "Fire, Flying, Ice, Poison, Bug",
-     "tip": "Any Fire or Flying attacker; Jumpluff is fast and can Sleep Powder."
+     "name": "Erika",
+     "types": [
+      "grass"
+     ],
+     "weak": [
+      "fire",
+      "flying",
+      "ice",
+      "poison",
+      "bug"
+     ]
     }
-   ],
-   "maps": [
-    "Celadon City"
    ],
    "free": true
   },
   {
    "title": "Fix the Power Plant",
-   "where": "Route 10 Power Plant → Cerulean City → Lavender Town",
    "done": "f:0x11F",
-   "text": "The Power Plant (Route 10, north of Lavender) has lost a machine part, so the Magnet Train is down. The thief hid it in the Cerulean Gym; a Team Rocket straggler on Route 24 or 25 knows more. Return the part to the manager, then visit the Lavender Radio Tower for the EXPN Card: tune it to the Poké Flute station to wake the Snorlax blocking Diglett's Cave (Route 11) and the Route 12 Snorlax.",
    "todo": [
     [
-     "Hear the manager's story at the Power Plant",
+     "Hear the manager's story at the Route 10 Power Plant",
      "f:0x120"
+    ],
+    [
+     "Find the stolen part in the Cerulean Gym",
+     ""
+    ],
+    [
+     "Bring it back to the manager",
+     ""
     ],
     [
      "Get the EXPN Card at the Lavender Radio Tower",
      "f:0x11F"
+    ],
+    [
+     "Play the Poké Flute channel to wake Snorlax",
+     ""
     ]
    ],
    "catch": [
     [
      "Snorlax",
-     "Route 11 / Route 12, level 50 (wake it with the Poké Flute channel)",
-     "huge HP and Attack"
+     "Route 11-12"
     ]
-   ],
-   "maps": [
-    "Route 9",
-    "Route 10",
-    "Route 24",
-    "Route 25"
    ]
   },
   {
    "title": "Kanto gym: Misty",
-   "where": "Cerulean City (Misty is on a date at Cerulean Cape, Route 25)",
    "done": "k:1",
-   "text": "If the Cerulean Gym is empty, Misty is out at the cape at the end of Route 25. Go interrupt her date and she'll head back to her Gym.",
    "todo": [
     [
-     "Beat Misty for the Cascade Badge",
+     "Find Misty at Cerulean Cape (Route 25)",
+     "f:0x9b3"
+    ],
+    [
+     "Beat Misty",
      "k:1"
     ]
    ],
    "boss": [
     {
      "t": 254,
-     "name": "Gym Leader Misty",
-     "type": "Water",
-     "weak": "Electric, Grass",
-     "tip": "Quagsire is Water/Ground (Grass 4x, Electric does nothing). Lapras is Water/Ice."
+     "name": "Misty",
+     "types": [
+      "water"
+     ],
+     "weak": [
+      "electric",
+      "grass"
+     ]
     }
-   ],
-   "maps": [
-    "Cerulean City",
-    "Route 25"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Janine",
-   "where": "Routes 12-15 or Cycling Road → Fuchsia City",
    "done": "k:4",
-   "text": "Fuchsia City is south. In Janine's Gym the trainers are disguised as her: talk to each to find the real one.",
    "todo": [
     [
-     "Beat Janine for the Soul Badge",
+     "Head south to Fuchsia City",
+     "f:0x9b7"
+    ],
+    [
+     "Find the real Janine and beat her",
      "k:4"
     ]
    ],
    "boss": [
     {
      "t": 257,
-     "name": "Gym Leader Janine",
-     "type": "Poison",
-     "weak": "Ground, Psychic",
-     "tip": "A Psychic type sweeps; Crobat is Poison/Flying so Ground won't hit it."
+     "name": "Janine",
+     "types": [
+      "poison"
+     ],
+     "weak": [
+      "ground",
+      "psychic"
+     ]
     }
-   ],
-   "maps": [
-    "Route 12",
-    "Route 13",
-    "Route 14",
-    "Route 15",
-    "Route 17",
-    "Route 18"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Brock",
-   "where": "Diglett's Cave → Pewter City",
    "done": "k:0",
-   "text": "With the Route 11 Snorlax gone, Diglett's Cave takes you from Vermilion to the west side of Kanto. Pewter City is north of Route 2.",
    "todo": [
     [
-     "Beat Brock for the Boulder Badge",
+     "Go through Diglett's Cave",
+     ""
+    ],
+    [
+     "Reach Pewter City",
+     "f:0x9b2"
+    ],
+    [
+     "Beat Brock",
      "k:0"
     ]
    ],
    "boss": [
     {
      "t": 253,
-     "name": "Gym Leader Brock",
-     "type": "Rock",
-     "weak": "Water, Grass, Fighting, Ground, Steel",
-     "tip": "Water or Grass moves do 4x to Graveler, Rhyhorn, Onix (Grass) and Omastar/Kabutops (Grass)."
+     "name": "Brock",
+     "types": [
+      "rock"
+     ],
+     "weak": [
+      "water",
+      "grass",
+      "fighting",
+      "ground",
+      "steel"
+     ]
     }
-   ],
-   "maps": [
-    "Route 2",
-    "Pewter City"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Blaine",
-   "where": "Pallet Town → Route 21 → Cinnabar → Seafoam Islands",
    "done": "k:6",
-   "text": "The volcano wiped out Cinnabar's Gym, so Blaine runs it from a cave in the Seafoam Islands (Route 20). Surf south from Pallet Town or west from Fuchsia.",
    "todo": [
     [
-     "Beat Blaine for the Volcano Badge",
+     "Surf to Cinnabar Island",
+     "f:0x9b8"
+    ],
+    [
+     "Beat Blaine in the Seafoam Islands",
      "k:6"
     ]
    ],
    "boss": [
     {
      "t": 259,
-     "name": "Gym Leader Blaine",
-     "type": "Fire",
-     "weak": "Water, Ground, Rock",
-     "tip": "Surf handles all three; Magcargo is Fire/Rock (Water 4x)."
+     "name": "Blaine",
+     "types": [
+      "fire"
+     ],
+     "weak": [
+      "water",
+      "ground",
+      "rock"
+     ]
     }
-   ],
-   "maps": [
-    "Route 19",
-    "Route 20",
-    "Route 21",
-    "Seafoam Islands"
    ],
    "free": true
   },
   {
    "title": "Kanto gym: Blue",
-   "where": "Viridian City",
    "done": "k:7",
-   "text": "Blue's Gym in Viridian opens once you have the other seven Kanto badges.",
    "todo": [
     [
-     "Beat Blue for the Earth Badge",
+     "Beat Blue in Viridian City (after the other 7)",
      "k:7"
     ]
    ],
    "boss": [
     {
      "t": 261,
-     "name": "Gym Leader Blue",
-     "type": "Mixed",
-     "weak": "Varies",
-     "tip": "Pidgeot (Electric/Ice/Rock), Arcanine and Rhydon (Water), Gyarados (Electric), Exeggutor (Fire/Bug/Ice), Machamp (Psychic/Flying). Level 55+."
+     "name": "Blue",
+     "types": [],
+     "weak": []
     }
-   ],
-   "maps": [
-    "Viridian City"
    ],
    "free": true
   },
   {
    "title": "Mt. Silver: the final battle",
-   "where": "Pallet Town → Route 22 → Route 28 → Mt. Silver",
    "done": "t:260",
-   "text": "With all 16 badges, talk to Prof. Oak in his Pallet Town lab: he opens Mt. Silver for you. Go west from Viridian on Route 22, through the gate to Route 28 and climb Mt. Silver to the summit. The trainer waiting at the top is the strongest in the game.",
    "todo": [
     [
-     "Get Prof. Oak's permission for Mt. Silver",
+     "Talk to Prof. Oak in Pallet Town",
      "f:0x12B"
+    ],
+    [
+     "Take Routes 22 and 28 to Mt. Silver",
+     "f:0x9c6"
     ],
     [
      "Beat the trainer at the summit",
      "t:260"
+    ],
+    [
+     "Level 75+, Full Restores and Revives",
+     ""
     ]
    ],
    "boss": [
     {
      "t": 260,
-     "name": "Pkmn Trainer Red",
-     "type": "Mixed",
-     "weak": "Varies",
-     "tip": "Levels 80-88, and it hails at the summit, chipping your team every turn. Train to 75+ and bring Full Restores and Revives. Pikachu is fast; Snorlax is the bulkiest."
+     "name": "Red",
+     "types": [],
+     "weak": []
     }
    ]
   },
   {
    "title": "You've beaten the story!",
-   "where": "",
    "done": "f:0",
-   "text": "Ideas for the post-game: rematch gym leaders by phone, chase Raikou, Entei and Suicune, catch the other legendary at {Whirl Islands (Lugia)|Bell Tower (Ho-Oh)}, take on the Battle Frontier near Cianwood, and complete the Pokédex."
+   "todo": [
+    [
+     "Rematch gym leaders by phone",
+     ""
+    ],
+    [
+     "Chase Raikou, Entei and Suicune",
+     ""
+    ],
+    [
+     "Take on the Battle Frontier",
+     ""
+    ],
+    [
+     "Complete the Pokédex",
+     ""
+    ]
+   ]
   }
  ]
 }

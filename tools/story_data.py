@@ -1,6 +1,7 @@
-# Builds guide/bosses.json, the teams of the story battles (gym leaders, rivals, Team Rocket
-# executives, Elite Four...) that guide/story.json points at by trainer id. The teams come from the
-# pret/pokeheartgold decompilation; the step text in guide/story.json is written by hand.
+# Builds guide/bosses.json for the NEXT section: "teams" are the parties of the story battles (gym
+# leaders, rivals, Team Rocket executives, Elite Four...) that guide/story.json points at by trainer id,
+# "dex" maps each Pokémon named in the steps' catch lists to its National Dex number (for the sprite).
+# Both come from the pret/pokeheartgold decompilation; the step text in guide/story.json is written by hand.
 #
 #   git clone --depth 1 https://github.com/pret/pokeheartgold
 #   python3 tools/story_data.py path/to/pokeheartgold > guide/bosses.json
@@ -11,8 +12,10 @@ root = Path(sys.argv[1])
 here = Path(__file__).resolve().parent.parent
 story = json.loads((here / "guide/story.json").read_text())
 
-ids = set()
+ids, names = set(), set()
 for step in story["steps"]:
+    for name, _ in step.get("catch", []):
+        names.update(re.findall(r"[^{}|]+", name))
     for b in step.get("boss", []):
         t = b["t"]
         ids.update(t if isinstance(t, list) else [t])
@@ -23,11 +26,14 @@ NAMES = {"NIDORAN_F": "Nidoran♀", "NIDORAN_M": "Nidoran♂", "MR_MIME": "Mr. M
          "FARFETCHD": "Farfetch'd", "HO_OH": "Ho-Oh", "PORYGON_Z": "Porygon-Z"}
 trainers = json.loads((root / "files/poketool/trainer/trainers.json").read_text())["trainers"]
 
-out = {}
+out = {"teams": {}, "dex": {}}
+for name in sorted(names):
+    key = {v: k for k, v in NAMES.items()}.get(name, name.upper())
+    out["dex"][name] = species[key]
 for i in sorted(ids):
     party = []
     for p in trainers[i]["party"]:
         key = p["species"][len("SPECIES_"):]
         party.append([species[key], NAMES.get(key, key.capitalize()), p["level"]])
-    out[str(i)] = party
+    out["teams"][str(i)] = party
 print(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
