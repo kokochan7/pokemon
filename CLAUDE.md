@@ -26,7 +26,7 @@ js/app.js           Constants (NDS_GAMES, CORES), IndexedDB helpers, launch(), m
 js/savesync.js      SaveSync: cloud save sync for DS games
 js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM flags/vars
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
-js/expshare.js      ExpShare: always-on whole-party Exp. Share, patches the battle code in DS RAM
+js/expshare.js      ExpShare: always-on full-EXP Exp. Share for the whole party, patches the battle code in DS RAM
 js/library.js       GAMES (cloud) and STORED (local) lists, login, clock; runs the page start-up
 css/style.css       All styles
 scene.svg           Generated background art. Don't read it; regenerate with python3 tools/scene.py
