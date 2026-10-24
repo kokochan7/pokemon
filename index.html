@@ -220,7 +220,14 @@
   .guide .story { line-height: 1.2; }
   /* the mini map stays in view while you scroll the lists below it */
   .guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
-  .guide .mapbox { overflow: hidden; }
+  .guide .mapbox { overflow: hidden; position: relative; }
+  .guide .me {
+    position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+    background: #3870e8; box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 3px #181820; pointer-events: none;
+    animation: me-blink 1s steps(2) infinite;
+  }
+  .guide .me[hidden] { display: none; }
+  @keyframes me-blink { 50% { opacity: .35; } }
   .guide .minimap { display: block; margin: 0 auto; image-rendering: pixelated; border: 3px solid var(--ink); }
   .guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
   .guide .key::before {
@@ -743,6 +750,42 @@
       if (!ver) return;
       render(null, "Waiting for the game…");
       timer = setInterval(poll, 1000);
+      setInterval(follow, 200);
+    }
+
+    // The player's map object in DS RAM: active (flag bit 0), id 255 (player) and movement 1 as the
+    // game creates it, current tile at +0x64/+0x6C and a fixed-point position (1 tile = 0x10000) at +0x70/+0x78
+    // that moves smoothly between tiles. It is found by scanning DS RAM and checked on every read.
+    let me = -1, meScan = 0;
+    function playerAt(h, o) {
+      if (o < 0 || o + 0x7c > h.length) return null;
+      const v = new DataView(h.buffer, h.byteOffset + o, 0x7c);
+      if (!(v.getUint32(0, true) & 1) || v.getUint32(8, true) !== 255 || v.getUint32(0x14, true) !== 1) return null;
+      const cx = v.getUint32(0x64, true), cz = v.getUint32(0x6c, true);
+      const x = v.getInt32(0x70, true) / 0x10000, z = v.getInt32(0x78, true) / 0x10000;
+      if (cx > 4096 || cz > 4096 || Math.abs(x - cx - 0.5) > 1.5 || Math.abs(z - cz - 0.5) > 1.5) return null;
+      return [x, z];
+    }
+    function player(h) {
+      let p = playerAt(h, me);
+      if (p || ram == null || meScan++ % 5) return p;
+      const u32 = new Uint32Array(h.buffer, h.byteOffset + ram, RAM_SIZE >> 2);
+      for (let i = 2; i < u32.length; i++) {
+        if (u32[i] === 255 && (p = playerAt(h, ram + (i - 2) * 4))) { me = ram + (i - 2) * 4; return p; }
+      }
+      me = -1;
+      return null;
+    }
+    function follow() {
+      const h = heap(), dot = document.querySelector(".guide .me"), c = dot && dot.parentElement.querySelector("canvas");
+      if (!h || !dot || !c || !c.geo) return;
+      const p = player(h), g = c.geo;
+      const inside = p && p[0] >= g.x0 && p[1] >= g.z0 && p[0] < g.x0 + g.w && p[1] < g.z0 + g.h;
+      dot.hidden = !inside;
+      if (inside) {
+        dot.style.left = c.offsetLeft + c.clientLeft + (p[0] - g.x0) * g.k + "px";
+        dot.style.top = c.offsetTop + c.clientTop + (p[1] - g.z0) * g.k + "px";
+      }
     }
 
     function heap() {
@@ -802,7 +845,7 @@
     // changes when you save. Use the copy that sits inside DS main RAM, found via the ROM header
     // the console copies to the end of RAM at boot. If that header can't be found, follow every
     // copy and show whichever changed last.
-    let debug = "";
+    let debug = "", ram;
     function scan() {
       const h = heap(), gen = general(), sig = gen && signature(gen);
       if (!h || !sig) { debug = gen ? "no trainer in save" : "no save"; return []; }
@@ -813,6 +856,7 @@
       // e.g. "3 RAM · 97%:33 r, 12%:0" = match score : map id, r = inside DS RAM
       debug = rams.length + " RAM · " + (all.map(([b, sc]) => Math.round(sc * 100) + "%:" + mapAt(h, b) +
         (rams.some((r) => b >= r && b < r + RAM_SIZE) ? " r" : "")).join(", ") || "no match");
+      ram = rams.find((r) => inRam.some((b) => b >= r && b < r + RAM_SIZE));
       return rams.length ? inRam : found;
     }
 
@@ -877,7 +921,7 @@
 
     /* --- terrain for the mini map, read from the ROM in this browser (never uploaded) --- */
     // NitroFS: FNT at header 0x40, FAT at 0x48. Land data is the NARC at a/0/6/5; each member
-    // holds a 32x32 grid of u16 terrain attributes at +0x14 (low byte = behaviour, bit 15 = wall).
+    // holds a 32x32 grid of u16 terrain attributes after its header (low byte = behaviour, bit 15 = wall).
     const Terrain = (() => {
       let rom = null, narc = null;
       const cache = new Map();
@@ -930,7 +974,12 @@
         if (!narc || id >= narc.count) return null;
         if (!cache.has(id)) {
           const start = narc.data + narc.table.getUint32(id * 8, true);
-          cache.set(id, read(start + 0x14, 0x800).then((v) => new Uint16Array(v.buffer.slice(v.byteOffset, v.byteOffset + 0x800))).catch(() => null));
+          // Header: four section sizes, then (HGSS) a background-sound section: 0x1234, its length, data.
+          // The terrain attributes come right after it.
+          cache.set(id, read(start, 0x14).then((hd) => {
+            const skip = hd.getUint16(0x10, true) === 0x1234 ? hd.getUint16(0x12, true) : 0;
+            return read(start + 0x14 + skip, 0x800);
+          }).then((v) => new Uint16Array(v.buffer.slice(v.byteOffset, v.byteOffset + 0x800))).catch(() => null));
         }
         return cache.get(id);
       }
@@ -955,6 +1004,7 @@
       canvas.width = bw * 32 * s; canvas.height = bh * 32 * s;
       canvas.style.width = Math.floor(bw * 32 * fit) + "px";
       canvas.style.height = Math.floor(bh * 32 * fit) + "px";
+      canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: bw * 32, h: bh * 32, k: Math.floor(bw * 32 * fit) / (bw * 32) };
       const c = canvas.getContext("2d");
       c.fillStyle = "#181820"; c.fillRect(0, 0, canvas.width, canvas.height);
       let drew = false;
@@ -1034,9 +1084,11 @@
         canvas = node("canvas", "minimap");
         canvas.setAttribute("aria-hidden", "true");
         const box = node("div", "mapbox");
-        box.append(canvas);
+        const dot = node("div", "me");
+        dot.hidden = true;
+        box.append(canvas, dot);
         const legend = node("div", "legend");
-        for (const [color, label] of [["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"], ["#f8f8f0", "door"]]) {
+        for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"], ["#f8f8f0", "door"]]) {
           const k = node("span", "key", label);
           k.style.setProperty("--c", color);
           legend.append(k);

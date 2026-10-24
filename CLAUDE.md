@@ -133,11 +133,17 @@ npx wrangler pages dev . --r2 ROMS=roms-test --binding SITE_PASSWORD=testpw123 -
   trainers), 320px each. Both have class `.guide`. The map is scaled to the column width, up to ~55%
   of the screen height, keeping its shape.
 - The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
-  file `a/0/6/5` is the land-data NARC, each member has 32x32 u16 terrain attributes at +0x14 (low byte
-  = tile behaviour, bit 15 = wall). hgss.json says which land-data blocks make up each map (`blocks`,
+  file `a/0/6/5` is the land-data NARC. Each member starts with four u32 section sizes, then (HGSS only)
+  a background-sound section `0x1234, u16 length, data`; the 32x32 u16 terrain attributes follow it at
+  +0x14+length (low byte = tile behaviour, bit 15 = wall). Reading them at a fixed +0x14 shifted the
+  terrain under the item and trainer spots (fixed 2026-10-24). hgss.json says which land-data blocks make up each map (`blocks`,
   plus dimmed `near` blocks that its events spill into) and the colour class per behaviour (`tiles`).
-  Nothing from the ROM is uploaded or committed. There's no "you are here" dot yet: the saved position
-  (+0x123C/+0x1240) only updates on warps.
+  Nothing from the ROM is uploaded or committed.
+- A blinking blue "you" dot shows the player live (5 reads a second). The saved position (+0x123C/+0x1240)
+  only updates on warps, so it reads the player's map object (`LocalMapObject` in the decomp) in DS RAM
+  instead: flags bit 0 set, id 255 at +0x08, movement 1 at +0x14, tile x/z at +0x64/+0x6C and the
+  fixed-point position at +0x70/+0x78 (tile * 0x10000 + 0x8000). `player()` scans DS RAM for it and
+  re-checks it on every read. Overworld coordinates are global, the same as hgss.json's.
   The **Guide** button in the top bar hides/shows it (localStorage `pp_guide`). Only for game codes IPK/IPG.
 - Live position: the game keeps its save data in DS RAM with the same layout as the save file, and its
   current position lives there (general block +0x1234 = map id, u32; trainer name/ID at +0x64).
