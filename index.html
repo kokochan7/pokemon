@@ -66,6 +66,15 @@
     border-radius: 8px; padding: 6px 12px; flex: 1; min-width: 180px;
   }
   .muted { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .sync { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .sync.ok { color: #7fd48a; }
+  .sync.warn { color: #ffb74d; }
+  .conflict {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 16px;
+    background: #3a2a10; border-bottom: 1px solid #6b4a14; font-size: 14px;
+  }
+  .conflict[hidden] { display: none; }
+  .conflict span { flex: 1; min-width: 220px; }
   button.link { background: none; border: none; color: var(--muted); padding: 0; margin-top: 8px; text-decoration: underline; }
 
   #player { height: 100vh; display: flex; flex-direction: column; }
@@ -121,14 +130,14 @@
   <ul class="tips">
     <li><b>Touch screen:</b> the bottom screen is your stylus. Click it with the mouse (or tap on a touch device) for the Pokégear, Pokétch, Pokéathlon and menus.</li>
     <li><b>Controls:</b> open the emulator's control settings from its menu bar to see or remap the keyboard bindings.</li>
-    <li><b>Saving:</b> save in-game from the Start menu as usual. Save states and the emulator's save-file download are there too, so grab a backup now and then.</li>
+    <li><b>Saving:</b> save in-game from the Start menu as usual. While you're unlocked, the save syncs to your private storage within about 30 seconds (watch the status at the top right), and the last 20 versions are kept as backups.</li>
     <li><b>Won't work:</b> the Pokéwalker (needs infrared hardware) and anything over Wi-Fi, including the GTS and wireless trading.</li>
     <li><b>Slow?</b> DS is the most demanding system here. Close other tabs and keep the window from being resized mid-game.</li>
   </ul>
 
   <p class="foot">
-    Saves live in this browser. Use the same address (same host and port) each time or they will look like
-    they disappeared, and clearing site data erases them.
+    In-game saves sync to your private storage whenever you're unlocked, so you can continue on another device.
+    Save states (the emulator's quick-save slots) stay in this browser only.
   </p>
 </main>
 
@@ -136,6 +145,12 @@
   <div class="bar">
     <button id="back">&larr; Library</button>
     <span class="t" id="title"></span>
+    <span id="sync" class="sync"></span>
+  </div>
+  <div id="conflict" class="conflict" hidden>
+    <span id="conflictMsg"></span>
+    <button id="useCloud" class="primary">Use cloud save</button>
+    <button id="useLocal">Keep this browser's save</button>
   </div>
   <div class="screen"><div id="game"></div></div>
 </section>
@@ -214,6 +229,7 @@
     window.EJS_pathtodata = DATA_PATH;
     window.EJS_startOnLoaded = true;
     window.EJS_color = "#e3350d";
+    window.EJS_onGameStart = () => SaveSync.start(name, blob);
 
     const s = document.createElement("script");
     s.src = DATA_PATH + "loader.js";
@@ -226,7 +242,183 @@
   }
 
   // The emulator can't be cleanly torn down, so going back is a page reload.
-  $("back").onclick = () => location.reload();
+  // Push any unsynced save first.
+  $("back").onclick = async () => {
+    $("back").disabled = true;
+    await SaveSync.flush().catch(() => {});
+    location.reload();
+  };
+
+  /* ---------- cloud save sync ---------- */
+  const SaveSync = (() => {
+    const INTERVAL_MS = 30000;
+    let id = null, lastHash = null, timer = null, busy = false, paused = false;
+    const statusEl = () => $("sync");
+
+    function status(text, cls) {
+      const el = statusEl();
+      el.textContent = text;
+      el.className = "sync" + (cls ? " " + cls : "");
+    }
+    const syncedKey = () => "pp_synced_" + id;
+    function getSynced() { try { return localStorage.getItem(syncedKey()); } catch { return null; } }
+    function setSynced(h) { lastHash = h; try { localStorage.setItem(syncedKey(), h); } catch {} }
+
+    async function sha(buf) {
+      const d = new Uint8Array(await crypto.subtle.digest("SHA-256", buf));
+      return [...d].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    const time = (d) => new Date(d).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+    // Same game = same save, whatever the file is called: use the DS game code (e.g. IPGE).
+    async function idFor(name, blob) {
+      if (/\.nds$/i.test(name)) {
+        const b = new Uint8Array(await blob.slice(12, 16).arrayBuffer());
+        const code = String.fromCharCode(...b);
+        if (/^[A-Z0-9]{4}$/.test(code)) return "nds-" + code;
+      }
+      return name.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 60) || "game";
+    }
+
+    async function waitForManager() {
+      for (let i = 0; i < 100; i++) {
+        const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
+        if (gm && gm.FS) return gm;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error("emulator not ready");
+    }
+
+    function readLocal(gm, flush) {
+      try { return gm.getSaveFile(flush) || null; } catch { return null; }
+    }
+
+    // Mirrors EmulatorJS's own "Load save file" button.
+    function writeLocal(gm, bytes) {
+      const path = gm.getSaveFilePath();
+      const parts = path.split("/");
+      let cp = "";
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!parts[i]) continue;
+        cp += "/" + parts[i];
+        if (!gm.FS.analyzePath(cp).exists) gm.FS.mkdir(cp);
+      }
+      if (gm.FS.analyzePath(path).exists) gm.FS.unlink(path);
+      gm.FS.writeFile(path, bytes);
+      gm.loadSaveFiles();
+    }
+
+    async function upload(bytes, hash) {
+      const res = await fetch("/api/save?id=" + encodeURIComponent(id), {
+        method: "PUT", credentials: "same-origin", body: bytes,
+      });
+      if (res.status === 401) { stop(); status("Locked: saves stay in this browser", "warn"); return false; }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      setSynced(hash);
+      status("Saved to cloud " + time(data.uploaded), "ok");
+      return true;
+    }
+
+    async function tick(flush = true) {
+      if (!id || busy || paused) return;
+      busy = true;
+      try {
+        const gm = await waitForManager();
+        const local = readLocal(gm, flush);
+        if (!local || !local.length) return;
+        const h = await sha(local);
+        if (h === lastHash) return;
+        status("Syncing save…");
+        await upload(local, h);
+      } catch (e) {
+        status("Save sync failed, will retry", "warn");
+        console.warn("save sync", e);
+      } finally { busy = false; }
+    }
+
+    function stop() { if (timer) clearInterval(timer); timer = null; }
+    function run() {
+      stop();
+      timer = setInterval(() => tick(true), INTERVAL_MS);
+    }
+
+    function askConflict(cloudWhen) {
+      return new Promise((resolve) => {
+        $("conflictMsg").textContent =
+          "This browser has a different save than the cloud (cloud copy from " + time(cloudWhen) +
+          "). Which one do you want to play? The other is kept as a backup.";
+        $("conflict").hidden = false;
+        $("useCloud").onclick = () => { $("conflict").hidden = true; resolve("cloud"); };
+        $("useLocal").onclick = () => { $("conflict").hidden = true; resolve("local"); };
+      });
+    }
+
+    async function start(name, blob) {
+      id = await idFor(name, blob);
+      lastHash = getSynced();
+      status("Checking cloud save…");
+      let gm;
+      try { gm = await waitForManager(); } catch { status("Save sync unavailable", "warn"); return; }
+      await new Promise((r) => setTimeout(r, 500)); // let the core settle
+
+      let res;
+      try { res = await fetch("/api/save?id=" + encodeURIComponent(id), { credentials: "same-origin", cache: "no-store" }); }
+      catch { status("Offline: saves stay in this browser", "warn"); return; }
+      if (res.status === 401) { status("Locked: unlock My games to sync saves", "warn"); return; }
+      if (res.status === 404 && !(res.headers.get("content-type") || "").includes("json")) {
+        status("Cloud saves only work on the deployed site", "warn"); return;
+      }
+
+      const local = readLocal(gm, false);
+      const localHash = local && local.length ? await sha(local) : null;
+
+      if (res.status === 404) {
+        // Nothing in the cloud yet: upload what this browser has, if anything.
+        if (localHash) { status("Uploading save…"); await upload(local, localHash).catch(() => status("Save sync failed, will retry", "warn")); }
+        else status("No save yet. It will sync after you save in-game.");
+        return run();
+      }
+      if (!res.ok) { status("Save sync failed", "warn"); return run(); }
+
+      const cloud = new Uint8Array(await res.arrayBuffer());
+      const cloudHash = await sha(cloud);
+      const cloudWhen = res.headers.get("x-save-uploaded");
+
+      let choice;
+      if (localHash === cloudHash) choice = "same";
+      else if (!localHash || localHash === lastHash) choice = "cloud"; // nothing new here since last sync
+      else {
+        paused = true;
+        choice = await askConflict(cloudWhen);
+        paused = false;
+      }
+
+      if (choice === "cloud") {
+        if (localHash && localHash !== lastHash) {
+          // This browser's version was never synced: keep it as a backup before replacing it.
+          await fetch("/api/save?backup=1&id=" + encodeURIComponent(id), {
+            method: "PUT", credentials: "same-origin", body: local,
+          }).catch(() => {});
+        }
+        writeLocal(gm, cloud);
+        setSynced(cloudHash);
+        status("Loaded cloud save from " + time(cloudWhen), "ok");
+      } else if (choice === "local") {
+        status("Uploading this browser's save…");
+        await upload(local, localHash).catch(() => status("Save sync failed, will retry", "warn"));
+      } else {
+        setSynced(cloudHash);
+        status("Save in sync (" + time(cloudWhen) + ")", "ok");
+      }
+      run();
+    }
+
+    // Sync right away when you switch tabs or minimize, and before going back to the library.
+    document.addEventListener("visibilitychange", () => { if (document.hidden) tick(true); });
+
+    return { start, flush: () => tick(true) };
+  })();
 
   /* ---------- picking a file ---------- */
   async function handleFile(file) {

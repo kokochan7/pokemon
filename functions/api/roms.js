@@ -9,7 +9,10 @@ export async function onRequestGet({ request, env }) {
   let cursor;
   do {
     const page = await env.ROMS.list({ cursor, limit: 1000 });
-    for (const o of page.objects) roms.push({ key: o.key, size: o.size, uploaded: o.uploaded });
+    for (const o of page.objects) {
+      if (o.key.startsWith("saves/")) continue; // save files live in the same bucket
+      roms.push({ key: o.key, size: o.size, uploaded: o.uploaded });
+    }
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
 

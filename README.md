@@ -24,6 +24,18 @@ ROMs can live in a private Cloudflare R2 bucket and show up under "My games" aft
 - Sessions last 30 days in an HttpOnly cookie. Changing `SITE_PASSWORD` signs out every device.
 - Upload ROMs to the bucket from the Cloudflare dashboard (R2 > bucket > Upload). Never commit them here.
 
+## Save sync
+
+In-game saves sync to the same bucket under `saves/<game id>.sav` while you're unlocked.
+The game id comes from the DS header (for example `nds-IPGE` for SoulSilver USA), so the same game
+shares one save no matter what the ROM file is called.
+
+- Loaded at game start, then uploaded every 30 seconds when the save changed, when the tab is hidden,
+  and when you go back to the library.
+- If this browser has an unsynced save that differs from the cloud, the page asks which to keep.
+- Every overwrite keeps the previous version in `saves/backups/<game id>/` (last 20).
+- Save states (quick-save slots) are not synced.
+
 ## Deploy
 
 Static site with no build step. On Cloudflare Pages, use framework preset "None",
