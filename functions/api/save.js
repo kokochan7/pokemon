@@ -86,3 +86,21 @@ export async function onRequestPut({ request, env }) {
   const put = await env.ROMS.put(key, body, { customMetadata: { sha256 } });
   return json({ ok: true, uploaded: put.uploaded.toISOString(), sha256 });
 }
+
+// Remove button: delete this device's save. A copy goes to its backups folder first
+// (-removed.sav), so it can still be recovered from the bucket by hand.
+export async function onRequestDelete({ request, env }) {
+  if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, 401);
+  if (!env.ROMS) return json({ error: "Storage not connected" }, 503);
+  const keys = saveKeys(request);
+  if (!keys || new URL(request.url).searchParams.get("device") === null) return json({ error: "bad id" }, 400);
+
+  const existing = await env.ROMS.get(keys.key);
+  if (!existing) return json({ ok: true, none: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  await env.ROMS.put(`${keys.backups}${stamp}-removed.sav`, await existing.arrayBuffer(), {
+    customMetadata: existing.customMetadata || {},
+  });
+  await env.ROMS.delete(keys.key);
+  return json({ ok: true });
+}
