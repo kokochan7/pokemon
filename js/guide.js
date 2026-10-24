@@ -204,7 +204,7 @@ const Guide = (() => {
     return (h[a] | h[a + 1] << 8 | h[a + 2] << 16 | h[a + 3] << 24) >>> 0;
   }
 
-  let cands = [], last = [], pick = 0;
+  let cands = [], last = [], pick = 0, mstate = null;
   function poll() {
     const h = heap();
     if (!h || !data) return;
@@ -223,7 +223,9 @@ const Guide = (() => {
     if (!(id in data) || id <= 1) { cands = []; return; }
     const t = timeOfDay(), st = Story.key(h, cands[pick]); // story progress from flags, vars and badges
     if (id !== shown) highlight = null;
-    if (id !== shown || t !== tod || st !== story || cands[pick] !== storyBase) { tod = t; story = st; storyBase = cands[pick]; render(id); }
+    if (id !== shown || t !== tod || st !== story || cands[pick] !== storyBase) {
+      tod = t; story = st; storyBase = cands[pick]; mstate = mapState(data[id]); render(id);
+    } else if (mapState(data[id]) !== mstate) { mstate = mapState(data[id]); render(id); } // item taken, trainer beaten
   }
 
   // HGSS: morning 4-10, day 10-20, night 20-4 (the game uses the console clock).
@@ -552,6 +554,11 @@ const Guide = (() => {
   }
 
   const painted = new Map();
+  // Save-data flags for the map: items picked up (their flag, from hgss.json) and trainers beaten.
+  const got = (f) => { const h = heap(); return !!(f && h && storyBase != null && Story.flag(h, storyBase, f)); };
+  const beaten = (tid) => { const h = heap(); return !!(tid && h && storyBase != null && Story.beaten(h, storyBase, tid)); };
+  const mapState = (m) => [...(m.items || []), ...(m.hidden || [])].map((it) => got(it[3]) ? 1 : 0).join("") + ":" +
+    (m.trainers || []).map((t) => beaten(t[4]) ? 1 : 0).join("");
   const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55));
   async function drawMap(m, canvas, highlight) {
     const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
@@ -598,15 +605,27 @@ const Guide = (() => {
       const [cx, cy] = at(x, z), r = 3 * grow;
       c.strokeStyle = "#f8f8f0"; c.lineWidth = 2 * grow; c.strokeRect(cx - r, cy - r, 2 * r, 2 * r);
     }
-    (m.trainers || []).forEach(([x, z], i) => {
-      const [cx, cy] = at(x, z), r = 5 * grow;
+    // Trainers: a big square with a white outline; a beaten one is dimmed and gets a green tick.
+    (m.trainers || []).forEach(([x, z, , , tid], i) => {
+      const [cx, cy] = at(x, z), r = 9 * grow, won = beaten(tid);
+      c.globalAlpha = won ? 0.6 : 1;
+      c.fillStyle = "#f8f8f0"; c.fillRect(cx - r - 2 * grow, cy - r - 2 * grow, 2 * r + 4 * grow, 2 * r + 4 * grow);
       c.fillStyle = "#181820"; c.fillRect(cx - r - grow, cy - r - grow, 2 * r + 2 * grow, 2 * r + 2 * grow);
-      c.fillStyle = "#585868"; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+      c.fillStyle = "#6040b0"; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
       c.fillStyle = "#f8f8f0"; c.fillRect(cx - r / 2, cy - r / 2, r, r);
+      c.globalAlpha = 1;
+      if (won) {
+        c.lineCap = c.lineJoin = "round";
+        for (const [w, color] of [[5 * grow, "#181820"], [3 * grow, "#48c058"]]) {
+          c.strokeStyle = color; c.lineWidth = w; c.beginPath();
+          c.moveTo(cx - r * 0.7, cy); c.lineTo(cx - r * 0.15, cy + r * 0.6); c.lineTo(cx + r * 0.8, cy - r * 0.6); c.stroke();
+        }
+      }
       if (highlight === "t" + i) ring(cx, cy, r + 6 * grow);
     });
-    (m.hidden || []).forEach((it, i) => ball(it, i, "h", true));
-    (m.items || []).forEach((it, i) => ball(it, i, "i", false));
+    // Items you've picked up are left off.
+    (m.hidden || []).forEach((it, i) => { if (!got(it[3])) ball(it, i, "h", true); });
+    (m.items || []).forEach((it, i) => { if (!got(it[3])) ball(it, i, "i", false); });
     if (highlight && box) {
       const list = { i: m.items, h: m.hidden, t: m.trainers }[highlight[0]], it = list && list[+highlight.slice(1)];
       if (it) {
@@ -652,13 +671,13 @@ const Guide = (() => {
         box.append(c, dot);
         for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
         const legend = node("div", "legend");
-        for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"]]) {
+        for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#6040b0", "trainer"]]) {
           const k = node("span", "key", label);
           k.style.setProperty("--c", color);
           legend.append(k);
         }
         mapWrap = node("div", "mapwrap");
-        mapWrap.append(node("h3", null, "MAP"), box, legend);
+        mapWrap.append(box, legend);
         mapWrap.canvas = c;
       }
       const wrap = mapWrap;
@@ -706,12 +725,12 @@ const Guide = (() => {
       };
     };
 
-    const items = (m.items || []).map((it, i) => [it[2], false, "i" + i]).concat((m.hidden || []).map((it, i) => [it[2], true, "h" + i]));
+    const items = (m.items || []).map((it, i) => [it[2], false, "i" + i, it[3]]).concat((m.hidden || []).map((it, i) => [it[2], true, "h" + i, it[3]]));
     if (items.length) {
       main.append(node("h3", null, "ITEMS"));
       const ul = node("ul", "items");
-      for (const [name, hidden, key] of items) {
-        const li = node("li");
+      for (const [name, hidden, key, flag] of items) {
+        const li = node("li", got(flag) ? "got" : null);
         const img = node("img");
         img.src = ITEM_ICON + slug(name.replace(/^([TH]M)\d+ .*/, (x, tm) => tm.toLowerCase() + "-normal")) + ".png";
         img.alt = ""; img.loading = "lazy";
