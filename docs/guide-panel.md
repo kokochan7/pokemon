@@ -29,7 +29,13 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   beaten one (trainer flag) is dimmed with a green tick. Items already picked up are left off the map and
   struck through in ITEMS: hgss.json gives each item its flag as a 4th value ([x, z, name, flag]), an item
   ball's `eventFlag` (FLAG_HIDE_ITEMBALL_*) or, for a hidden item, 800 + (script number - 8000). `poll()`
-  redraws when those flags change for the current map (`mapState()`). Tiles are shown at least 6px: a map that doesn't fit
+  redraws when those flags change for the current map (`mapState()`). The legend under the map shows small
+  CSS copies of the real markers (dot, Poké Ball, gold ball, purple square, ticked square).
+- Story, trainer and item flags are read from **every** in-RAM match, not just the one picked for the map
+  id (`Story` takes a list of bases: a flag counts if any copy has it, a var is the highest). Kenny's game
+  has two 95% matches in RAM: the live block and a buffer the game only fills when you save. After a save
+  the picker switches to that buffer (its map id just changed), so reading only it showed trainers beaten
+  since the save as not beaten (seen in Union Cave, 2026-10-24). Tiles are shown at least 6px: a map that doesn't fit
   scrolls in its box and keeps the player's dot in the middle (stopping at the map's edges; paused 4s
   after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
   centred in it), and the map section is built once and reused by each render, so the previous map stays
