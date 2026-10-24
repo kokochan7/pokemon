@@ -25,4 +25,7 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
 - Other versions/regions: if the first site isn't at the US address, 0x02200000-0x02280000 is searched for its bytes and
   the other sites are taken at the same offsets. If nothing matches, nothing is written (the tooltip keeps saying
   "Waiting for the first battle").
+- The calls to `_s32_div_f` are `blx` (ARM target, second half 0xE8xx), not `bl` (0xF8xx): the first version only
+  accepted `bl`, so it never matched and never patched (Kenny, SoulSilver USA, 2026-10-24). Fixed in `isBl()`.
+- HG and SS overlay 12 differ only by one immediate (`cmp r0, #GAME_VERSION` in overlay_12_022378C0.s), same size.
 - Tested only against fake RAM here (no ROM in the repo). If it misbehaves, ask Kenny for the button's tooltip text.

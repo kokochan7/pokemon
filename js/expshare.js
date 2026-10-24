@@ -9,7 +9,7 @@
 const ExpShare = (() => {
   const GAMES = ["IPK", "IPG"];
   const RAM_SIZE = 0x400000, HEADER_IN_RAM = 0x3FFE00; // boot copies the ROM header to 0x027FFE00
-  const NOP = 0x46c0, BL = -1;                           // BL = either half of a bl (any target)
+  const NOP = 0x46c0, BL = -1;                           // BL = either half of a bl or blx (any target)
   // Each site: DS address of the first halfword, the original Thumb halfwords, and what to
   // write (null = leave alone). Offsets from the first site are fixed, so on a version where
   // the overlay sits elsewhere the first site is searched for and the rest follow it.
@@ -87,8 +87,9 @@ const ExpShare = (() => {
 
   // Does the code at DS address `at` (+ shift) match `code`, or the patched version of it?
   function u16(h, b, a) { const o = b + a - 0x02000000; return h[o] | h[o + 1] << 8; }
+  // The second half is 0xF8xx for bl (Thumb target) and 0xE8xx for blx (ARM target, e.g. _s32_div_f).
   function isBl(hw, i, code) {
-    return code[i - 1] === BL ? (hw & 0xf800) === 0xf800 : (hw & 0xf800) === 0xf000;
+    return code[i - 1] === BL ? (hw & 0xe800) === 0xe800 : (hw & 0xf800) === 0xf000;
   }
   function siteIs(h, b, s, patched) {
     for (let i = 0; i < s.code.length; i++) {
