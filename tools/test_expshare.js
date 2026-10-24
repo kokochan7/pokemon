@@ -34,9 +34,13 @@ const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer 
   heap.fill(0x55, base + 0x200000, base + 0x280000); const before = Buffer.from(heap.slice(base + 0x200000, base + 0x280000));
   for (let i = 0; i < 12; i++) fn();
   console.log("untouched other overlay:", Buffer.compare(before, Buffer.from(heap.slice(base + 0x200000, base + 0x280000))) === 0);
+  // overlay at another address (another version): a fresh page searches for it. Once found, the
+  // address is kept, so a page that already patched doesn't search again.
+  const fresh = new Function(src + "\nreturn ExpShare;")();
+  await fresh.prepare(romBlob()); fresh.started();
   load(0x40); for (let i = 0; i < 12; i++) fn();
   console.log("shifted +0x40:\n" + dump(0x40));
   // one site differs -> no write
-  load(0); w16(0x02245b78, 0xb037); for (let i = 0; i < 12; i++) fn();
-  console.log("mismatch site4 untouched:", r16(0x0223e79e).toString(16));
+  load(0x40); w16(0x02245b78 + 0x40, 0xb037); for (let i = 0; i < 12; i++) fn();
+  console.log("mismatch site4 untouched:", r16(0x0223e79e + 0x40).toString(16));
 })();

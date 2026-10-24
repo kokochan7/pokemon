@@ -63,7 +63,7 @@ const ExpShare = (() => {
   ];
   const SEARCH = [0x02200000, 0x02280000]; // where overlay 12 can sit if it isn't at the US address
 
-  let header = null, bases = [], scans = 0, shift = 0, logged = false;
+  let header = null, bases = [], scans = 0, shift = 0, logged = false, found = false;
 
   async function prepare(blob) {
     const h = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
@@ -139,8 +139,11 @@ const ExpShare = (() => {
       if (!bases.length) return;
     }
     for (const b of bases) {
-      if (!all(h, b, false) && !(scans++ % 4 === 0 && search(h, b))) continue;
+      // Once the battle code has been found (and patched), it's always at the same address: no more searching.
+      if (!all(h, b, false) && (found || !(scans++ % 4 === 0 && search(h, b)))) continue;
       write(h, b);
+      found = true;
+      bases = [b];
       if (!logged) { logged = true; console.info("Exp. Share: battle code patched"); }
       return;
     }

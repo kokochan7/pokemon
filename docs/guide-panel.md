@@ -68,6 +68,15 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 - While the guide is still looking for the game (the GUIDE/"Waiting" screen) it shows a debug line, e.g.
   `1 RAM · 97%:33 r, 3%:0 r` (header copies found in RAM, then each match as score:map id, r = inside DS RAM).
   Kenny asked for it to be hidden once the map shows. Ask him for a screenshot if it misbehaves.
+- Speed: the ROM header copies (DS RAM areas) are looked for in the whole heap once and kept; later scans
+  only search those 4 MB areas (the whole-heap pass took ~0.35s and stalled the game every 5s while the
+  guide was searching). After 6 empty scans in a row the header copies are looked for again. The 5-a-second
+  dot, the trainer marks and the 1-second poll all skip their work while the panel is off or the window
+  is under 900px. Only the last 4 painted maps are kept, each drawn at about its shown size (8-16px per
+  tile, not always 16px). Markers are still worked out in 16px-tile units under a canvas scale. Exit tags
+  are measured once per map, and on scroll their boxes are worked out from position + size + the CSS
+  offsets (`OFFSET` in guide.js), with no layout reads. Keep `OFFSET` in step with the `.exit` transforms
+  in style.css.
 - The emulator also keeps the cartridge's save memory in the heap, which holds the same bytes but only
   changes on save. `Guide` keeps the match that lies inside DS main RAM: boot copies the ROM header to
   0x027FFE00, i.e. RAM base + 0x3FFE00 (checked in the real core with a stub ROM). If that can't be

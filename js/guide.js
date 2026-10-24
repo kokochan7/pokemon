@@ -41,6 +41,10 @@ const Guide = (() => {
     catch { render(null, "Couldn't load the guide data."); ver = null; }
   }
 
+  // Nothing to update while the panel is off or the window is too narrow to show it.
+  const narrow = matchMedia("(max-width: 899px)");
+  const idle = () => el().hidden || narrow.matches;
+
   function started() {
     if (!ver) return;
     render(null, "Waiting for the game…");
@@ -73,6 +77,7 @@ const Guide = (() => {
     return null;
   }
   function follow() {
+    if (idle()) return;
     const h = heap(), dot = document.querySelector(".guide .me"), c = dot && dot.parentElement.querySelector("canvas");
     if (!h || !dot || !c || !c.geo) return;
     const p = player(h), g = c.geo;
@@ -88,8 +93,8 @@ const Guide = (() => {
     // scroll at the map's edges), unless you just scrolled it yourself.
     const box = c.parentElement;
     if (Date.now() < followPause) return;
-    box.scrollLeft = x - box.clientWidth / 2;
-    box.scrollTop = y - box.clientHeight / 2;
+    const sl = Math.round(x - box.clientWidth / 2), st = Math.round(y - box.clientHeight / 2);
+    if (sl !== box.lastL || st !== box.lastT) { box.lastL = sl; box.lastT = st; box.scrollLeft = sl; box.scrollTop = st; }
   }
   let followPause = 0, lastPos = null;
 
@@ -114,7 +119,7 @@ const Guide = (() => {
   let fighting = null;
   function markTrainers() {
     const h = heap();
-    if (!h) return;
+    if (!h || idle()) return;
     const t = opponent(h), was = fighting;
     if (t !== undefined) fighting = t;
     for (const li of document.querySelectorAll(".guide .trainers li[data-tid]")) {
@@ -162,12 +167,12 @@ const Guide = (() => {
     for (let i = 0; i < bytes.length; i++) if (h[at + i] !== bytes[i]) return false;
     return true;
   }
-  // Every 4-byte aligned spot in the heap where `bytes` occurs, using the word at keyAt as a key.
-  function findAll(h, bytes, keyAt) {
+  // Every 4-byte aligned spot in the heap (or in from..to) where `bytes` occurs, using the word at keyAt as a key.
+  function findAll(h, bytes, keyAt, from = 0, to = h.length) {
     const u32 = new Uint32Array(h.buffer, h.byteOffset, h.length >> 2);
     const key = (bytes[keyAt] | bytes[keyAt + 1] << 8 | bytes[keyAt + 2] << 16 | bytes[keyAt + 3] << 24) >>> 0;
     const out = [];
-    for (let i = 0; i < u32.length; i++) {
+    for (let i = Math.max(0, from >> 2), end = Math.min(u32.length, to >> 2); i < end; i++) {
       if (u32[i] === key && matches(h, i * 4 - keyAt, bytes)) out.push(i * 4 - keyAt);
     }
     return out;
@@ -185,14 +190,19 @@ const Guide = (() => {
   // changes when you save. Use the copy that sits inside DS main RAM, found via the ROM header
   // the console copies to the end of RAM at boot. If that header can't be found, follow every
   // copy and show whichever changed last.
-  let debug = "", ram;
+  // Going over the whole heap (~160 MB) takes a good part of a second and stalls the game, so the
+  // ROM header copies (DS RAM) are looked for once and kept; later scans only search those 4 MB areas.
+  // They are looked for again after 6 scans in a row find nothing.
+  let debug = "", ram, rams = [], misses = 0;
   function scan() {
     const h = heap(), gen = general(), sig = gen && signature(gen);
     if (!h || !sig) { debug = gen ? "no trainer in save" : "no save"; return []; }
-    const all = findAll(h, sig, 16).map((t) => t - TRAINER).map((b) => [b, score(h, b, gen)]);
+    if (!rams.length || misses >= 6) { rams = findAll(h, header, 12).map((x) => x - HEADER_IN_RAM); misses = 0; }
+    const areas = rams.length ? rams.map((r) => [r + TRAINER, r + RAM_SIZE]) : [[0, h.length]];
+    const all = areas.flatMap(([a, b]) => findAll(h, sig, 16, a, b)).map((t) => t - TRAINER).map((b) => [b, score(h, b, gen)]);
     const found = all.filter(([b, sc]) => sc > 0.5 && mapAt(h, b) > 1 && mapAt(h, b) in data).map(([b]) => b);
-    const rams = findAll(h, header, 12).map((x) => x - HEADER_IN_RAM);
     const inRam = found.filter((b) => rams.some((r) => b >= r && b < r + RAM_SIZE));
+    misses = inRam.length ? 0 : misses + 1;
     // e.g. "3 RAM · 97%:33 r, 12%:0" = match score : map id, r = inside DS RAM
     debug = rams.length + " RAM · " + (all.map(([b, sc]) => Math.round(sc * 100) + "%:" + mapAt(h, b) +
       (rams.some((r) => b >= r && b < r + RAM_SIZE) ? " r" : "")).join(", ") || "no match");
@@ -208,6 +218,7 @@ const Guide = (() => {
 
   let cands = [], last = [], pick = 0, mstate = null, pollError = "", warpAt = 0, warpFrom = null;
   function poll() {
+    if (idle()) return;
     try { pollOnce(); pollError = ""; } catch (e) { pollError = String(e && e.message || e); cands = []; scans = 0; }
     const d = document.querySelector(".guide .dbg");
     if (d) d.textContent = debugLine();
@@ -423,8 +434,9 @@ const Guide = (() => {
     return any ? { grid, dim } : null;
   }
 
-  // Draw the terrain once per map; markers go on top of this cached copy.
-  async function paintTerrain(m, blocks, bx0, bz0, W, H) {
+  // Draw the terrain once per map; markers go on top of this cached copy. The tile art is 16px (T),
+  // drawn at ts px per tile: about the size the map is shown at, so big maps don't hold big canvases.
+  async function paintTerrain(m, blocks, bx0, bz0, W, H, ts) {
     const tg = await terrainGrid(blocks, bx0, bz0, W, H);
     if (!tg) return null;
     const { grid, dim } = tg, art = tileArt();
@@ -462,9 +474,10 @@ const Guide = (() => {
     }
 
     const cv = document.createElement("canvas");
-    cv.width = W * T; cv.height = H * T;
+    cv.width = W * ts; cv.height = H * ts;
     const c = cv.getContext("2d");
-    c.fillStyle = "#181820"; c.fillRect(0, 0, cv.width, cv.height);
+    c.scale(ts / T, ts / T);
+    c.fillStyle = "#181820"; c.fillRect(0, 0, W * T, H * T);
     for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
       const v = grid[z * W + x];
       if (v < 0) continue;
@@ -546,35 +559,48 @@ const Guide = (() => {
       const name = exitName(m, to);
       if (name) label("door", name, x - bx0 * 32 + 0.5, z - bz0 * 32, name).k = g.k;
     }
+    // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
+    const tags = [...box.querySelectorAll(".exit")];
+    for (const t of tags) { t.w = t.offsetWidth; t.h = t.offsetHeight; }
     clampExits(box);
     if (!box.clamps) { box.clamps = true; box.addEventListener("scroll", () => clampExits(box), { passive: true }); }
   }
-  // Edge arrows stay in view while the map scrolls, pinned to the side they point to.
+  // Edge arrows stay in view while the map scrolls, pinned to the side they point to. Tag boxes are
+  // worked out from their position, measured size and CSS offsets (in the map box's coordinates)
+  // instead of read back from the page, so this only writes styles.
+  const OFFSET = { N: [-0.5, 0, 0, 2], S: [-0.5, -1, 0, -2], W: [0, -0.5, 2, 0], E: [-1, -0.5, -2, 0] };
+  const rect = (x, y, w, h, [fx, fy, dx, dy]) => {
+    const left = x + fx * w + dx, top = y + fy * h + dy;
+    return { left, top, right: left + w, bottom: top + h };
+  };
   function clampExits(box) {
     const L = box.scrollLeft, T0 = box.scrollTop, R = L + box.clientWidth, B = T0 + box.clientHeight;
+    const taken = [];
     for (const el of box.querySelectorAll(".exit.edge")) {
-      const w = el.offsetWidth / 2 + 4, h = el.offsetHeight / 2 + 4;
+      const w = el.w / 2 + 4, h = el.h / 2 + 4;
       let x = el.x, y = el.y;
       if (el.side === "N" || el.side === "S") x = Math.max(L + w, Math.min(R - w, x));
       else y = Math.max(T0 + h, Math.min(B - h, y));
       if (el.side === "N") y = Math.max(y, T0); if (el.side === "S") y = Math.min(y, B);
       if (el.side === "W") x = Math.max(x, L); if (el.side === "E") x = Math.min(x, R);
       el.style.left = x + "px"; el.style.top = y + "px";
+      taken.push(rect(x, y, el.w, el.h, OFFSET[el.side]));
     }
     // Door tags go above their door, or under it if that spot is taken. One that would still cover an
     // edge arrow or another tag is left out (its door keeps its outline), so tags never pile up.
-    const taken = [...box.querySelectorAll(".exit.edge")].map((e) => e.getBoundingClientRect());
     const hits = (r) => taken.some((q) => r.left < q.right + 2 && q.left < r.right + 2 && r.top < q.bottom + 2 && q.top < r.bottom + 2);
     for (const el of box.querySelectorAll(".exit.door")) {
-      el.hidden = false; el.classList.remove("below"); el.style.top = el.y + "px";
-      let r = el.getBoundingClientRect();
-      if (hits(r)) { el.classList.add("below"); el.style.top = el.y + el.k + "px"; r = el.getBoundingClientRect(); }
-      if (hits(r)) el.hidden = true;
-      else taken.push(r);
+      let below = false, r = rect(el.x, el.y, el.w, el.h, [-0.5, -1, 0, -1]);
+      if (hits(r)) { below = true; r = rect(el.x, el.y + el.k, el.w, el.h, [-0.5, 0, 0, 1]); }
+      const hide = hits(r);
+      if (el.hidden !== hide) el.hidden = hide;
+      if (el.below !== below) { el.below = below; el.classList.toggle("below", below); el.style.top = el.y + (below ? el.k : 0) + "px"; }
+      if (!hide) taken.push(r);
     }
   }
 
-  const painted = new Map();
+  // The last few painted maps (each up to a few MB), oldest first.
+  const painted = new Map(), PAINTED_MAX = 4;
   // Save-data flags for the map: items picked up (their flag, from hgss.json) and trainers beaten.
   const got = (f) => { const h = heap(); return !!(f && h && storyBase != null && Story.flag(h, storyBase, f)); };
   const beaten = (tid) => { const h = heap(); return !!(tid && h && storyBase != null && Story.beaten(h, storyBase, tid)); };
@@ -587,28 +613,36 @@ const Guide = (() => {
     const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
     const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
     const W = bw * 32, H = bh * 32;
-    if (!painted.has(m)) painted.set(m, paintTerrain(m, blocks, bx0, bz0, W, H));
-    canvas.want = m;
-    const base = await painted.get(m);
-    if (canvas.want !== m) return; // a newer map was asked for while this one was painting
-    if (!base) return false;
     // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
     // follows the player (see follow()). The box is always the same height, so the panel doesn't
     // jump when you change area; a shorter map sits in the middle of it.
     const box = canvas.parentElement;
     const boxW = (box && box.clientWidth || 268) - 6;
     const boxH = mapBoxH();
-    if (box) box.style.height = boxH + 6 + "px";
     const fit = Math.min(boxW / W, boxH / H);
     const k = fit >= 6 ? fit : Math.max(6, boxW / W); // too tall: fill the width; too wide: 6px tiles
-    canvas.width = W * T; canvas.height = H * T;
+    const ts = Math.max(8, Math.min(T, Math.ceil(k * (window.devicePixelRatio || 1))));
+    let p = painted.get(m);
+    if (p && p.ts !== ts) p = null;
+    if (p) painted.delete(m); // move to the newest end
+    else p = { ts, base: paintTerrain(m, blocks, bx0, bz0, W, H, ts) };
+    painted.set(m, p);
+    while (painted.size > PAINTED_MAX) painted.delete(painted.keys().next().value);
+    canvas.want = m;
+    const base = await p.base;
+    if (canvas.want !== m) return; // a newer map was asked for while this one was painting
+    if (!base) return false;
+    if (box) box.style.height = boxH + 6 + "px";
+    if (canvas.width !== W * ts || canvas.height !== H * ts) { canvas.width = W * ts; canvas.height = H * ts; }
     canvas.style.width = Math.round(W * k) + "px";
     canvas.style.height = Math.round(H * k) + "px";
     canvas.style.marginTop = Math.max(0, Math.floor((boxH - Math.round(H * k)) / 2)) + "px";
-    canvas.style.imageRendering = k >= T ? "pixelated" : "auto";
+    canvas.style.imageRendering = k >= ts ? "pixelated" : "auto";
     canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: W, h: H, k: Math.round(W * k) / W };
     const c = canvas.getContext("2d");
-    c.drawImage(base, 0, 0);
+    // Markers are worked out in 16px-tile units, scaled down to the canvas.
+    c.setTransform(ts / T, 0, 0, ts / T, 0, 0);
+    c.drawImage(base, 0, 0, W * T, H * T);
     // Markers, drawn bigger when the map is shown small so they stay visible.
     const grow = Math.max(1, 8 / k);
     const at = (x, z) => [(x - bx0 * 32 + 0.5) * T, (z - bz0 * 32 + 0.5) * T];
