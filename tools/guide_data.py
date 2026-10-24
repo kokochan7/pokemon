@@ -104,13 +104,14 @@ def item_name(script, prefix):
 trainer_ids = {k: v[0] for k, v in defines("include/constants/trainers.h", "TRAINER_").items()}
 trainer_data = json.loads(read("files/poketool/trainer/trainers.json"))["trainers"]
 def trainer(script):
-    """[class + name, [[dex, name, level], ...]] for a std_trainer(TRAINER_X) object."""
+    """[class + name, [[dex, name, level], ...], trainer id] for a std_trainer(TRAINER_X) object."""
     if not isinstance(script, str): return None
     m = re.match(r"std_trainer\((TRAINER_\w+)\)", script)
     if not m or m.group(1) not in trainer_ids: return None
-    t = trainer_data[trainer_ids[m.group(1)]]
+    tid = trainer_ids[m.group(1)]
+    t = trainer_data[tid]
     who = (title(t["class"], "TRAINERCLASS_") + " " + t["name"].replace("{TRNAME}", "")).strip()
-    return who, [[*mon(p["species"])[:2], p["level"]] for p in t["party"]]
+    return who, [[*mon(p["species"])[:2], p["level"]] for p in t["party"]], tid
 
 # Map matrices: a grid of 32x32-tile blocks, each naming the map header it belongs to and the
 # land-data block (terrain) it uses. Matrix 0 is the whole overworld.

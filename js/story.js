@@ -136,5 +136,7 @@ const Story = (() => {
     return [el("h3", null, "CATCH"), grid];
   }
 
-  return { load, key, nodes, catches };
+  const beaten = (h, base, tid) => flag(h, base, TRAINER_FLAGS + tid);
+
+  return { load, key, nodes, catches, beaten };
 })();

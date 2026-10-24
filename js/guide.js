@@ -46,6 +46,7 @@ const Guide = (() => {
     render(null, "Waiting for the game…");
     timer = setInterval(poll, 1000);
     setInterval(follow, 200);
+    setInterval(markTrainers, 250);
   }
 
   // The player's map object in DS RAM: active (flag bit 0), id 255 (player) and movement 1 as the
@@ -89,6 +90,41 @@ const Guide = (() => {
     if (y < box.scrollTop + vh * 0.25 || y > box.scrollTop + vh * 0.75) box.scrollTop = y - vh / 2;
   }
   let followPause = 0;
+
+  // The trainer you're battling: the one standing next to you. The field's map objects sit in one array
+  // (0x12C bytes each) with the player's; a trainer's script id is 3000 + trainer id - 1 (std_trainer, or
+  // 5000 + ... for the second of a pair). Returns undefined when the player object isn't readable
+  // (e.g. during the battle itself), so the last opponent stays highlighted.
+  const MAP_OBJECT = 0x12C;
+  function opponent(h) {
+    if (!playerAt(h, me)) return undefined;
+    const u32 = (o) => (h[o] | h[o + 1] << 8 | h[o + 2] << 16 | h[o + 3] << 24) >>> 0;
+    const px = u32(me + 0x64), pz = u32(me + 0x6c);
+    for (let k = -64; k <= 64; k++) {
+      const o = me + k * MAP_OBJECT;
+      if (!k || o < 0 || o + MAP_OBJECT > h.length || !(h[o] & 1)) continue;
+      const s = u32(o + 0x20), tid = s >= 3000 && s < 3740 ? s - 2999 : s >= 5000 && s < 5740 ? s - 4999 : 0;
+      if (tid && Math.abs(u32(o + 0x64) - px) + Math.abs(u32(o + 0x6c) - pz) === 1) return tid;
+    }
+    return null;
+  }
+  // Mark the trainer list: the one you're battling, and the ones already beaten (their flags in the save data).
+  let fighting = null;
+  function markTrainers() {
+    const h = heap();
+    if (!h) return;
+    const t = opponent(h), was = fighting;
+    if (t !== undefined) fighting = t;
+    for (const li of document.querySelectorAll(".guide .trainers li[data-tid]")) {
+      const id = +li.dataset.tid;
+      li.classList.toggle("fight", id === fighting);
+      if (storyBase != null) li.classList.toggle("beaten", Story.beaten(h, storyBase, id));
+      if (id === fighting && was !== fighting) {
+        li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        if (li.onclick) li.onclick(); // ring it on the mini map too
+      }
+    }
+  }
 
   function heap() {
     const m = window.EJS_emulator && window.EJS_emulator.gameManager && window.EJS_emulator.gameManager.Module;
@@ -678,8 +714,9 @@ const Guide = (() => {
     if (m.trainers) {
       side.append(node("h3", null, "TRAINERS"));
       const ul = node("ul", "trainers");
-      m.trainers.forEach(([, , who, party], i) => {
+      m.trainers.forEach(([, , who, party, tid], i) => {
         const li = node("li");
+        li.dataset.tid = tid;
         li.append(node("div", "who", who));
         const p = node("div", "party");
         for (const [dex, name, lv] of party) {
