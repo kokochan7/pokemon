@@ -187,62 +187,62 @@
 
   /* ---------- guide panel (HGSS): follows the player's current map ---------- */
   .screen > #game { flex: 1; min-width: 0; }
-  #guide {
+  .guide {
     flex: none; width: 300px; overflow-y: auto; background: var(--paper); color: var(--ink);
     border-left: 4px solid var(--ink); box-shadow: inset 3px 0 0 var(--paper), inset 5px 0 0 var(--ink);
     padding: 14px 12px 18px 16px; font: 18px/1.15 var(--term);
   }
-  #guide h3 {
+  .guide h3 {
     font: 9px/1 var(--pixel); margin: 16px 0 8px; letter-spacing: 1px;
     display: inline-block; background: var(--ink); color: var(--paper); padding: 5px 7px 4px;
   }
-  #guide .loc { font: 11px/1.5 var(--pixel); margin: 2px 0 0; }
-  #guide .place { color: #585868; }
-  #guide .note { color: #585868; margin-top: 10px; }
-  #guide .tabs { display: flex; gap: 6px; margin: 0 0 6px; }
-  #guide .tabs button { font-size: 8px; padding: 5px 6px 4px; }
-  #guide .tabs button::before { content: none; }
-  #guide .tabs button.on { background: var(--ink); color: var(--paper); }
-  #guide .method { font: 8px/1 var(--pixel); color: #585868; margin: 10px 0 4px; text-transform: uppercase; }
-  #guide ul { list-style: none; margin: 0; padding: 0; }
-  #guide .mons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-  #guide .mons li {
+  .guide .loc { font: 11px/1.5 var(--pixel); margin: 2px 0 0; }
+  .guide .place { color: #585868; }
+  .guide .note { color: #585868; margin-top: 10px; }
+  .guide .tabs { display: flex; gap: 6px; margin: 0 0 6px; }
+  .guide .tabs button { font-size: 8px; padding: 5px 6px 4px; }
+  .guide .tabs button::before { content: none; }
+  .guide .tabs button.on { background: var(--ink); color: var(--paper); }
+  .guide .method { font: 8px/1 var(--pixel); color: #585868; margin: 10px 0 4px; text-transform: uppercase; }
+  .guide ul { list-style: none; margin: 0; padding: 0; }
+  .guide .mons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .guide .mons li {
     display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; column-gap: 4px;
     border: 2px solid var(--ink); background: var(--paper-2); padding: 0 4px 0 0; overflow: hidden;
   }
   /* HGSS sprites are 80px with lots of empty space around the Pokémon: crop to the middle */
-  #guide .mons img { width: 64px; height: 64px; margin: -10px; image-rendering: pixelated; grid-row: span 2; }
-  #guide .mons .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #guide .mons .lv { color: #585868; font-size: 16px; }
-  #guide .items li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
-  #guide .items img { width: 24px; height: 24px; image-rendering: pixelated; flex: none; }
-  #guide .items .h { color: #585868; font-size: 15px; margin-left: auto; }
-  #guide .story { line-height: 1.2; }
+  .guide .mons img { width: 64px; height: 64px; margin: -10px; image-rendering: pixelated; grid-row: span 2; }
+  .guide .mons .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .guide .mons .lv { color: #585868; font-size: 16px; }
+  .guide .items li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+  .guide .items img { width: 24px; height: 24px; image-rendering: pixelated; flex: none; }
+  .guide .items .h { color: #585868; font-size: 15px; margin-left: auto; }
+  .guide .story { line-height: 1.2; }
   /* the mini map stays in view while you scroll the lists below it */
-  #guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
-  #guide .mapbox { overflow-x: auto; }
-  #guide .minimap { display: block; max-width: 100%; image-rendering: pixelated; border: 3px solid var(--ink); }
-  #guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
-  #guide .key::before {
+  .guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
+  .guide .mapbox { overflow: hidden; }
+  .guide .minimap { display: block; margin: 0 auto; image-rendering: pixelated; border: 3px solid var(--ink); }
+  .guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
+  .guide .key::before {
     content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
     background: var(--c); box-shadow: 0 0 0 1px var(--ink);
   }
-  #guide .dir { flex: none; width: 48px; color: #585868; }
-  #guide .spot { cursor: pointer; }
-  #guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
-  #guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
-  #guide .who { font-size: 18px; }
-  #guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
-  #guide .pm { display: inline-flex; align-items: center; font-size: 15px; color: #585868; }
-  #guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
-  #guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
-  #guide .src a { color: inherit; }
-  #guide { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
-  @media (min-width: 1300px) {
-    #guide { width: 600px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
-    #guide .gcol + .gcol { border-left: 2px solid var(--paper-2); padding-left: 14px; }
-  }
-  @media (max-width: 899px) { #guide { display: none; } #guideBtn { display: none; } }
+  .guide .dir { flex: none; width: 48px; color: #585868; }
+  .guide .spot { cursor: pointer; }
+  .guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
+  .guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
+  .guide .who { font-size: 18px; }
+  .guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+  .guide .pm { display: inline-flex; align-items: center; font-size: 15px; color: #585868; }
+  .guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
+  .guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
+  .guide .src a { color: inherit; }
+  /* From 1300px wide the guide splits around the game: next step, map, items and exits on the
+     left (#guideL), wild Pokémon and trainers on the right (#guide). */
+  #guideL { border-left: 0; border-right: 4px solid var(--ink); box-shadow: inset -3px 0 0 var(--paper), inset -5px 0 0 var(--ink); }
+  @media (min-width: 1300px) { .guide { width: 320px; } }
+  @media (max-width: 1299px) { #guideL { display: none; } }
+  @media (max-width: 899px) { .guide { display: none; } #guideBtn { display: none; } }
 
   /* Keep EmulatorJS's menu bar visible on desktop, and give it its own strip under the game
      so it never covers the DS touch screen. --ejs-bar is set to the bar's height at game start. */
@@ -306,7 +306,7 @@
     <button id="useCloud" class="primary">Cloud save</button>
     <button id="useLocal">This browser</button>
   </div>
-  <div class="screen"><div id="game"></div><aside id="guide" hidden aria-label="Guide"></aside></div>
+  <div class="screen"><aside id="guideL" class="guide" hidden aria-label="Guide map"></aside><div id="game"></div><aside id="guide" class="guide" hidden aria-label="Guide"></aside></div>
 </section>
 
 <script>
@@ -714,11 +714,13 @@
     const METHODS = { surf: "Surfing", rock: "Rock Smash", oldrod: "Old Rod", goodrod: "Good Rod", superrod: "Super Rod" };
     let ver = null, header = null, data = null, tiles = {}, shown = null, timer = null, scans = 0, tod = null, badges = null;
     const el = () => $("guide");
+    const wide = matchMedia("(min-width: 1300px)");
 
     function visible() { try { return localStorage.getItem("pp_guide") !== "off"; } catch { return true; } }
     function setVisible(on) {
       try { localStorage.setItem("pp_guide", on ? "on" : "off"); } catch {}
       el().hidden = !on;
+      $("guideL").hidden = !on || !$("guideL").firstChild;
       setTimeout(() => window.dispatchEvent(new Event("resize")), 0); // let the emulator refit
     }
 
@@ -730,6 +732,7 @@
       $("guideBtn").hidden = false;
       $("guideBtn").onclick = () => setVisible(el().hidden);
       el().hidden = !visible();
+      wide.addEventListener("change", () => { if (shown != null) render(shown); });
       render(null, "Loading…");
       Terrain.open(blob).then(() => { if (shown != null) render(shown); });
       try { ({ maps: data, tiles } = await (await fetch("guide/hgss.json")).json()); }
@@ -943,9 +946,15 @@
       if (!blocks.length) return false;
       const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
       const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
-      const s = Math.max(1, Math.min(4, Math.floor(268 / (bw * 32)), Math.floor(260 / (bh * 32))));
+      // Fill the column's width, up to about half the screen's height; draw at a whole number of
+      // pixels per tile (at least the shown size) and let CSS scale it with crisp pixels.
+      const boxW = (canvas.parentElement && canvas.parentElement.clientWidth || 268) - 6;
+      const boxH = Math.max(260, Math.min(560, innerHeight * 0.55));
+      const fit = Math.min(boxW / (bw * 32), boxH / (bh * 32));
+      const s = Math.max(1, Math.min(8, Math.ceil(fit)));
       canvas.width = bw * 32 * s; canvas.height = bh * 32 * s;
-      canvas.style.width = canvas.width + "px";
+      canvas.style.width = Math.floor(bw * 32 * fit) + "px";
+      canvas.style.height = Math.floor(bh * 32 * fit) + "px";
       const c = canvas.getContext("2d");
       c.fillStyle = "#181820"; c.fillRect(0, 0, canvas.width, canvas.height);
       let drew = false;
@@ -966,7 +975,7 @@
         const px = (x - bx0 * 32) * s + s / 2, pz = (z - bz0 * 32) * s + s / 2;
         c.fillStyle = "#181820"; c.fillRect(px - r - 1, pz - r - 1, 2 * r + 2, 2 * r + 2);
         c.fillStyle = fill; c.fillRect(px - r, pz - r, 2 * r, 2 * r);
-        if (ring) { c.strokeStyle = "#e0b030"; c.lineWidth = 2; c.strokeRect(px - r - 4, pz - r - 4, 2 * r + 8, 2 * r + 8); }
+        if (ring) { const o = r + Math.max(4, s); c.strokeStyle = "#e0b030"; c.lineWidth = Math.max(2, s / 2); c.strokeRect(px - o, pz - o, 2 * o, 2 * o); }
       };
       const r = Math.max(2, s);
       for (const [x, z] of m.warps || []) dot(x, z, "#f8f8f0", r - 1);
@@ -1002,17 +1011,19 @@
     let pickedTime = null, highlight = null;
     function render(id, msg) {
       shown = id;
-      const g = el();
-      g.replaceChildren();
+      const g = el(), gl = $("guideL");
+      g.replaceChildren(); gl.replaceChildren();
+      gl.hidden = true;
       if (id == null) {
         g.append(node("h3", null, "GUIDE"), node("div", "note", msg || ""), node("div", "src", debug));
         return;
       }
       const m = data[id];
-      // Two columns on wide screens: next step, map, exits and items on the left; wild Pokémon
-      // and trainers on the right.
+      // main: next step, map, items, exits. side: wild Pokémon, trainers. On wide screens main
+      // goes in its own panel on the left of the game.
       const main = node("div", "gcol"), side = node("div", "gcol");
-      g.append(main, side);
+      if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
+      g.append(side);
       main.append(node("div", "loc", m.name || "???"));
       if (m.place) main.append(node("div", "place", m.place));
 
@@ -1034,22 +1045,6 @@
         wrap.append(node("h3", null, "MAP"), box, legend);
         main.append(wrap);
         drawMap(m, canvas, highlight).then((ok) => { if (!ok) { wrap.remove(); canvas = null; } });
-      }
-
-      const exits = (m.exits || []).map(([d, to]) => [{ N: "North", S: "South", E: "East", W: "West" }[d], to])
-        .concat((m.warps || []).map(([, , to]) => ["Door", to]));
-      if (exits.length) {
-        main.append(node("h3", null, "EXITS"));
-        const ul = node("ul", "items");
-        for (const [d, to] of exits) {
-          const t = data[to];
-          if (!t) continue;
-          const li = node("li");
-          const label = t.name === m.name ? t.place || t.name : t.name + (t.place ? " · " + t.place : "");
-          li.append(node("span", "dir", d), node("span", null, label));
-          ul.append(li);
-        }
-        main.append(ul);
       }
 
       const enc = m[ver];
@@ -1076,7 +1071,7 @@
         li.onmouseenter = li.onclick = () => {
           if (highlight === key || !canvas) return;
           highlight = key;
-          for (const x of g.querySelectorAll(".spot")) x.classList.toggle("on", x.dataset.spot === key);
+          for (const x of document.querySelectorAll(".guide .spot")) x.classList.toggle("on", x.dataset.spot === key);
           drawMap(m, canvas, key);
         };
       };
@@ -1094,6 +1089,22 @@
           li.append(img, node("span", null, name));
           if (hidden) li.append(node("span", "h", "hidden"));
           spot(li, key);
+          ul.append(li);
+        }
+        main.append(ul);
+      }
+
+      const exits = (m.exits || []).map(([d, to]) => [{ N: "North", S: "South", E: "East", W: "West" }[d], to])
+        .concat((m.warps || []).map(([, , to]) => ["Door", to]));
+      if (exits.length) {
+        main.append(node("h3", null, "EXITS"));
+        const ul = node("ul", "items");
+        for (const [d, to] of exits) {
+          const t = data[to];
+          if (!t) continue;
+          const li = node("li");
+          const label = t.name === m.name ? t.place || t.name : t.name + (t.place ? " · " + t.place : "");
+          li.append(node("span", "dir", d), node("span", null, label));
           ul.append(li);
         }
         main.append(ul);
@@ -1120,7 +1131,7 @@
         });
         side.append(ul);
       }
-      if (!enc && !items.length && !m.trainers) main.append(node("div", "note", "Nothing to catch or pick up here."));
+      if (!enc && !m.trainers) side.append(node("div", "note", "No wild Pokémon or trainers here."));
 
       const src = node("div", "src");
       const a = node("a", null, "More on Bulbapedia");
@@ -1128,7 +1139,6 @@
       a.target = "_blank"; a.rel = "noopener";
       src.append(a, node("div", null, "Map " + id + " · " + debug));
       main.append(src);
-      if (!side.childNodes.length) side.remove();
     }
 
     return { prepare, started };
