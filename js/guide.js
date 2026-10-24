@@ -552,6 +552,7 @@ const Guide = (() => {
   }
 
   const painted = new Map();
+  const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55));
   async function drawMap(m, canvas, highlight) {
     const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
     if (!blocks.length) return false;
@@ -559,19 +560,23 @@ const Guide = (() => {
     const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
     const W = bw * 32, H = bh * 32;
     if (!painted.has(m)) painted.set(m, paintTerrain(m, blocks, bx0, bz0, W, H));
+    canvas.want = m;
     const base = await painted.get(m);
+    if (canvas.want !== m) return; // a newer map was asked for while this one was painting
     if (!base) return false;
     // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
-    // follows the player (see follow()).
+    // follows the player (see follow()). The box is always the same height, so the panel doesn't
+    // jump when you change area; a shorter map sits in the middle of it.
     const box = canvas.parentElement;
     const boxW = (box && box.clientWidth || 268) - 6;
-    const boxH = Math.max(260, Math.min(560, innerHeight * 0.55));
-    if (box) box.style.maxHeight = boxH + 6 + "px";
+    const boxH = mapBoxH();
+    if (box) box.style.height = boxH + 6 + "px";
     const fit = Math.min(boxW / W, boxH / H);
     const k = fit >= 6 ? fit : Math.max(6, boxW / W); // too tall: fill the width; too wide: 6px tiles
     canvas.width = W * T; canvas.height = H * T;
     canvas.style.width = Math.round(W * k) + "px";
     canvas.style.height = Math.round(H * k) + "px";
+    canvas.style.marginTop = Math.max(0, Math.floor((boxH - Math.round(H * k)) / 2)) + "px";
     canvas.style.imageRendering = k >= T ? "pixelated" : "auto";
     canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: W, h: H, k: Math.round(W * k) / W };
     const c = canvas.getContext("2d");
@@ -614,7 +619,7 @@ const Guide = (() => {
     return true;
   }
 
-  let pickedTime = null, highlight = null;
+  let pickedTime = null, highlight = null, mapWrap = null;
   function render(id, msg) {
     shown = id;
     const g = el(), gl = $("guideL");
@@ -631,27 +636,35 @@ const Guide = (() => {
     if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
     g.append(side);
     main.append(node("div", "loc", m.name || "???"));
-    if (m.place) main.append(node("div", "place", m.place));
+    main.append(node("div", "place", m.place || "\u00a0")); // always there, so the map below doesn't shift
 
     let canvas = null;
     if (m.blocks && Terrain.ready()) {
-      canvas = node("canvas", "minimap");
-      canvas.setAttribute("aria-hidden", "true");
-      const box = node("div", "mapbox");
-      const dot = node("div", "me");
-      dot.hidden = true;
-      box.append(canvas, dot);
-      for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
-      const legend = node("div", "legend");
-      for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"]]) {
-        const k = node("span", "key", label);
-        k.style.setProperty("--c", color);
-        legend.append(k);
+      // The map section is built once and moved into each new render, so it keeps its size and
+      // the old map stays on screen until the new one is drawn (no flicker between areas).
+      if (!mapWrap) {
+        const c = node("canvas", "minimap");
+        c.setAttribute("aria-hidden", "true");
+        const box = node("div", "mapbox");
+        box.style.height = mapBoxH() + 6 + "px";
+        const dot = node("div", "me");
+        dot.hidden = true;
+        box.append(c, dot);
+        for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
+        const legend = node("div", "legend");
+        for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"]]) {
+          const k = node("span", "key", label);
+          k.style.setProperty("--c", color);
+          legend.append(k);
+        }
+        mapWrap = node("div", "mapwrap");
+        mapWrap.append(node("h3", null, "MAP"), box, legend);
+        mapWrap.canvas = c;
       }
-      const wrap = node("div", "mapwrap");
-      wrap.append(node("h3", null, "MAP"), box, legend);
+      const wrap = mapWrap;
+      canvas = wrap.canvas;
       main.append(wrap);
-      drawMap(m, canvas, highlight).then((ok) => { if (!ok) { wrap.remove(); canvas = null; } });
+      drawMap(m, canvas, highlight).then((ok) => { if (ok === false && shown === id) { wrap.remove(); canvas = null; } });
     }
 
     if (story != null) main.append(...Story.nodes(heap(), storyBase, SPRITE));
