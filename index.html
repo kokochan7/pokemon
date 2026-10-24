@@ -368,11 +368,13 @@
     window.addEventListener("resize", () => setTimeout(update, 100));
   }
 
-  // Speed button in the emulator's menu bar: each click steps 1x > 2x > 3x > 5x > 1x.
+  // Speed button in the emulator's menu bar: each click steps 1x > 2x > 5x > 1x.
   // Added by hand because custom EJS_Buttons are rejected in EmulatorJS 4.2.3. It drives
   // EmulatorJS's own fast-forward settings, so Settings > Speed Options stay in step.
-  // The ratio is a cap: on a slow device the game may not reach the full 5x.
-  const SPEEDS = [1, 2, 3, 5];
+  // The ratio is only a cap: DeSmuME in the browser has no JIT, so the CPU sets the real top
+  // speed. Skipping the drawing of most frames (FRAMESKIP) leaves more of it for the game.
+  const SPEEDS = [1, 2, 5];
+  const FRAMESKIP = { 1: "0", 2: "1", 5: "4" };
   let speedIdx = 0;
   function addSpeedButton() {
     const emu = window.EJS_emulator, bar = emu && emu.elements && emu.elements.menu;
@@ -391,6 +393,7 @@
     const emu = window.EJS_emulator;
     speedIdx = i % SPEEDS.length;
     const x = SPEEDS[speedIdx];
+    emu.changeSettingOption("desmume_frameskip", FRAMESKIP[x]);
     if (x > 1) {
       emu.changeSettingOption("ff-ratio", x.toFixed(1));
       emu.changeSettingOption("fastForward", "enabled");
