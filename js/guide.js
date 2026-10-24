@@ -82,12 +82,12 @@ const Guide = (() => {
     const x = c.offsetLeft + c.clientLeft + (p[0] - g.x0) * g.k, y = c.offsetTop + c.clientTop + (p[1] - g.z0) * g.k;
     dot.style.left = x + "px";
     dot.style.top = y + "px";
-    // Keep the player in view when the map is bigger than its box, unless you just scrolled it.
+    // Keep the player in the middle of the box when the map is bigger than it (the browser stops the
+    // scroll at the map's edges), unless you just scrolled it yourself.
     const box = c.parentElement;
     if (Date.now() < followPause) return;
-    const vw = box.clientWidth, vh = box.clientHeight;
-    if (x < box.scrollLeft + vw * 0.25 || x > box.scrollLeft + vw * 0.75) box.scrollLeft = x - vw / 2;
-    if (y < box.scrollTop + vh * 0.25 || y > box.scrollTop + vh * 0.75) box.scrollTop = y - vh / 2;
+    box.scrollLeft = x - box.clientWidth / 2;
+    box.scrollTop = y - box.clientHeight / 2;
   }
   let followPause = 0;
 
@@ -735,12 +735,6 @@ const Guide = (() => {
     }
     if (!enc && !m.trainers) side.append(node("div", "note", "No wild Pokémon or trainers here."));
 
-    const src = node("div", "src");
-    const a = node("a", null, "More on Bulbapedia");
-    a.href = "https://bulbapedia.bulbagarden.net/w/index.php?search=" + encodeURIComponent(m.name);
-    a.target = "_blank"; a.rel = "noopener";
-    src.append(a);
-    main.append(src);
   }
 
   return { prepare, started };
