@@ -743,8 +743,12 @@
       li.append(info, play);
       cloudList.appendChild(li);
 
-      // Use the cached copy (if any) to show the proper game name up front.
-      cachedFor(r).then((rec) => {
+      // Show the proper game name from the header code the server read (no download needed).
+      const known = r.code && NDS_GAMES[r.code.slice(0, 3)];
+      if (known) {
+        info.firstChild.textContent = known.title + (REGION[r.code[3]] ? " (" + REGION[r.code[3]] + ")" : "");
+        li.style.setProperty("--tint", known.tint);
+      } else cachedFor(r).then((rec) => {
         if (rec && rec.game) {
           info.firstChild.textContent = rec.game.title + (rec.game.region ? " (" + rec.game.region + ")" : "");
           li.style.setProperty("--tint", rec.game.tint);
