@@ -23,7 +23,10 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
   and differs from the cloud, the page asks which to keep. The loser is uploaded as a backup.
 - Server keeps the previous version on every overwrite in the slot's backups folder (last 20).
 - `SaveSync.started()` checks `getSaveFilePath()` matches the expected path and pauses sync if not.
-- Periodic sync reads passively every 30s, and also syncs on tab hide and on "Exit".
+- While the game runs, every 2s the page makes the core flush its save to the file
+  (`getSaveFile(true)` = `cmd_savefiles`) and hashes it. A change is uploaded once it is the same on two
+  checks in a row (the game writes a save over a few seconds), so an in-game save reaches the cloud in
+  about 2 to 4 seconds. Tab hide and "Exit" flush and upload at once.
 - Save states are not synced (core-specific, browser-only).
 
 HGSS save sanity check: 512 KB, two 256 KB slots. General block 0xF628 bytes, storage block at
