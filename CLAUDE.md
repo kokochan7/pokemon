@@ -128,6 +128,8 @@ npx wrangler pages dev . --r2 ROMS=roms-test --binding SITE_PASSWORD=testpw123 -
   overworld maps by direction, plus doors), wild Pokémon (grass by MORN/DAY/NITE, surfing, rods, Rock
   Smash), items with hidden ones marked, and trainers with their teams. Hovering or tapping an item or
   trainer rings its spot on the map; the map sticks to the top while scrolling.
+- Layout: 300px, one column, from 900px wide. From 1300px wide the panel is 600px with two columns
+  (left: next, map, exits, items; right: wild Pokémon, trainers) so it fits without scrolling.
 - The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
   file `a/0/6/5` is the land-data NARC, each member has 32x32 u16 terrain attributes at +0x14 (low byte
   = tile behaviour, bit 15 = wall). hgss.json says which land-data blocks make up each map (`blocks`,

@@ -237,6 +237,11 @@
   #guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
   #guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
   #guide .src a { color: inherit; }
+  #guide { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+  @media (min-width: 1300px) {
+    #guide { width: 600px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
+    #guide .gcol + .gcol { border-left: 2px solid var(--paper-2); padding-left: 14px; }
+  }
   @media (max-width: 899px) { #guide { display: none; } #guideBtn { display: none; } }
 
   /* Keep EmulatorJS's menu bar visible on desktop, and give it its own strip under the game
@@ -1004,10 +1009,14 @@
         return;
       }
       const m = data[id];
-      g.append(node("div", "loc", m.name || "???"));
-      if (m.place) g.append(node("div", "place", m.place));
+      // Two columns on wide screens: next step, map, exits and items on the left; wild Pokémon
+      // and trainers on the right.
+      const main = node("div", "gcol"), side = node("div", "gcol");
+      g.append(main, side);
+      main.append(node("div", "loc", m.name || "???"));
+      if (m.place) main.append(node("div", "place", m.place));
 
-      if (badges) g.append(node("h3", null, "NEXT"), node("div", "story", nextStep(badges[0], badges[1])));
+      if (badges) main.append(node("h3", null, "NEXT"), node("div", "story", nextStep(badges[0], badges[1])));
 
       let canvas = null;
       if (m.blocks && Terrain.ready()) {
@@ -1023,14 +1032,14 @@
         }
         const wrap = node("div", "mapwrap");
         wrap.append(node("h3", null, "MAP"), box, legend);
-        g.append(wrap);
+        main.append(wrap);
         drawMap(m, canvas, highlight).then((ok) => { if (!ok) { wrap.remove(); canvas = null; } });
       }
 
       const exits = (m.exits || []).map(([d, to]) => [{ N: "North", S: "South", E: "East", W: "West" }[d], to])
         .concat((m.warps || []).map(([, , to]) => ["Door", to]));
       if (exits.length) {
-        g.append(node("h3", null, "EXITS"));
+        main.append(node("h3", null, "EXITS"));
         const ul = node("ul", "items");
         for (const [d, to] of exits) {
           const t = data[to];
@@ -1040,12 +1049,12 @@
           li.append(node("span", "dir", d), node("span", null, label));
           ul.append(li);
         }
-        g.append(ul);
+        main.append(ul);
       }
 
       const enc = m[ver];
       if (enc) {
-        g.append(node("h3", null, "WILD"));
+        side.append(node("h3", null, "WILD"));
         if (enc.grass_morn) {
           const t = pickedTime || tod;
           const tabs = node("div", "tabs");
@@ -1054,9 +1063,9 @@
             b.onclick = () => { pickedTime = k === tod ? null : k; render(id); };
             tabs.append(b);
           }
-          g.append(node("div", "method", "Grass"), tabs, monList(enc["grass_" + t]));
+          side.append(node("div", "method", "Grass"), tabs, monList(enc["grass_" + t]));
         }
-        for (const k in METHODS) if (enc[k]) g.append(node("div", "method", METHODS[k]), monList(enc[k]));
+        for (const k in METHODS) if (enc[k]) side.append(node("div", "method", METHODS[k]), monList(enc[k]));
       }
 
       // Hover or tap a row to ring its spot on the mini map.
@@ -1074,7 +1083,7 @@
 
       const items = (m.items || []).map((it, i) => [it[2], false, "i" + i]).concat((m.hidden || []).map((it, i) => [it[2], true, "h" + i]));
       if (items.length) {
-        g.append(node("h3", null, "ITEMS"));
+        main.append(node("h3", null, "ITEMS"));
         const ul = node("ul", "items");
         for (const [name, hidden, key] of items) {
           const li = node("li");
@@ -1087,11 +1096,11 @@
           spot(li, key);
           ul.append(li);
         }
-        g.append(ul);
+        main.append(ul);
       }
 
       if (m.trainers) {
-        g.append(node("h3", null, "TRAINERS"));
+        side.append(node("h3", null, "TRAINERS"));
         const ul = node("ul", "trainers");
         m.trainers.forEach(([, , who, party], i) => {
           const li = node("li");
@@ -1109,16 +1118,17 @@
           spot(li, "t" + i);
           ul.append(li);
         });
-        g.append(ul);
+        side.append(ul);
       }
-      if (!enc && !items.length && !m.trainers) g.append(node("div", "note", "Nothing to catch or pick up here."));
+      if (!enc && !items.length && !m.trainers) main.append(node("div", "note", "Nothing to catch or pick up here."));
 
       const src = node("div", "src");
       const a = node("a", null, "More on Bulbapedia");
       a.href = "https://bulbapedia.bulbagarden.net/w/index.php?search=" + encodeURIComponent(m.name);
       a.target = "_blank"; a.rel = "noopener";
       src.append(a, node("div", null, "Map " + id + " · " + debug));
-      g.append(src);
+      main.append(src);
+      if (!side.childNodes.length) side.remove();
     }
 
     return { prepare, started };
