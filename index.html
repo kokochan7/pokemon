@@ -157,16 +157,6 @@
   .muted:empty { display: none; }
   #empty { font: 18px/1.2 var(--term); color: #585868; }
 
-  /* ---------- load from device ---------- */
-  #drop {
-    border: 3px dashed var(--ink); background: var(--paper-2);
-    padding: 26px 16px; text-align: center; cursor: pointer;
-  }
-  #drop:hover, #drop.over, #drop:focus-visible { background: #fff8d0; outline: none; }
-  #drop strong { display: block; font-size: 11px; font-weight: normal; }
-  #drop span { display: block; margin-top: 8px; font: 18px/1 var(--term); color: #585868; letter-spacing: 1px; }
-  .row { display: flex; gap: 12px 18px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
-  .row select { padding: 7px 8px 6px; font-size: 9px; }
   #err { font: 18px/1.2 var(--term); color: var(--red); margin-top: 10px; }
   #err:empty { display: none; }
 
@@ -233,6 +223,7 @@
       <ul id="cloudList"></ul>
       <div id="cloudMsg" class="muted"></div>
       <button id="logout" class="link" hidden>Lock</button>
+      <div id="err" role="alert"></div>
     </div>
   </section>
 
@@ -242,32 +233,6 @@
     <div id="empty" hidden>NO GAMES STORED.</div>
   </section>
 
-  <section class="box">
-    <h2>NEW GAME</h2>
-    <div id="drop" tabindex="0" role="button" aria-label="Load a ROM from this device">
-      <strong>LOAD ROM</strong>
-      <span>.NDS  .GBA  .GBC  .GB  .ZIP</span>
-      <input id="file" type="file" accept=".gb,.gbc,.gba,.nds,.zip" hidden>
-    </div>
-    <div class="row">
-      <label>SYSTEM
-        <select id="sys">
-          <option value="auto">AUTO</option>
-          <option value="gb">GB / GBC</option>
-          <option value="gba">GBA</option>
-          <option value="nds">DS</option>
-        </select>
-      </label>
-      <label>DS CORE
-        <select id="ndsCore">
-          <option value="desmume">DeSmuME</option>
-          <option value="melonds">melonDS</option>
-        </select>
-      </label>
-      <label><input type="checkbox" id="remember" checked> KEEP IN PC</label>
-    </div>
-    <div id="err" role="alert"></div>
-  </section>
 </main>
 
 <section id="player" hidden>
@@ -313,11 +278,6 @@
   function ndsCore() {
     try { return localStorage.getItem("pp_nds_core") || "desmume"; } catch { return "desmume"; }
   }
-  document.addEventListener("DOMContentLoaded", () => {
-    const sel = $("ndsCore");
-    sel.value = ndsCore();
-    sel.onchange = () => { try { localStorage.setItem("pp_nds_core", sel.value); } catch {} };
-  });
   const menu = $("menu"), player = $("player"), err = $("err");
 
   /* ---------- tiny IndexedDB library ---------- */
@@ -634,31 +594,23 @@
     return { prepare, started, flush: () => tick(true) };
   })();
 
-  /* ---------- picking a file ---------- */
+  /* ---------- launching a game file (from the cloud list) ---------- */
   async function handleFile(file) {
     err.textContent = "";
     if (!file) return;
-    const core = detectCore(file.name, $("sys").value);
+    const core = detectCore(file.name, "auto");
     if (!core) {
-      err.textContent = "UNKNOWN SYSTEM. PICK ONE BELOW.";
+      err.textContent = "UNKNOWN SYSTEM.";
       return;
     }
     const game = await identify(file);
     const label = game ? game.title + (game.region ? " (" + game.region + ")" : "") : file.name;
-    if ($("remember").checked) {
-      try { await dbPut({ name: file.name, core, size: file.size, added: Date.now(), blob: file, game }); }
-      catch (e) { console.warn("Could not save to library:", e); }
-    }
+    // Keep a copy in this browser's PC so the next launch doesn't re-download it.
+    try { await dbPut({ name: file.name, core, size: file.size, added: Date.now(), blob: file, game }); }
+    catch (e) { console.warn("Could not save to library:", e); }
     launch(file.name, file, core, label);
   }
 
-  const drop = $("drop"), input = $("file");
-  drop.onclick = () => input.click();
-  drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } };
-  input.onchange = () => handleFile(input.files[0]);
-  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
-  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (e) => handleFile(e.dataTransfer.files[0]));
 
   /* ---------- library list ---------- */
   async function renderLibrary() {
