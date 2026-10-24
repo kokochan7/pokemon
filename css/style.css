@@ -221,18 +221,20 @@ body.playing #scene { display: none; }
 /* exits on the mini map: arrows at the edges, name tags over doors */
 .guide .exit {
   position: absolute; z-index: 1; pointer-events: none; white-space: nowrap;
-  font: 800 11px/1 var(--read); padding: 3px 5px; border-radius: 3px;
-  background: var(--ink); color: var(--paper); box-shadow: 0 0 0 1px var(--paper);
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis;
+  font: 700 9px/1 var(--read); padding: 2px 4px; border-radius: 2px;
+  background: rgba(24, 24, 32, .82); color: var(--paper);
 }
-.guide .exit.N { transform: translate(-50%, 3px); }
-.guide .exit.S { transform: translate(-50%, calc(-100% - 3px)); }
-.guide .exit.W { transform: translate(3px, -50%); }
-.guide .exit.E { transform: translate(calc(-100% - 3px), -50%); }
+.guide .exit.N { transform: translate(-50%, 2px); }
+.guide .exit.S { transform: translate(-50%, calc(-100% - 2px)); }
+.guide .exit.W { transform: translate(2px, -50%); }
+.guide .exit.E { transform: translate(calc(-100% - 2px), -50%); }
 .guide .exit.door {
-  transform: translate(-50%, calc(-100% - 2px)); font-size: 10px; padding: 2px 4px;
-  background: var(--paper); color: var(--ink); box-shadow: 0 0 0 1px var(--ink); opacity: .92;
+  transform: translate(-50%, calc(-100% - 1px)); max-width: 100px; font-size: 8px; padding: 1px 3px;
+  background: rgba(248, 248, 240, .85); color: var(--ink);
 }
-.guide .exit.door.below { transform: translate(-50%, 2px); }
+.guide .exit[hidden] { display: none; }
+.guide .exit.door.below { transform: translate(-50%, 1px); }
 .guide .spot { cursor: pointer; }
 .guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
 .guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }

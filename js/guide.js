@@ -502,14 +502,16 @@ const Guide = (() => {
       if (el.side === "W") x = Math.max(x, L); if (el.side === "E") x = Math.min(x, R);
       el.style.left = x + "px"; el.style.top = y + "px";
     }
-    // A door tag that would cover an edge arrow goes under its door instead.
-    const edges = [...box.querySelectorAll(".exit.edge")].map((e) => e.getBoundingClientRect());
+    // Door tags go above their door, or under it if that spot is taken. One that would still cover an
+    // edge arrow or another tag is left out (its door keeps its outline), so tags never pile up.
+    const taken = [...box.querySelectorAll(".exit.edge")].map((e) => e.getBoundingClientRect());
+    const hits = (r) => taken.some((q) => r.left < q.right + 2 && q.left < r.right + 2 && r.top < q.bottom + 2 && q.top < r.bottom + 2);
     for (const el of box.querySelectorAll(".exit.door")) {
-      el.classList.remove("below"); el.style.top = el.y + "px";
-      const r = el.getBoundingClientRect();
-      if (edges.some((q) => r.left < q.right && q.left < r.right && r.top < q.bottom && q.top < r.bottom)) {
-        el.classList.add("below"); el.style.top = el.y + el.k + "px";
-      }
+      el.hidden = false; el.classList.remove("below"); el.style.top = el.y + "px";
+      let r = el.getBoundingClientRect();
+      if (hits(r)) { el.classList.add("below"); el.style.top = el.y + el.k + "px"; r = el.getBoundingClientRect(); }
+      if (hits(r)) el.hidden = true;
+      else taken.push(r);
     }
   }
 
