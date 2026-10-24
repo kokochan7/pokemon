@@ -10,6 +10,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   `#guideL` on the left (location, map, next, items) and `#guide` on the right (wild Pokémon,
   trainers), 320px each. Both have class `.guide`. The map is scaled to the column width, up to ~55%
   of the screen height, keeping its shape.
+- Kept compact so the panels need little scrolling (Kenny's ask): 13px text, tight spacing, wild Pokémon
+  as three small tiles per row, 32px party sprites. NEXT shows only the step title, no "Step N of 40".
 - The mini map is drawn from the terrain in Kenny's own ROM, read in the browser (`Terrain`): NitroFS
   file `a/0/6/5` is the land-data NARC. Each member starts with four u32 section sizes, then (HGSS only)
   a background-sound section `0x1234, u16 length, data`; the 32x32 u16 terrain attributes follow it at
