@@ -19,6 +19,14 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   terrain under the item and trainer spots (fixed 2026-10-24). hgss.json says which land-data blocks make up each map (`blocks`,
   plus dimmed `near` blocks that its events spill into) and the colour class per behaviour (`tiles`).
   Nothing from the ROM is uploaded or committed.
+- The map is drawn in game-style 16x16 tiles made in code (`tileArt()`, original art), picked by each tile's
+  behaviour: path, grass, very tall grass, water, sand, ledges by jump direction, doors. Walls depend on the
+  map: trees outdoors (headbutt trees marked), rock in caves (cave-floor tiles > 10%), plain walls indoors
+  (no exits). Outdoors, the wall rectangle sitting on a door or warp is drawn as a house (roof + front
+  with windows), and a lone blocked tile as a boulder. The terrain is painted once per map and cached;
+  item balls, trainers and doors go on top. Tiles are shown at least 6px: a map that doesn't fit
+  scrolls in its box and follows the player (paused 4s after you scroll it or pick a row).
+- The panel's text uses Nunito (Google Fonts) for readability; the rest of the site keeps the pixel fonts.
 - A blinking blue "you" dot shows the player live (5 reads a second). The saved position (+0x123C/+0x1240)
   only updates on warps, so it reads the player's map object (`LocalMapObject` in the decomp) in DS RAM
   instead: flags bit 0 set, id 255 at +0x08, movement 1 at +0x14, tile x/z at +0x64/+0x6C and the

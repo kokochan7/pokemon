@@ -8,6 +8,7 @@
   --silver: #b8c0d0;
   --pixel: "Press Start 2P", ui-monospace, monospace;
   --term: "VT323", ui-monospace, monospace;
+  --read: "Nunito", system-ui, sans-serif;
 
   /* scene palette: day */
   --sk1: #5898f0; --sk2: #78b0f8; --sk3: #98c8f8; --sk4: #c0e0f8;
@@ -173,20 +174,20 @@ body.playing #scene { display: none; }
 .guide {
   flex: none; width: 300px; overflow-y: auto; background: var(--paper); color: var(--ink);
   border-left: 4px solid var(--ink); box-shadow: inset 3px 0 0 var(--paper), inset 5px 0 0 var(--ink);
-  padding: 14px 12px 18px 16px; font: 18px/1.15 var(--term);
+  padding: 14px 12px 18px 16px; font: 14px/1.35 var(--read);
 }
 .guide h3 {
-  font: 9px/1 var(--pixel); margin: 16px 0 8px; letter-spacing: 1px;
+  font: 800 11px/1 var(--read); margin: 16px 0 8px; letter-spacing: 1px;
   display: inline-block; background: var(--ink); color: var(--paper); padding: 5px 7px 4px;
 }
-.guide .loc { font: 11px/1.5 var(--pixel); margin: 2px 0 0; }
+.guide .loc { font: 800 18px/1.3 var(--read); margin: 2px 0 0; }
 .guide .place { color: #585868; }
 .guide .note { color: #585868; margin-top: 10px; }
 .guide .tabs { display: flex; gap: 6px; margin: 0 0 6px; }
-.guide .tabs button { font-size: 8px; padding: 5px 6px 4px; }
+.guide .tabs button { font: 700 11px/1 var(--read); padding: 5px 8px; }
 .guide .tabs button::before { content: none; }
 .guide .tabs button.on { background: var(--ink); color: var(--paper); }
-.guide .method { font: 8px/1 var(--pixel); color: #585868; margin: 10px 0 4px; text-transform: uppercase; }
+.guide .method { font: 700 11px/1 var(--read); color: #585868; margin: 10px 0 4px; text-transform: uppercase; letter-spacing: .5px; }
 .guide ul { list-style: none; margin: 0; padding: 0; }
 .guide .mons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .guide .mons li {
@@ -196,14 +197,14 @@ body.playing #scene { display: none; }
 /* HGSS sprites are 80px with lots of empty space around the Pokémon: crop to the middle */
 .guide .mons img { width: 64px; height: 64px; margin: -10px; image-rendering: pixelated; grid-row: span 2; }
 .guide .mons .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.guide .mons .lv { color: #585868; font-size: 16px; }
+.guide .mons .lv { color: #585868; font-size: 12px; }
 .guide .items li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
 .guide .items img { width: 24px; height: 24px; image-rendering: pixelated; flex: none; }
-.guide .items .h { color: #585868; font-size: 15px; margin-left: auto; }
-.guide .story { line-height: 1.2; }
+.guide .items .h { color: #585868; font-size: 12px; margin-left: auto; }
+.guide .story { line-height: 1.4; }
 /* the mini map stays in view while you scroll the lists below it */
 .guide .mapwrap { position: sticky; top: -14px; z-index: 1; background: var(--paper); padding-bottom: 6px; margin: 0 -4px; padding-left: 4px; }
-.guide .mapbox { overflow: hidden; position: relative; }
+.guide .mapbox { overflow: auto; position: relative; scrollbar-width: thin; }
 .guide .me {
   position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
   background: #3870e8; box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 3px #181820; pointer-events: none;
@@ -211,8 +212,8 @@ body.playing #scene { display: none; }
 }
 .guide .me[hidden] { display: none; }
 @keyframes me-blink { 50% { opacity: .35; } }
-.guide .minimap { display: block; margin: 0 auto; image-rendering: pixelated; border: 3px solid var(--ink); }
-.guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 15px; color: #585868; }
+.guide .minimap { display: block; margin: 0 auto; border: 3px solid var(--ink); }
+.guide .legend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-size: 12px; color: #585868; }
 .guide .key::before {
   content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
   background: var(--c); box-shadow: 0 0 0 1px var(--ink);
@@ -221,11 +222,11 @@ body.playing #scene { display: none; }
 .guide .spot { cursor: pointer; }
 .guide .spot.on { background: var(--paper-2); box-shadow: -4px 0 0 var(--gold); }
 .guide .trainers li { padding: 4px 0 6px; border-bottom: 2px solid var(--paper-2); }
-.guide .who { font-size: 18px; }
+.guide .who { font-weight: 700; }
 .guide .party { display: flex; flex-wrap: wrap; gap: 2px 8px; }
-.guide .pm { display: inline-flex; align-items: center; font-size: 15px; color: #585868; }
+.guide .pm { display: inline-flex; align-items: center; font-size: 12px; color: #585868; }
 .guide .pm img { width: 40px; height: 40px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
-.guide .src { margin-top: 18px; font-size: 15px; color: #585868; }
+.guide .src { margin-top: 18px; font-size: 12px; color: #585868; }
 .guide .src a { color: inherit; }
 /* From 1300px wide the guide splits around the game: next step, map, items and exits on the
    left (#guideL), wild Pokémon and trainers on the right (#guide). */

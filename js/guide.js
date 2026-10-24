@@ -75,11 +75,18 @@ const Guide = (() => {
     const p = player(h), g = c.geo;
     const inside = p && p[0] >= g.x0 && p[1] >= g.z0 && p[0] < g.x0 + g.w && p[1] < g.z0 + g.h;
     dot.hidden = !inside;
-    if (inside) {
-      dot.style.left = c.offsetLeft + c.clientLeft + (p[0] - g.x0) * g.k + "px";
-      dot.style.top = c.offsetTop + c.clientTop + (p[1] - g.z0) * g.k + "px";
-    }
+    if (!inside) return;
+    const x = c.offsetLeft + c.clientLeft + (p[0] - g.x0) * g.k, y = c.offsetTop + c.clientTop + (p[1] - g.z0) * g.k;
+    dot.style.left = x + "px";
+    dot.style.top = y + "px";
+    // Keep the player in view when the map is bigger than its box, unless you just scrolled it.
+    const box = c.parentElement;
+    if (Date.now() < followPause) return;
+    const vw = box.clientWidth, vh = box.clientHeight;
+    if (x < box.scrollLeft + vw * 0.25 || x > box.scrollLeft + vw * 0.75) box.scrollLeft = x - vw / 2;
+    if (y < box.scrollTop + vh * 0.25 || y > box.scrollTop + vh * 0.75) box.scrollTop = y - vh / 2;
   }
+  let followPause = 0;
 
   function heap() {
     const m = window.EJS_emulator && window.EJS_emulator.gameManager && window.EJS_emulator.gameManager.Module;
@@ -279,52 +286,210 @@ const Guide = (() => {
     return { open, block, ready: () => !!narc };
   })();
 
-  // Mini map colours by terrain class (see "tiles" in hgss.json).
-  const TILE = { 0: "#f0f0e0", 1: "#78c050", 2: "#5898f0", 3: "#b07840", 4: "#d83820", 5: "#e8d098" };
-  const WALL = "#4c6450";
+  /* --- mini map: game-style 16x16 tiles drawn from each tile's behaviour --- */
+  // Terrain classes come from "tiles" in hgss.json: 0 floor/path, 1 grass, 2 water, 3 ledge, 4 door
+  // or warp, 5 sand. A few raw behaviours get their own look: 3 very tall grass, 6 headbutt tree,
+  // 8 cave floor, 56-59 ledges by jump direction (E, W, N, S).
+  const T = 16;
+  const ROOFS = [["#d84830", "#f07050"], ["#3870c8", "#6898e8"], ["#409848", "#68c068"], ["#a050a8", "#c878c8"]];
+  const tileArt = (() => {
+    let cache = null;
+    const make = (draw) => {
+      const cv = document.createElement("canvas");
+      cv.width = cv.height = T;
+      const c = cv.getContext("2d");
+      const px = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+      draw(px, c);
+      return cv;
+    };
+    const ground = (px) => { px(0, 0, 16, 16, "#f0e0a8"); px(3, 4, 1, 1, "#d8c088"); px(11, 9, 1, 1, "#d8c088"); px(7, 13, 1, 1, "#d8c088"); };
+    const grassBase = (px) => { px(0, 0, 16, 16, "#88d070"); px(2, 3, 1, 1, "#70b858"); px(12, 6, 1, 1, "#70b858"); px(6, 12, 1, 1, "#70b858"); };
+    const tuft = (px, x, y, dark, light) => {
+      px(x, y + 2, 1, 3, dark); px(x + 2, y, 1, 5, dark); px(x + 4, y + 2, 1, 3, dark);
+      px(x + 1, y + 3, 1, 2, light); px(x + 3, y + 1, 1, 4, light); px(x, y + 5, 5, 1, dark);
+    };
+    const tree = (px) => {
+      px(0, 0, 16, 16, "#306830");
+      px(2, 1, 12, 11, "#204818"); px(3, 2, 10, 9, "#48a040"); px(4, 3, 4, 3, "#78c860"); px(5, 4, 2, 1, "#a8e090");
+      px(9, 7, 3, 2, "#388830"); px(4, 9, 8, 2, "#388830");
+      px(6, 12, 4, 3, "#704828"); px(7, 12, 1, 3, "#906038"); px(2, 15, 12, 1, "#204818");
+    };
+    function build() {
+      cache = {
+        path: make(ground),
+        grass: make((px) => { px(0, 0, 16, 16, "#58b048"); tuft(px, 1, 1, "#287828", "#90d870"); tuft(px, 9, 2, "#287828", "#90d870"); tuft(px, 4, 9, "#287828", "#90d870"); tuft(px, 11, 10, "#287828", "#90d870"); }),
+        tall: make((px) => { px(0, 0, 16, 16, "#3c8c38"); tuft(px, 0, 0, "#185818", "#68b050"); tuft(px, 8, 1, "#185818", "#68b050"); tuft(px, 3, 8, "#185818", "#68b050"); tuft(px, 11, 9, "#185818", "#68b050"); }),
+        water: [0, 1].map((v) => make((px) => {
+          px(0, 0, 16, 16, "#4888e8");
+          const y = v ? 3 : 9, x = v ? 2 : 8;
+          px(x, y, 6, 1, "#a8d0f8"); px(x + 1, y - 1, 4, 1, "#78b0f0"); px((x + 8) % 16, y + 6 & 15, 4, 1, "#78b0f0");
+        })),
+        sand: make((px) => { px(0, 0, 16, 16, "#f0d890"); for (const [x, y] of [[2, 2], [9, 4], [5, 9], [13, 11], [1, 13], [10, 14]]) px(x, y, 1, 1, "#c8a860"); }),
+        cave: make((px) => { px(0, 0, 16, 16, "#c0a070"); px(3, 3, 2, 1, "#987850"); px(10, 8, 2, 1, "#987850"); px(5, 12, 1, 1, "#987850"); }),
+        rock: make((px) => { px(0, 0, 16, 16, "#705838"); px(0, 0, 16, 2, "#886c48"); px(2, 5, 5, 3, "#584428"); px(9, 10, 5, 3, "#584428"); px(3, 4, 3, 1, "#a08458"); }),
+        floor: make((px) => { px(0, 0, 16, 16, "#e8c890"); px(0, 7, 16, 1, "#c8a070"); px(0, 15, 16, 1, "#c8a070"); px(5, 0, 1, 7, "#c8a070"); px(12, 8, 1, 7, "#c8a070"); }),
+        wall: make((px) => { px(0, 0, 16, 16, "#606878"); px(0, 0, 16, 3, "#808898"); px(0, 13, 16, 3, "#404858"); }),
+        tree: make(tree),
+        headbutt: make((px) => { tree(px); px(3, 2, 10, 1, "#204818"); px(10, 4, 2, 2, "#f8d048"); }),
+        boulder: make((px) => { grassBase(px); px(3, 4, 10, 10, "#606060"); px(4, 3, 8, 1, "#606060"); px(4, 4, 7, 7, "#a0a0a0"); px(5, 5, 3, 2, "#d0d0d0"); }),
+        door: make((px) => { ground(px); px(3, 0, 10, 14, "#502818"); px(4, 1, 8, 13, "#885030"); px(10, 7, 1, 2, "#f8d048"); }),
+        ledge: ["E", "W", "N", "S"].map((d) => make((px, c) => {
+          grassBase(px);
+          // the ledge lip sits on the side you jump towards
+          c.save(); c.translate(8, 8); c.rotate({ S: 0, W: Math.PI / 2, N: Math.PI, E: -Math.PI / 2 }[d]); c.translate(-8, -8);
+          px(0, 10, 16, 3, "#a87838"); px(0, 13, 16, 2, "#704820"); px(0, 9, 16, 1, "#c89850"); c.restore();
+        })),
+      };
+      cache.roof = ROOFS.map(([dark, light]) => make((px) => { px(0, 0, 16, 16, dark); for (let y = 2; y < 16; y += 4) px(0, y, 16, 1, light); }));
+      cache.front = make((px) => { px(0, 0, 16, 16, "#f0e8d8"); px(0, 0, 16, 2, "#383838"); px(4, 5, 8, 6, "#5070a8"); px(4, 5, 8, 1, "#383838"); px(7, 5, 1, 6, "#f0e8d8"); px(0, 15, 16, 1, "#a09888"); });
+      return cache;
+    }
+    return () => cache || build();
+  })();
 
+  // The whole map's terrain as one grid; -1 where no block was drawn.
+  async function terrainGrid(blocks, bx0, bz0, W, H) {
+    const grid = new Int32Array(W * H).fill(-1), dim = new Uint8Array(W * H);
+    let any = false;
+    for (const [bx, bz, land, isNear] of blocks) {
+      const t = await Terrain.block(land);
+      if (!t) continue;
+      any = true;
+      const ox = (bx - bx0) * 32, oz = (bz - bz0) * 32;
+      for (let i = 0; i < 1024; i++) {
+        const at = (oz + (i >> 5)) * W + ox + (i & 31);
+        grid[at] = t[i]; dim[at] = isNear ? 1 : 0;
+      }
+    }
+    return any ? { grid, dim } : null;
+  }
+
+  // Draw the terrain once per map; markers go on top of this cached copy.
+  async function paintTerrain(m, blocks, bx0, bz0, W, H) {
+    const tg = await terrainGrid(blocks, bx0, bz0, W, H);
+    if (!tg) return null;
+    const { grid, dim } = tg, art = tileArt();
+    const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
+    const wall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
+    const cls = (v) => tiles[v & 0xff] || 0;
+    let caveTiles = 0;
+    for (const v of grid) if (v >= 0 && (v & 0xff) === 8) caveTiles++;
+    const env = m.exits && m.exits.length ? "out" : caveTiles > grid.length / 10 ? "cave" : "in";
+
+    // Outdoors, the block of walls right above a door or warp is a building (rows above its bottom
+    // row are roof); a lone blocked tile is a sign or boulder; other walls are trees.
+    const house = new Int8Array(W * H); // 0 none, 1.. roof colour + 1 for the front row, -1 boulder
+    if (env === "out") {
+      const doors = (m.warps || []).map(([x, z]) => [x - bx0 * 32, z - bz0 * 32]);
+      for (let i = 0; i < grid.length; i++) if (grid[i] >= 0 && !(grid[i] & 0x8000) && cls(grid[i]) === 4) doors.push([i % W, (i / W) | 0]);
+      doors.forEach(([dx, dz], n) => {
+        if (!wall(dx, dz - 1) || house[(dz - 1) * W + dx]) return;
+        // The widest-by-tallest wall rectangle sitting on the door, at most 6 tall and 13 wide.
+        let top = dz - 1, l = dx, r = dx, best = 0;
+        for (let t = dz - 1; t >= dz - 6 && wall(dx, t); t--) {
+          const col = (x) => { for (let z = t; z < dz; z++) if (!wall(x, z)) return false; return true; };
+          let a = dx, b = dx;
+          while (a > dx - 6 && col(a - 1)) a--;
+          while (b < dx + 6 && col(b + 1)) b++;
+          const area = (b - a + 1) * (dz - t) * (b > a ? 1 : 0.5); // prefer a real building over a 1-wide post
+          if (area > best) { best = area; top = t; l = a; r = b; }
+        }
+        for (let z = top; z < dz; z++) for (let x = l; x <= r; x++) house[z * W + x] = z === dz - 1 && top < dz - 1 ? 1 : 2 + (n % ROOFS.length);
+      });
+      for (let i = 0; i < grid.length; i++) {
+        const x = i % W, z = (i / W) | 0;
+        if (!house[i] && wall(x, z) && !wall(x - 1, z) && !wall(x + 1, z) && !wall(x, z - 1) && !wall(x, z + 1)) house[i] = -1;
+      }
+    }
+
+    const cv = document.createElement("canvas");
+    cv.width = W * T; cv.height = H * T;
+    const c = cv.getContext("2d");
+    c.fillStyle = "#181820"; c.fillRect(0, 0, cv.width, cv.height);
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      const v = grid[z * W + x];
+      if (v < 0) continue;
+      const b = v & 0xff, k = cls(v);
+      let img;
+      if (v & 0x8000) {
+        if (env === "in") img = art.wall;
+        else if (env === "cave") img = art.rock;
+        else {
+          const h = house[z * W + x];
+          img = h === 1 ? art.front : h > 1 ? art.roof[h - 2] : h < 0 ? art.boulder : b === 6 ? art.headbutt : art.tree;
+        }
+      } else if (k === 2) img = art.water[(x + z) & 1];
+      else if (k === 1) img = b === 3 ? art.tall : art.grass;
+      else if (k === 3) img = art.ledge[b >= 56 && b <= 59 ? b - 56 : 3];
+      else if (k === 4) img = art.door;
+      else if (k === 5) img = art.sand;
+      else img = env === "in" ? art.floor : env === "cave" || b === 8 ? art.cave : art.path;
+      c.drawImage(img, x * T, z * T);
+    }
+    c.fillStyle = "rgba(24,24,32,.45)";
+    for (let i = 0; i < dim.length; i++) if (dim[i] && grid[i] >= 0) c.fillRect((i % W) * T, ((i / W) | 0) * T, T, T);
+    return cv;
+  }
+
+  const painted = new Map();
   async function drawMap(m, canvas, highlight) {
     const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
     if (!blocks.length) return false;
     const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
     const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
-    // Fill the column's width, up to about half the screen's height; draw at a whole number of
-    // pixels per tile (at least the shown size) and let CSS scale it with crisp pixels.
-    const boxW = (canvas.parentElement && canvas.parentElement.clientWidth || 268) - 6;
+    const W = bw * 32, H = bh * 32;
+    if (!painted.has(m)) painted.set(m, paintTerrain(m, blocks, bx0, bz0, W, H));
+    const base = await painted.get(m);
+    if (!base) return false;
+    // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
+    // follows the player (see follow()).
+    const box = canvas.parentElement;
+    const boxW = (box && box.clientWidth || 268) - 6;
     const boxH = Math.max(260, Math.min(560, innerHeight * 0.55));
-    const fit = Math.min(boxW / (bw * 32), boxH / (bh * 32));
-    const s = Math.max(1, Math.min(8, Math.ceil(fit)));
-    canvas.width = bw * 32 * s; canvas.height = bh * 32 * s;
-    canvas.style.width = Math.floor(bw * 32 * fit) + "px";
-    canvas.style.height = Math.floor(bh * 32 * fit) + "px";
-    canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: bw * 32, h: bh * 32, k: Math.floor(bw * 32 * fit) / (bw * 32) };
+    if (box) box.style.maxHeight = boxH + 6 + "px";
+    const fit = Math.min(boxW / W, boxH / H);
+    const k = fit >= 6 ? fit : Math.max(6, boxW / W); // too tall: fill the width; too wide: 6px tiles
+    canvas.width = W * T; canvas.height = H * T;
+    canvas.style.width = Math.round(W * k) + "px";
+    canvas.style.height = Math.round(H * k) + "px";
+    canvas.style.imageRendering = k >= T ? "pixelated" : "auto";
+    canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: W, h: H, k: Math.round(W * k) / W };
     const c = canvas.getContext("2d");
-    c.fillStyle = "#181820"; c.fillRect(0, 0, canvas.width, canvas.height);
-    let drew = false;
-    for (const [bx, bz, land, dim] of blocks) {
-      const t = await Terrain.block(land);
-      if (!t) continue;
-      drew = true;
-      const ox = (bx - bx0) * 32 * s, oz = (bz - bz0) * 32 * s;
-      for (let i = 0; i < 1024; i++) {
-        const v = t[i];
-        c.fillStyle = v & 0x8000 ? WALL : TILE[tiles[v & 0xff] || 0];
-        c.fillRect(ox + (i & 31) * s, oz + (i >> 5) * s, s, s);
-      }
-      if (dim) { c.fillStyle = "rgba(24,24,32,.45)"; c.fillRect(ox, oz, 32 * s, 32 * s); }
-    }
-    if (!drew) return false;
-    const dot = (x, z, fill, r, ring) => {
-      const px = (x - bx0 * 32) * s + s / 2, pz = (z - bz0 * 32) * s + s / 2;
-      c.fillStyle = "#181820"; c.fillRect(px - r - 1, pz - r - 1, 2 * r + 2, 2 * r + 2);
-      c.fillStyle = fill; c.fillRect(px - r, pz - r, 2 * r, 2 * r);
-      if (ring) { const o = r + Math.max(4, s); c.strokeStyle = "#e0b030"; c.lineWidth = Math.max(2, s / 2); c.strokeRect(px - o, pz - o, 2 * o, 2 * o); }
+    c.drawImage(base, 0, 0);
+    // Markers, drawn bigger when the map is shown small so they stay visible.
+    const grow = Math.max(1, 8 / k);
+    const at = (x, z) => [(x - bx0 * 32 + 0.5) * T, (z - bz0 * 32 + 0.5) * T];
+    const ring = (x, y, r) => { c.strokeStyle = "#e0b030"; c.lineWidth = 3 * grow; c.strokeRect(x - r, y - r, 2 * r, 2 * r); };
+    const ball = ([x, z], i, key, hidden) => {
+      const [cx, cy] = at(x, z), r = 5 * grow;
+      c.fillStyle = "#181820"; c.beginPath(); c.arc(cx, cy, r + grow, 0, 2 * Math.PI); c.fill();
+      c.fillStyle = hidden ? "#e0b030" : "#d83820"; c.beginPath(); c.arc(cx, cy, r, Math.PI, 2 * Math.PI); c.fill();
+      c.fillStyle = "#f8f8f0"; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI); c.fill();
+      c.fillStyle = "#181820"; c.fillRect(cx - r, cy - grow / 2, 2 * r, grow);
+      c.fillStyle = "#f8f8f0"; c.fillRect(cx - 1.5 * grow, cy - 1.5 * grow, 3 * grow, 3 * grow);
+      if (highlight === key + i) ring(cx, cy, r + 6 * grow);
     };
-    const r = Math.max(2, s);
-    for (const [x, z] of m.warps || []) dot(x, z, "#f8f8f0", r - 1);
-    (m.trainers || []).forEach(([x, z], i) => dot(x, z, "#585868", r, highlight === "t" + i));
-    (m.hidden || []).forEach(([x, z], i) => dot(x, z, "#e0b030", r, highlight === "h" + i));
-    (m.items || []).forEach(([x, z], i) => dot(x, z, "#d83820", r, highlight === "i" + i));
+    for (const [x, z] of m.warps || []) {
+      const [cx, cy] = at(x, z), r = 3 * grow;
+      c.strokeStyle = "#f8f8f0"; c.lineWidth = 2 * grow; c.strokeRect(cx - r, cy - r, 2 * r, 2 * r);
+    }
+    (m.trainers || []).forEach(([x, z], i) => {
+      const [cx, cy] = at(x, z), r = 5 * grow;
+      c.fillStyle = "#181820"; c.fillRect(cx - r - grow, cy - r - grow, 2 * r + 2 * grow, 2 * r + 2 * grow);
+      c.fillStyle = "#585868"; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+      c.fillStyle = "#f8f8f0"; c.fillRect(cx - r / 2, cy - r / 2, r, r);
+      if (highlight === "t" + i) ring(cx, cy, r + 6 * grow);
+    });
+    (m.hidden || []).forEach((it, i) => ball(it, i, "h", true));
+    (m.items || []).forEach((it, i) => ball(it, i, "i", false));
+    if (highlight && box) {
+      const list = { i: m.items, h: m.hidden, t: m.trainers }[highlight[0]], it = list && list[+highlight.slice(1)];
+      if (it) {
+        const [cx, cy] = at(it[0], it[1]);
+        box.scrollTo({ left: cx / T * canvas.geo.k - box.clientWidth / 2, top: cy / T * canvas.geo.k - box.clientHeight / 2, behavior: "smooth" });
+        followPause = Date.now() + 4000;
+      }
+    }
     return true;
   }
 
@@ -380,6 +545,7 @@ const Guide = (() => {
       const dot = node("div", "me");
       dot.hidden = true;
       box.append(canvas, dot);
+      for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
       const legend = node("div", "legend");
       for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#585868", "trainer"], ["#f8f8f0", "door"]]) {
         const k = node("span", "key", label);
