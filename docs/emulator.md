@@ -6,7 +6,10 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
 - **DS core defaults to DeSmuME.** An early melonDS test showed "A communication error has occurred" on
   Continue, back when saves were injected mid-game. Retested 2026-10-24 with a dummy ROM that reads and writes
   the save chip through the HGSS IR passthrough: melonDS reads a save put in place before boot, writes it,
-  and keeps it across reloads, same as DeSmuME. Not yet confirmed with the real game. A **DS CORE** picker in the GAMES box
+  and keeps it across reloads, same as DeSmuME. **But with Kenny's real HeartGold it still fails** (2026-10-24):
+  fresh save in melonDS, Exit after the save had synced, reopen, Continue → communication error. So it isn't
+  the save file plumbing or Exit timing; the libretro melonDS core's save/IR code matches upstream, cause unknown.
+  The core note on the main page says HGSS saves don't load in melonDS. A **DS CORE** picker in the GAMES box
   (back at Kenny's request, 2026-10-24) stores the choice in localStorage `pp_nds_core` (default `desmume`).
   Choosing melonDS shows a short note to switch back if Continue fails. The Speed button's frameskip and the
   advanced-timing option apply only to DeSmuME. The guide and Exp. Share find DS RAM through the ROM header
