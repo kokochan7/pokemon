@@ -24,7 +24,8 @@ Code: `js/savesync.js` (front end), `functions/api/save.js` (server).
 - Server keeps the previous version on every overwrite in the slot's backups folder (last 20).
 - `SaveSync.started()` checks `getSaveFilePath()` matches the expected path and pauses sync if not.
 - While the game runs, every 2s the page makes the core flush its save to the file
-  (`getSaveFile(true)` = `cmd_savefiles`) and hashes it. A change is uploaded once it is the same on two
+  (`gameManager.functions.saveSaveFiles()` = `cmd_savefiles`, then `getSaveFile(false)`, which reads it once;
+  `getSaveFile(true)` would read it twice) and hashes it. A change is uploaded once it is the same on two
   checks in a row (the game writes a save over a few seconds), so an in-game save reaches the cloud in
   about 2 to 4 seconds. Tab hide and "Exit" flush and upload at once.
 - Save states are not synced (core-specific, browser-only).

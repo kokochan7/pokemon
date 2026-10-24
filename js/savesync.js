@@ -206,8 +206,13 @@ const SaveSync = (() => {
     if (!g || !g.FS) return;
     busy = true;
     try {
+      // getSaveFile(true) would read the whole file twice (once for an event nobody here listens to),
+      // so ask the core to write its save, then read it once.
       let bytes = null;
-      try { bytes = g.getSaveFile(flush); } catch {}
+      try {
+        if (flush && g.functions && g.functions.saveSaveFiles) g.functions.saveSaveFiles();
+        bytes = g.getSaveFile(flush && !(g.functions && g.functions.saveSaveFiles));
+      } catch {}
       const raw = toRaw(bytes);
       if (!raw || !raw.length) return;
       const h = await sha(raw);

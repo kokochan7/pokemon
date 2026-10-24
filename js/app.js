@@ -97,13 +97,15 @@ async function launch(name, blob, core, label) {
     ExpShare.started();
     pinMenuBar();
     addSpeedButton();
+    if (emuCore === "desmume") window.EJS_emulator.changeSettingOption("desmume_advanced_timing", "disabled");
   };
   // The emulator's Restart is a bare core reset that skips saving and can leave DS games
   // unable to read their save ("A communication error has occurred"). Use ← Library instead.
   window.EJS_Buttons = { restart: false };
   // Let EmulatorJS write the in-game save to its file every 30s (its own supported path);
-  // the cloud sync just reads that file.
-  window.EJS_defaultOptions = { "save-save-interval": "30" };
+  // the cloud sync just reads that file. DeSmuME's advanced bus-level timing costs speed that
+  // HGSS doesn't need (also forced at game start, in case an older setting was remembered).
+  window.EJS_defaultOptions = { "save-save-interval": "30", "desmume_advanced_timing": "disabled" };
 
   const s = document.createElement("script");
   s.src = DATA_PATH + "loader.js";
@@ -143,9 +145,10 @@ function tuneRetroArch() {
 // Added by hand because custom EJS_Buttons are rejected in EmulatorJS 4.2.3. It drives
 // EmulatorJS's own fast-forward settings, so Settings > Speed Options stay in step.
 // The ratio is only a cap: DeSmuME in the browser has no JIT, so the CPU sets the real top
-// speed. Skipping the drawing of most frames (FRAMESKIP) leaves more of it for the game.
+// speed. Skipping the drawing of most frames (FRAMESKIP) leaves more of it for the game:
+// at 2x only 1 frame in 3 is drawn (40 a second), which still looks smooth.
 const SPEEDS = [1, 2];
-const FRAMESKIP = { 1: "0", 2: "1" };
+const FRAMESKIP = { 1: "0", 2: "2" };
 let speedIdx = 0;
 function addSpeedButton() {
   const emu = window.EJS_emulator, bar = emu && emu.elements && emu.elements.menu;
