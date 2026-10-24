@@ -11,7 +11,8 @@ const Guide = (() => {
   const RAM_SIZE = 0x400000, HEADER_IN_RAM = 0x3FFE00; // boot copies the ROM header to 0x027FFE00
   const SPRITE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iv/heartgold-soulsilver/";
   const ITEM_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/";
-  const METHODS = { surf: "Surfing", rock: "Rock Smash", oldrod: "Old Rod", goodrod: "Good Rod", superrod: "Super Rod" };
+  const METHODS = { surf: "Surfing", rock: "Rock Smash" };
+  const RODS = ["oldrod", "goodrod", "superrod"];
   let ver = null, header = null, data = null, tiles = {}, shown = null, timer = null, scans = 0, tod = null, story = null, storyBase = null;
   const el = () => $("guide");
   const wide = matchMedia("(min-width: 1300px)");
@@ -633,7 +634,15 @@ const Guide = (() => {
         side.append(node("div", "method", "Grass"), tabs, monList(enc["grass_" + t]));
       }
       for (const k in METHODS) if (enc[k]) side.append(node("div", "method", METHODS[k]), monList(enc[k]));
+      // Old, Good and Super Rod in one list: each Pokémon once, with its level range over all rods.
+      const fish = new Map();
+      for (const k of RODS) for (const [dex, name, lo, hi] of enc[k] || []) {
+        const f = fish.get(dex);
+        fish.set(dex, f ? [dex, name, Math.min(f[2], lo), Math.max(f[3], hi)] : [dex, name, lo, hi]);
+      }
+      if (fish.size) side.append(node("div", "method", "Fishing"), monList([...fish.values()]));
     }
+    if (story != null) side.append(...Story.catches(heap(), storyBase, SPRITE));
 
     // Hover or tap a row to ring its spot on the mini map.
     const spot = (li, key) => {
@@ -693,7 +702,7 @@ const Guide = (() => {
     const a = node("a", null, "More on Bulbapedia");
     a.href = "https://bulbapedia.bulbagarden.net/w/index.php?search=" + encodeURIComponent(m.name);
     a.target = "_blank"; a.rel = "noopener";
-    src.append(a, node("div", null, "Map " + id + " · " + debug));
+    src.append(a);
     main.append(src);
   }
 

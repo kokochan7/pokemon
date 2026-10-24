@@ -87,7 +87,7 @@ const Story = (() => {
   }
 
   // The NEXT section, all at a glance: the step's to-do bullets (ticked from the save data), the
-  // boss teams with type and weakness icons, and what to catch nearby.
+  // boss teams with type and weakness icons. What to catch goes in the right panel (catches()).
   function nodes(h, base, sprite) {
     if (!steps) return [];
     const i = current(h, base), s = steps[i];
@@ -115,24 +115,26 @@ const Story = (() => {
       for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
       box.append(div);
     }
-    if (s.catch) {
-      const c = el("div", "catch");
-      c.append(el("div", "method", "Catch"));
-      const grid = el("ul", "cgrid");
-      for (const [who, where] of s.catch) {
-        const name = pick(who), li = el("li"), img = el("img");
-        img.src = sprite + bosses.dex[name] + ".png"; img.alt = ""; img.loading = "lazy";
-        img.onerror = () => { img.style.visibility = "hidden"; };
-        const t = el("span");
-        t.append(el("b", null, name), el("span", "where", where));
-        li.append(img, t);
-        grid.append(li);
-      }
-      c.append(grid);
-      box.append(c);
-    }
     return [el("h3", null, "NEXT"), box];
   }
 
-  return { load, key, nodes };
+  // CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
+  function catches(h, base, sprite) {
+    if (!steps) return [];
+    const s = steps[current(h, base)];
+    if (!s.catch) return [];
+    const grid = el("ul", "cgrid");
+    for (const [who, where] of s.catch) {
+      const name = pick(who), li = el("li"), img = el("img");
+      img.src = sprite + bosses.dex[name] + ".png"; img.alt = ""; img.loading = "lazy";
+      img.onerror = () => { img.style.visibility = "hidden"; };
+      const t = el("span");
+      t.append(el("b", null, name), el("span", "where", where));
+      li.append(img, t);
+      grid.append(li);
+    }
+    return [el("h3", null, "CATCH"), grid];
+  }
+
+  return { load, key, nodes, catches };
 })();
