@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Pokémon Player</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1d2026;
+    --line: #2d323b;
+    --text: #e8eaee;
+    --muted: #8b93a1;
+    --accent: #e3350d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body.playing { overflow: hidden; }
+  main { max-width: 720px; margin: 0 auto; padding: 40px 20px 60px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+
+  #drop {
+    border: 2px dashed var(--line); border-radius: 14px; background: var(--panel);
+    padding: 44px 20px; text-align: center; cursor: pointer; transition: .15s;
+  }
+  #drop:hover, #drop.over { border-color: var(--accent); background: #22262d; }
+  #drop strong { display: block; font-size: 17px; margin-bottom: 4px; }
+  #drop span { color: var(--muted); font-size: 13px; }
+
+  .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 16px 0 0; color: var(--muted); font-size: 14px; }
+  select, button {
+    font: inherit; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+  #err { color: #ff8a80; margin-top: 14px; min-height: 1.4em; font-size: 14px; }
+
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 36px 0 10px; }
+  #lib { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  #lib li {
+    display: flex; align-items: center; gap: 12px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+  }
+  #lib .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #lib .meta { color: var(--muted); font-size: 12px; }
+  #empty { color: var(--muted); font-size: 14px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 36px; line-height: 1.6; }
+  .tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 6px; }
+  .tips b { color: var(--text); font-weight: 600; }
+  #lib li { border-left: 4px solid var(--tint, var(--line)); }
+
+  #player { height: 100vh; display: flex; flex-direction: column; }
+  #player[hidden], #menu[hidden] { display: none; }
+  .bar { display: flex; gap: 14px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .bar .t { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .screen { flex: 1; min-height: 0; display: flex; justify-content: center; background: #000; }
+  .screen > div { width: 100%; max-width: 1100px; height: 100%; }
+</style>
+</head>
+<body>
+
+<main id="menu">
+  <h1>My Pokémon Player</h1>
+  <p class="sub">Bring your own ROM. Files stay in your browser and are never uploaded anywhere.</p>
+
+  <div id="drop" tabindex="0">
+    <strong>Drop your Pokémon ROM here, or click to choose</strong>
+    <span>HeartGold / SoulSilver (.nds). A .zip works too, just pick the system below first.</span>
+    <input id="file" type="file" accept=".gb,.gbc,.gba,.nds,.zip" hidden>
+  </div>
+
+  <div class="row">
+    <label>System
+      <select id="sys">
+        <option value="auto">Auto-detect</option>
+        <option value="gb">Game Boy / Color</option>
+        <option value="gba">Game Boy Advance</option>
+        <option value="nds">Nintendo DS</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="remember" checked> Keep in library on this device</label>
+  </div>
+  <div id="err" role="alert"></div>
+
+  <h2>Library</h2>
+  <ul id="lib"></ul>
+  <div id="empty" hidden>Nothing saved yet. ROMs you load will show up here.</div>
+
+  <h2>HeartGold / SoulSilver tips</h2>
+  <ul class="tips">
+    <li><b>Touch screen:</b> the bottom screen is your stylus. Click it with the mouse (or tap on a touch device) for the Pokégear, Pokétch, Pokéathlon and menus.</li>
+    <li><b>Controls:</b> open the emulator's control settings from its menu bar to see or remap the keyboard bindings.</li>
+    <li><b>Saving:</b> save in-game from the Start menu as usual. Save states and the emulator's save-file download are there too, so grab a backup now and then.</li>
+    <li><b>Won't work:</b> the Pokéwalker (needs infrared hardware) and anything over Wi-Fi, including the GTS and wireless trading.</li>
+    <li><b>Slow?</b> DS is the most demanding system here. Close other tabs and keep the window from being resized mid-game.</li>
+  </ul>
+
+  <p class="foot">
+    Saves live in this browser. Use the same address (same host and port) each time or they will look like
+    they disappeared, and clearing site data erases them.
+  </p>
+</main>
+
+<section id="player" hidden>
+  <div class="bar">
+    <button id="back">&larr; Library</button>
+    <span class="t" id="title"></span>
+  </div>
+  <div class="screen"><div id="game"></div></div>
+</section>
+
+<script>
+  const DATA_PATH = "https://cdn.emulatorjs.org/stable/data/";
+  const CORES = { gb: "gb", gbc: "gb", gba: "gba", nds: "nds" };
+  const LABEL = { gb: "Game Boy / Color", gba: "Game Boy Advance", nds: "Nintendo DS" };
+
+  // The first 3 letters of an NDS game code (4 bytes at offset 0x0C of the ROM header)
+  // identify the game; the 4th is the region. Add more Pokémon games here as you go.
+  const NDS_GAMES = {
+    IPK: { title: "Pokémon HeartGold", tint: "#d4a017" },
+    IPG: { title: "Pokémon SoulSilver", tint: "#aab4c4" },
+    ADA: { title: "Pokémon Diamond", tint: "#7aa7e0" },
+    APA: { title: "Pokémon Pearl", tint: "#e0a0c0" },
+    CPU: { title: "Pokémon Platinum", tint: "#9a9a9a" },
+  };
+  const REGION = { E: "USA", J: "Japan", P: "Europe", D: "Germany", F: "France", I: "Italy", S: "Spain", K: "Korea" };
+
+  async function identify(file) {
+    if (!/\.nds$/i.test(file.name)) return null;
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const code = String.fromCharCode(...bytes.slice(12, 16));
+    const g = NDS_GAMES[code.slice(0, 3)];
+    return g ? { title: g.title, tint: g.tint, region: REGION[code[3]] || "" } : null;
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const menu = $("menu"), player = $("player"), err = $("err");
+
+  /* ---------- tiny IndexedDB library ---------- */
+  const DB = "rom-library", STORE = "roms";
+  function openDb() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function dbDo(mode, fn) {
+    const db = await openDb();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE, mode);
+      const req = fn(t.objectStore(STORE));
+      t.oncomplete = () => res(req && req.result);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  const dbAll = () => dbDo("readonly", (s) => s.getAll());
+  const dbGet = (id) => dbDo("readonly", (s) => s.get(id));
+  const dbPut = (rec) => dbDo("readwrite", (s) => s.put(rec));
+  const dbDel = (id) => dbDo("readwrite", (s) => s.delete(id));
+
+  /* ---------- helpers ---------- */
+  function detectCore(name, override) {
+    if (override && override !== "auto") return override;
+    const ext = name.split(".").pop().toLowerCase();
+    return CORES[ext] || null;
+  }
+  const fmtSize = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+
+  /* ---------- launch ---------- */
+  function launch(name, blob, core, label) {
+    document.body.classList.add("playing");
+    menu.hidden = true;
+    player.hidden = false;
+    $("title").textContent = label || name;
+
+    window.EJS_player = "#game";
+    window.EJS_core = core;
+    window.EJS_gameName = name.replace(/\.[^.]+$/, "");
+    window.EJS_gameUrl = new Blob([blob]);
+    window.EJS_pathtodata = DATA_PATH;
+    window.EJS_startOnLoaded = true;
+    window.EJS_color = "#e3350d";
+
+    const s = document.createElement("script");
+    s.src = DATA_PATH + "loader.js";
+    s.onerror = () => {
+      player.hidden = true; menu.hidden = false;
+      document.body.classList.remove("playing");
+      err.textContent = "Couldn't load the emulator from the CDN. Check your internet connection.";
+    };
+    document.body.appendChild(s);
+  }
+
+  // The emulator can't be cleanly torn down, so going back is a page reload.
+  $("back").onclick = () => location.reload();
+
+  /* ---------- picking a file ---------- */
+  async function handleFile(file) {
+    err.textContent = "";
+    if (!file) return;
+    const core = detectCore(file.name, $("sys").value);
+    if (!core) {
+      err.textContent = "Can't tell which system that is. Choose a System above, then load it again.";
+      return;
+    }
+    const game = await identify(file);
+    const label = game ? game.title + (game.region ? " (" + game.region + ")" : "") : file.name;
+    if ($("remember").checked) {
+      try { await dbPut({ name: file.name, core, size: file.size, added: Date.now(), blob: file, game }); }
+      catch (e) { console.warn("Could not save to library:", e); }
+    }
+    launch(file.name, file, core, label);
+  }
+
+  const drop = $("drop"), input = $("file");
+  drop.onclick = () => input.click();
+  drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } };
+  input.onchange = () => handleFile(input.files[0]);
+  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => handleFile(e.dataTransfer.files[0]));
+
+  /* ---------- library list ---------- */
+  async function renderLibrary() {
+    const ul = $("lib");
+    ul.innerHTML = "";
+    let items = [];
+    try { items = await dbAll(); } catch (e) { console.warn(e); }
+    items.sort((a, b) => b.added - a.added);
+    $("empty").hidden = items.length > 0;
+
+    for (const it of items) {
+      const li = document.createElement("li");
+
+      const g = it.game;
+      const label = g ? g.title + (g.region ? " (" + g.region + ")" : "") : it.name;
+      if (g) li.style.setProperty("--tint", g.tint);
+
+      const info = document.createElement("div");
+      info.className = "name";
+      info.textContent = label;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = (g ? it.name + " \u00b7 " : "") + (LABEL[it.core] || it.core) + " \u00b7 " + fmtSize(it.size);
+      info.appendChild(meta);
+
+      const play = document.createElement("button");
+      play.className = "primary";
+      play.textContent = "Play";
+      play.onclick = async () => {
+        const rec = await dbGet(it.id);
+        if (rec) launch(rec.name, rec.blob, rec.core, label);
+      };
+
+      const del = document.createElement("button");
+      del.textContent = "Remove";
+      del.title = "Removes the ROM from the library. Your save data is kept.";
+      del.onclick = async () => { await dbDel(it.id); renderLibrary(); };
+
+      li.append(info, play, del);
+      ul.appendChild(li);
+    }
+  }
+  renderLibrary();
+</script>
+</body>
+</html>

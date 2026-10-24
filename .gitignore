@@ -1,0 +1,8 @@
+# Never commit ROMs or save files
+*.nds
+*.gba
+*.gb
+*.gbc
+*.zip
+*.sav
+*.state
