@@ -1,4 +1,4 @@
-# Pokémon Player
+# Kenny's Pokémon Player
 
 Kenny's personal, bring-your-own-ROM Pokémon emulator site. One static page plus a few
 Cloudflare Pages Functions. Currently focused on Gen 4 DS (HeartGold / SoulSilver).
@@ -47,6 +47,7 @@ Cloudflare config (dashboard, not in the repo):
 - Game rows show only the color tag, the title and the buttons. No file name or size subtitle.
 
 Gen 2 (Gold/Silver/Crystal) Game Boy Color look. No instructional copy on the page, keep labels terse.
+- Logo reads KENNY'S / POKéMON / PLAYER; the tab title is "Kenny's Pokémon Player".
 - Fonts: Press Start 2P (UI) and VT323 (secondary text), from Google Fonts.
 - White double-bordered "text boxes" (`.box`), section tabs (GAMES / STORED), ▶ cursor on
   button hover/focus.
@@ -74,7 +75,7 @@ Gen 2 (Gold/Silver/Crystal) Game Boy Color look. No instructional copy on the pa
   The ratio is only a cap: DeSmuME in wasm is interpreter-only, so the CPU limits real speed. 2x also
   sets `desmume_frameskip` to 1 so less time goes to drawing. A 5x step was tried and removed: on
   Kenny's PC it felt no faster than 2x.
-  It's inserted by hand because custom `EJS_Buttons` entries are rejected in 4.2.3. Every game boots at 1x.
+  It's inserted by hand because custom `EJS_Buttons` entries are rejected in 4.2.3. Every game boots at 2x.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 
 ## Save sync (DS games)

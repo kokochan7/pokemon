@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pokémon Player</title>
+<title>Kenny's Pokémon Player</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -209,7 +209,7 @@
 
 <main id="menu">
   <header class="title">
-    <div class="logo"><span class="l1">POKéMON</span><span class="l2">PLAYER</span></div>
+    <div class="logo"><span class="l2">KENNY'S</span><span class="l1">POKéMON</span><span class="l2">PLAYER</span></div>
     <div><span class="clock" id="clock"></span></div>
   </header>
 
@@ -393,7 +393,7 @@
       '<span class="ejs_menu_text">Speed</span>';
     btn.onclick = () => setSpeed(speedIdx + 1);
     bar.insertBefore(btn, bar.querySelector(".ejs_menu_bar_spacer"));
-    setSpeed(0); // EmulatorJS remembers fast-forward per game; always boot at 1x
+    setSpeed(1); // EmulatorJS remembers fast-forward per game; always boot at 2x
   }
   function setSpeed(i) {
     const emu = window.EJS_emulator;

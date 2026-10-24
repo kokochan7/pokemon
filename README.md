@@ -1,4 +1,4 @@
-# Pokémon Player
+# Kenny's Pokémon Player
 
 A single-page, bring-your-own-ROM player for Pokémon games, built on [EmulatorJS](https://emulatorjs.org).
 Currently focused on Gen 4 (HeartGold / SoulSilver), with Diamond, Pearl and Platinum also recognized.
