@@ -233,9 +233,23 @@ body.playing #scene { display: none; }
 @keyframes me-blink { 50% { opacity: .35; } }
 .guide .minimap { display: block; margin: 0 auto; border: 3px solid var(--ink); }
 .guide .legend { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-top: 2px; font-size: 11px; color: #585868; }
-.guide .key::before {
-  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px;
-  background: var(--c); box-shadow: 0 0 0 1px var(--ink);
+.guide .key { display: inline-flex; align-items: center; }
+.guide .key::before { content: ""; display: inline-block; flex: none; width: 10px; height: 10px; margin-right: 4px; box-sizing: border-box; }
+/* the map's markers: blue dot, Poké Ball, gold ball, purple square, purple square with a tick */
+.guide .key.you::before { border-radius: 50%; background: #3870e8; box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 3px #181820; margin: 0 6px 0 3px; }
+.guide .key.item::before, .guide .key.hidden::before {
+  border-radius: 50%; border: 1px solid #181820;
+  background: radial-gradient(circle, #f8f8f0 0 1.5px, #181820 1.5px 2.5px, transparent 2.5px),
+    linear-gradient(var(--c) 0 42%, #181820 42% 58%, #f8f8f0 58%);
+}
+.guide .key.item::before { --c: #d83820; }
+.guide .key.hidden::before { --c: #e0b030; }
+.guide .key.trainer::before, .guide .key.beaten::before {
+  background: linear-gradient(#f8f8f0, #f8f8f0) center / 4px 4px no-repeat, #6040b0;
+  box-shadow: 0 0 0 1px #181820, 0 0 0 2px #f8f8f0; margin: 0 6px 0 2px;
+}
+.guide .key.beaten::before {
+  content: "✓"; font: 900 9px/10px sans-serif; color: #48c058; text-align: center; background: #6040b0; opacity: .8;
 }
 /* exits on the mini map: arrows at the edges, name tags over doors */
 .guide .exit {

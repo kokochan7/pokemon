@@ -221,10 +221,11 @@ const Guide = (() => {
     last = ids;
     const id = ids[pick];
     if (!(id in data) || id <= 1) { cands = []; return; }
-    const t = timeOfDay(), st = Story.key(h, cands[pick]); // story progress from flags, vars and badges
+    const t = timeOfDay(), st = Story.key(h, cands); // story progress from flags, vars and badges
     if (id !== shown) highlight = null;
-    if (id !== shown || t !== tod || st !== story || cands[pick] !== storyBase) {
-      tod = t; story = st; storyBase = cands[pick]; mstate = mapState(data[id]); render(id);
+    // Story and map flags are read from every match (see Story), not just the one picked for the map id.
+    if (id !== shown || t !== tod || st !== story || cands !== storyBase) {
+      tod = t; story = st; storyBase = cands; mstate = mapState(data[id]); render(id);
     } else if (mapState(data[id]) !== mstate) { mstate = mapState(data[id]); render(id); } // item taken, trainer beaten
   }
 
@@ -671,11 +672,8 @@ const Guide = (() => {
         box.append(c, dot);
         for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
         const legend = node("div", "legend");
-        for (const [color, label] of [["#3870e8", "you"], ["#d83820", "item"], ["#e0b030", "hidden"], ["#6040b0", "trainer"]]) {
-          const k = node("span", "key", label);
-          k.style.setProperty("--c", color);
-          legend.append(k);
-        }
+        // Each key is a small CSS copy of the marker drawn on the map.
+        for (const label of ["you", "item", "hidden", "trainer", "beaten"]) legend.append(node("span", "key " + label, label));
         mapWrap = node("div", "mapwrap");
         mapWrap.append(box, legend);
         mapWrap.canvas = c;

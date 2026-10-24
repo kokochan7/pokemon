@@ -18,8 +18,11 @@ const Story = (() => {
     } catch { steps = null; }
   }
 
-  const flag = (h, base, n) => n > 0 && (h[base + FLAGS + (n >> 3)] >> (n & 7) & 1) === 1;
-  const getVar = (h, base, id) => h[base + VARS + (id - 0x4000) * 2] | h[base + VARS + (id - 0x4000) * 2 + 1] << 8;
+  // `base` can be a list of every copy of the general block found in RAM: besides the live one, the game
+  // keeps a buffer it fills only when you save. Flags only ever get set and story vars only go up, so
+  // a flag counts if any copy has it and a var is the highest of the copies.
+  const flag = (h, base, n) => n > 0 && [].concat(base).some((b) => (h[b + FLAGS + (n >> 3)] >> (n & 7) & 1) === 1);
+  const getVar = (h, base, id) => Math.max(...[].concat(base).map((b) => h[b + VARS + (id - 0x4000) * 2] | h[b + VARS + (id - 0x4000) * 2 + 1] << 8));
 
   // "f:0x6A|t:20&b:0": | is any, & is all. An empty condition is never true.
   function test(h, base, cond) {
@@ -28,7 +31,7 @@ const Story = (() => {
       const [k, x] = [c[0], c.slice(2)];
       if (k === "f") return flag(h, base, Number(x));
       if (k === "t") return flag(h, base, TRAINER_FLAGS + Number(x));
-      if (k === "b" || k === "k") return (h[base + BADGES[k === "k" ? 1 : 0]] >> Number(x) & 1) === 1;
+      if (k === "b" || k === "k") return [].concat(base).some((b) => (h[b + BADGES[k === "k" ? 1 : 0]] >> Number(x) & 1) === 1);
       if (k === "v") { const [id, min] = x.split(">="); return getVar(h, base, parseInt(id, 16)) >= Number(min); }
       return false;
     }));
