@@ -1,9 +1,6 @@
 // Checks js/expshare.js against a fake DS RAM made of dummy bytes (no ROM needed): node tools/test_expshare.js
 const fs = require("fs");
 const src = fs.readFileSync(require("path").join(__dirname, "../js/expshare.js"), "utf8");
-const store = {}; const btn = { hidden: true, textContent: "", title: "" };
-global.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } };
-global.$ = () => btn;
 const heap = new Uint8Array(0x1000000);
 global.window = { EJS_emulator: { gameManager: { Module: { HEAPU8: heap } } } };
 const ExpShare = new Function(src + "\nreturn ExpShare;")();
@@ -26,14 +23,13 @@ const dump = (shift) => sites.map(([a, c]) => c.map((_, i) => r16(a + shift + i 
 const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer }) });
 (async () => {
   await ExpShare.prepare(romBlob());
-  console.log("button:", btn.hidden, btn.textContent);
   load(0);
   // drive tick via started's interval: call setInterval manually
   let fn; global.setInterval = (f) => { fn = f; }; ExpShare.started();
   for (let i = 0; i < 12; i++) fn();
-  console.log("patched US:\n" + dump(0), "\n", btn.title);
-  btn.onclick(); console.log("after off:\n" + dump(0), btn.textContent);
-  btn.onclick(); console.log("on again:\n" + dump(0).split("\n")[0]);
+  console.log("patched US:\n" + dump(0));
+  for (let i = 0; i < 12; i++) fn();
+  console.log("still patched, written once:", dump(0).split("\n")[0]);
   // a different overlay in that memory: nothing written
   heap.fill(0x55, base + 0x200000, base + 0x280000); const before = Buffer.from(heap.slice(base + 0x200000, base + 0x280000));
   for (let i = 0; i < 12; i++) fn();

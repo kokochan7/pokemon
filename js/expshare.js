@@ -1,7 +1,7 @@
 /* ---------- always-on Exp. Share (HeartGold / SoulSilver) ---------- */
 // After each knockout every Pokémon in the party (not eggs, not fainted) gets the full EXP. Only
 // the Pokémon on the field gets the "gained X Exp. Points!" message; benched ones only show their
-// level-ups. Nothing in the ROM or save changes:
+// level-ups. Always on, with no button (Kenny's choice). Nothing in the ROM or save changes:
 // while a battle is loaded, a few instructions of the battle code (overlay 12) are patched in
 // DS RAM, the same way an Action Replay code works. The overlay is reloaded for every battle,
 // so the patch is re-applied each time. Addresses and bytes come from pret/pokeheartgold (US);
@@ -63,26 +63,11 @@ const ExpShare = (() => {
   ];
   const SEARCH = [0x02200000, 0x02280000]; // where overlay 12 can sit if it isn't at the US address
 
-  let header = null, bases = [], scans = 0, shift = 0, saved = null, patchedAt = -1, status = "";
-
-  function on() { try { return localStorage.getItem("pp_expshare") !== "off"; } catch { return true; } }
-  function label() {
-    $("expBtn").textContent = "Exp. Share: " + (on() ? "On" : "Off");
-    $("expBtn").title = on() ? status : "Only the Pokémon that fought get EXP (the game's normal rule).";
-  }
+  let header = null, bases = [], scans = 0, shift = 0, logged = false;
 
   async function prepare(blob) {
     const h = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
-    if (!GAMES.includes(String.fromCharCode(...h.slice(12, 15)))) return;
-    header = h;
-    status = "On. Waiting for the first battle.";
-    $("expBtn").hidden = false;
-    $("expBtn").onclick = () => {
-      try { localStorage.setItem("pp_expshare", on() ? "off" : "on"); } catch {}
-      tick();
-      label();
-    };
-    label();
+    if (GAMES.includes(String.fromCharCode(...h.slice(12, 15)))) header = h;
   }
 
   function started() {
@@ -137,13 +122,10 @@ const ExpShare = (() => {
     return false;
   }
 
-  function write(h, b, patched) {
-    if (patched) saved = [];
-    SITES.forEach((s, n) => s.code.forEach((_, i) => {
-      if (s.patch[i] == null) return;
+  function write(h, b) {
+    SITES.forEach((s) => s.patch.forEach((v, i) => {
+      if (v == null) return;
       const o = b + s.at + shift + i * 2 - 0x02000000;
-      if (patched) saved.push(h[o] | h[o + 1] << 8);
-      const v = patched ? s.patch[i] : saved.shift();
       h[o] = v & 0xff; h[o + 1] = v >> 8;
     }));
   }
@@ -157,16 +139,9 @@ const ExpShare = (() => {
       if (!bases.length) return;
     }
     for (const b of bases) {
-      if (!all(h, b, false) && !all(h, b, true) && !(scans++ % 4 === 0 && search(h, b))) continue;
-      if (on() && all(h, b, false)) {
-        write(h, b, true);
-        patchedAt = b;
-        status = "On: working in this battle.";
-        label();
-      } else if (!on() && b === patchedAt && saved && all(h, b, true)) {
-        write(h, b, false);
-        patchedAt = -1;
-      }
+      if (!all(h, b, false) && !(scans++ % 4 === 0 && search(h, b))) continue;
+      write(h, b);
+      if (!logged) { logged = true; console.info("Exp. Share: battle code patched"); }
       return;
     }
   }
