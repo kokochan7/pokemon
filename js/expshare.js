@@ -1,7 +1,7 @@
 /* ---------- always-on Exp. Share (HeartGold / SoulSilver) ---------- */
-// After each knockout every Pokémon in the party (not eggs, not fainted) gets the full EXP. Only
-// the Pokémon on the field gets the "gained X Exp. Points!" message; benched ones only show their
-// level-ups. Always on, with no button (Kenny's choice). Nothing in the ROM or save changes:
+// After each knockout the Pokémon that fought get the full EXP and the rest of the party (not eggs,
+// not fainted) gets 75% of it (Kenny's choice). Only the Pokémon on the field gets the "gained X
+// Exp. Points!" message; benched ones only show their level-ups. Always on, with no button (Kenny's choice). Nothing in the ROM or save changes:
 // while a battle is loaded, a few instructions of the battle code (overlay 12) are patched in
 // DS RAM, the same way an Action Replay code works. The overlay is reloaded for every battle,
 // so the patch is re-applied each time. Addresses and bytes come from pret/pokeheartgold (US);
@@ -15,13 +15,14 @@ const ExpShare = (() => {
   // write (null = leave alone). Offsets from the first site are fixed, so on a version where
   // the overlay sits elsewhere the first site is searched for and the rest follow it.
   const SITES = [
-    { // BtlCmd_CalcExpGain: always take the "Exp. Share held" branch, with the full EXP instead of
-      // EXP / 2 (lsr r4, r0, #1 -> adds r4, r0, #0) and no dividing by the number of fighters.
+    { // BtlCmd_CalcExpGain: always take the "Exp. Share held" branch, and split the EXP as
+      // gainedExp = EXP / 4 (fighters only) and partyGainedExp = EXP - EXP / 4 (everyone), with no
+      // dividing by the number of fighters: lsrs r1, r0, #2; subs r4, r0, r1; adds r0, r1, #0.
       at: 0x0223e796,
       code:  [0x0400, 0x9900, 0x0c00, 0x2900, 0xd020, 0x0844, 0x9901, 0x1c20, BL, BL, 0x1c29, 0x319c, 0x6008],
-      patch: [null, null, null, null, NOP, 0x1c04, null, null, NOP, NOP, null, null, null],
+      patch: [null, null, null, null, NOP, 0x0881, 0x1a44, 0x1c08, NOP, NOP, null, null, null],
     },
-    { // the second division, EXP / holders: partyGainedExp = EXP
+    { // the second division, (EXP - EXP / 4) / holders: partyGainedExp = EXP - EXP / 4
       at: 0x0223e7c2,
       code:  [0x9900, 0x1c20, BL, BL, 0x1c29, 0x31a0, 0x6008],
       patch: [null, null, NOP, NOP, null, null, null],
@@ -43,11 +44,11 @@ const ExpShare = (() => {
       code:  [0x2106, 0x2200, 0x1c06, BL, BL, 0x0400, 0x0c00, 0x2101, 0x2205, BL, BL, 0x2833, 0xd011],
       patch: [0x214c, null, null, null, null, null, null, null, null, NOP, NOP, 0x2800, null],
     },
-    { // Task_GetExp, adding up the EXP: skip the fighters' gainedExp (beq -> b) and make "holds an
-      // Exp. Share" always true (cmp r0, r0), so everyone gets partyGainedExp = the full EXP.
+    { // Task_GetExp, adding up the EXP: "holds an Exp. Share" is always true (cmp r0, r0), so a fighter
+      // gets gainedExp + partyGainedExp = the full EXP and everyone else partyGainedExp = 75%.
       at: 0x02245a48,
       code:  [0x4208, 0xd003, 0x9809, 0x309c, 0x6800, 0x900e, 0x9806, 0x2833, 0xd106, 0x9809, 0x30a0],
-      patch: [null, 0xe003, null, null, null, null, null, 0x4280, null, null, null],
+      patch: [null, null, null, null, null, null, null, 0x4280, null, null, null],
     },
     { // Task_GetExp, before printing the message: bl to the routine at 0x0223E7E2 instead of
       // "ldr r0, [sp, #0x38]; cmp r0, #0"; the beq after it goes to the code that stores r0 as the state.
