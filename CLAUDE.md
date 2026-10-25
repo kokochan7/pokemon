@@ -27,7 +27,7 @@ js/app.js           Constants (NDS_GAMES, CORES), IndexedDB helpers, launch(), m
 js/savesync.js      SaveSync: per-device cloud save backup for DS games
 js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM flags/vars
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
-js/expshare.js      ExpShare: always-on Exp. Share (benched get 50%), patches the battle code in DS RAM
+js/expshare.js      ExpShare: always-on Exp. Share (fighter 75%, benched 50%) and +5 trainer levels, patched in DS RAM
 js/library.js       GAMES (cloud) and STORED (local) lists, login, clock; runs the page start-up
 css/style.css       All styles
 scene.svg           Generated background art. Don't read it; regenerate with python3 tools/scene.py
@@ -48,7 +48,7 @@ file is visible in the others. Keep the load order in `index.html`.
 - `docs/emulator.md`: EmulatorJS setup, why DeSmuME, menu bar, Speed button. Read before touching `launch()`.
 - `docs/save-sync.md`: save ids, IDBFS paths, .dsv handling, conflict rule, HGSS save layout.
 - `docs/guide-panel.md`: guide layout, RAM scanning, terrain from the ROM, rebuilding hgss.json.
-- `docs/exp-share.md`: the Exp. Share RAM patch (addresses, what each instruction change does).
+- `docs/exp-share.md`: the Exp. Share and trainer-level RAM patches (addresses, what each instruction change does).
 - `docs/testing.md`: wrangler dev server, testing with the real emulator offline, gotchas.
 - `docs/ideas.md`: backlog.
 
