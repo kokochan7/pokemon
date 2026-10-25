@@ -1,10 +1,12 @@
-/* ---------- always-on Exp. Share (HeartGold / SoulSilver) ---------- */
-// After each knockout the Pokémon that fought get the full EXP and the rest of the party (not eggs,
-// not fainted) gets 50% of it (Kenny's choice). Only the Pokémon on the field gets the "gained X
-// Exp. Points!" message; benched ones only show their level-ups. Always on, with no button (Kenny's choice). Nothing in the ROM or save changes:
-// while a battle is loaded, a few instructions of the battle code (overlay 12) are patched in
-// DS RAM, the same way an Action Replay code works. The overlay is reloaded for every battle,
-// so the patch is re-applied each time. Addresses and bytes come from pret/pokeheartgold (US);
+/* ---------- always-on Exp. Share and +5 trainer levels (HeartGold / SoulSilver) ---------- */
+// After each knockout the Pokémon that fought get 75% of the EXP and the rest of the party (not
+// eggs, not fainted) gets 50% (Kenny's choice). Only the Pokémon on the field gets the "gained X
+// Exp. Points!" message; benched ones only show their level-ups. Every trainer's Pokémon are also
+// 5 levels higher than normal. Always on, with no button. Nothing in the ROM or save changes:
+// a few instructions of the game's code are patched in DS RAM, the same way an Action Replay code
+// works. The battle code (overlay 12) is reloaded for every battle, so it is re-patched each time;
+// the trainer party code is in the always-loaded ARM9 code and is patched once (and again after a
+// reset). Addresses and bytes come from pret/pokeheartgold (US);
 // each site is checked byte for byte before writing, so another version or region is left alone.
 // See docs/exp-share.md.
 const ExpShare = (() => {
@@ -16,11 +18,11 @@ const ExpShare = (() => {
   // the overlay sits elsewhere the first site is searched for and the rest follow it.
   const SITES = [
     { // BtlCmd_CalcExpGain: always take the "Exp. Share held" branch, and split the EXP as
-      // gainedExp = EXP / 2 (fighters only) and partyGainedExp = EXP - EXP / 2 (everyone), with no
-      // dividing by the number of fighters: lsrs r1, r0, #1; subs r4, r0, r1; adds r0, r1, #0.
+      // gainedExp = EXP / 4 (fighters only) and partyGainedExp = EXP - EXP / 2 (everyone), with no
+      // dividing by the number of fighters: lsrs r1, r0, #1; subs r4, r0, r1; lsrs r0, r1, #1.
       at: 0x0223e796,
       code:  [0x0400, 0x9900, 0x0c00, 0x2900, 0xd020, 0x0844, 0x9901, 0x1c20, BL, BL, 0x1c29, 0x319c, 0x6008],
-      patch: [null, null, null, null, NOP, 0x0841, 0x1a44, 0x1c08, NOP, NOP, null, null, null],
+      patch: [null, null, null, null, NOP, 0x0841, 0x1a44, 0x0848, NOP, NOP, null, null, null],
     },
     { // the second division, (EXP - EXP / 2) / holders: partyGainedExp = EXP - EXP / 2
       at: 0x0223e7c2,
@@ -45,7 +47,7 @@ const ExpShare = (() => {
       patch: [0x214c, null, null, null, null, null, null, null, null, NOP, NOP, 0x2800, null],
     },
     { // Task_GetExp, adding up the EXP: "holds an Exp. Share" is always true (cmp r0, r0), so a fighter
-      // gets gainedExp + partyGainedExp = the full EXP and everyone else partyGainedExp = 50%.
+      // gets gainedExp + partyGainedExp = 75% of the EXP and everyone else partyGainedExp = 50%.
       at: 0x02245a48,
       code:  [0x4208, 0xd003, 0x9809, 0x309c, 0x6800, 0x900e, 0x9806, 0x2833, 0xd106, 0x9809, 0x30a0],
       patch: [null, null, null, null, null, null, null, 0x4280, null, null, null],
@@ -64,7 +66,18 @@ const ExpShare = (() => {
   ];
   const SEARCH = [0x02200000, 0x02280000]; // where overlay 12 can sit if it isn't at the US address
 
-  let header = null, bases = [], scans = 0, shift = 0, logged = false, found = false;
+  // CreateNPCTrainerParty (ARM9, 0x02073604 in HG US) calls CreateMon(mon, species, level, iv, ...)
+  // once for each of the 4 trainer data layouts, each time with this code. iv is at most 31, so the
+  // "lsl r3, r3, #0x18 ... lsr r3, r3, #0x18" (keep the low byte) does nothing: the lsl becomes a nop
+  // and the lsr becomes "adds r2, #5", so the level passed to CreateMon is 5 higher. The level used to
+  // seed the Pokémon's personality is read separately and stays the same. [value, mask] per halfword.
+  const LEVEL_UP = 5;
+  const TRAINER_CODE = [[0x1c03], [0x2001], [0x9000], [0x061b], [0x9701], [0x2002], [0x9002], [0x2000],
+    [0x9003], [0x9a00, 0xff00], [0x9900, 0xff00], [0x8852], [0x1c30], [0x0e1b]]; // ldr r2/r1, [sp, #any]
+  const TRAINER_PATCH = { 3: NOP, 13: 0x3200 | LEVEL_UP };
+  const TRAINER_SEARCH = [0x02000000, 0x02110000]; // ARM9 static code
+
+  let header = null, bases = [], scans = 0, shift = 0, logged = false, found = false, trainerAt = null, trainerBase = null, trainerTicks = 0;
 
   async function prepare(blob) {
     const h = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
@@ -131,6 +144,31 @@ const ExpShare = (() => {
     }));
   }
 
+  // The 4 CreateMon calls: every match of TRAINER_CODE in the ARM9 code, original or patched.
+  function trainerIs(h, b, a, patched) {
+    return TRAINER_CODE.every(([v, m = 0xffff], i) => {
+      const want = patched && TRAINER_PATCH[i] != null ? TRAINER_PATCH[i] : v;
+      return (u16(h, b, a + i * 2) & (patched && TRAINER_PATCH[i] != null ? 0xffff : m)) === want;
+    });
+  }
+  function findTrainer(h, b) {
+    const out = [];
+    for (let a = TRAINER_SEARCH[0]; a < TRAINER_SEARCH[1]; a += 2) {
+      if (u16(h, b, a) === 0x1c03 && (trainerIs(h, b, a, false) || trainerIs(h, b, a, true))) out.push(a);
+    }
+    return out.length === 4 && out[3] - out[0] < 0x400 ? out : null;
+  }
+  function trainerLevels(h, b) {
+    for (const a of trainerAt) {
+      if (!trainerIs(h, b, a, false)) continue; // already patched (or not the game's code right now)
+      for (const i in TRAINER_PATCH) {
+        const o = b + a + i * 2 - 0x02000000;
+        h[o] = TRAINER_PATCH[i] & 0xff; h[o + 1] = TRAINER_PATCH[i] >> 8;
+      }
+      console.info("Trainer levels +" + LEVEL_UP + ": patched at 0x" + a.toString(16));
+    }
+  }
+
   function tick() {
     const h = heap();
     if (!h || !header) return;
@@ -138,6 +176,10 @@ const ExpShare = (() => {
       if (scans++ % 10) return; // look for DS RAM every 5s until the game is running
       bases = findBases(h).filter((b) => b + RAM_SIZE <= h.length);
       if (!bases.length) return;
+    }
+    if (trainerAt) trainerLevels(h, trainerBase);
+    else if (trainerTicks++ % 10 === 0) { // search every 5s until the game's code is in RAM
+      for (const b of bases) if ((trainerAt = findTrainer(h, b))) { trainerBase = b; trainerLevels(h, b); break; }
     }
     for (const b of bases) {
       // Once the battle code has been found (and patched), it's always at the same address: no more searching.

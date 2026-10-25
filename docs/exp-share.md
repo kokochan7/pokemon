@@ -1,9 +1,10 @@
-# Exp. Share (HeartGold / SoulSilver)
+# Exp. Share and +5 trainer levels (HeartGold / SoulSilver)
 
 Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node tools/test_expshare.js` (fake RAM, dummy bytes).
 
-- Always-on, whole party (Kenny's choice): after each knockout the Pokémon that fought get the full EXP and every other
-  party Pokémon gets 50% of it (EXP - EXP/2; 100% for everyone until 2026-10-25, then 75%, then 50% the same day). Eggs and fainted Pokémon get nothing, Lv 100 is skipped as usual. EVs go to everyone.
+- Always-on, whole party (Kenny's choice): after each knockout the Pokémon that fought get 75% of the EXP (EXP/4 +
+  EXP - EXP/2) and every other party Pokémon gets 50% (EXP - EXP/2). History, all Kenny's calls: 100% for everyone
+  (2026-10-24), then benched 75%, then 50%, then fighters 75% with +5 trainer levels (2026-10-25). Eggs and fainted Pokémon get nothing, Lv 100 is skipped as usual. EVs go to everyone.
   Lucky Egg, traded and trainer-battle boosts still apply. Only the Pokémon on the field gets "gained X Exp. Points!";
   benched ones get no message unless they level up ("grew to Lv. N!", stat summary, move learning, evolution after battle
   all work normally). A combined "your team gained EXP" line isn't possible without new game text.
@@ -17,9 +18,9 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   commit 9d46feb8; the decomp is matching, so these are the real ROM bytes; HG and SS share them):
   - `BtlCmd_CalcExpGain` (0x0223E6A0): nop the `beq` at 0x0223E79E so the "someone holds an Exp. Share" branch is always
     taken, replace `lsr r4, r0, #1; ldr r1, [sp, #4]; add r0, r4, #0` at 0x0223E7A0 with
-    `lsrs r1, r0, #1; subs r4, r0, r1; adds r0, r1, #0` (`#2` gives 75%), and nop the two `blx _s32_div_f` at 0x0223E7A6 / 0x0223E7C6 so
-    nothing is divided by the number of fighters. Result: `gainedExp` (ctx+0x9C) = EXP/2, `partyGainedExp` (ctx+0xA0) =
-    EXP - EXP/2 (each at least 1). Checked in unicorn: EXP 100 -> 50 + 50, 63 -> 31 + 32.
+    `lsrs r1, r0, #1; subs r4, r0, r1; lsrs r0, r1, #1`, and nop the two `blx _s32_div_f` at 0x0223E7A6 / 0x0223E7C6 so
+    nothing is divided by the number of fighters. Result: `gainedExp` (ctx+0x9C) = EXP/4, `partyGainedExp` (ctx+0xA0) =
+    EXP - EXP/2 (each at least 1). Checked in unicorn: EXP 100 -> 25 + 50, 63 -> 15 + 32.
   - The other branch of that `beq` (0x0223E7E2-0x0223E805) is dead after this, and holds an 18-halfword routine (code cave)
     used by the message step below. It returns Z=0 for "print the message" when the slot is
     `ctx->selectedMonIndex[expBattler]` (ctx+0x219C), else Z=1 with r0 = next state: 0x25 (check done) if the Pokémon got
@@ -27,7 +28,7 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   - `Task_GetExp` (0x02245898), slot picker loop: `mov r1, #6` (held item) -> `#76` (MON_DATA_IS_EGG) at 0x022458DC,
     nop the `bl GetItemAttr` at 0x022458EE, `cmp r0, #0x33` -> `cmp r0, #0` at 0x022458F2: every non-egg slot gets a turn.
   - `Task_GetExp`, EXP sum: `cmp r0, #0x33` -> `cmp r0, r0` at 0x02245A56 ("holds an Exp. Share" always true): fighters
-    get `gainedExp + partyGainedExp` = EXP, everyone else `partyGainedExp` = 50%. (For 100% for everyone, the `beq` at
+    get `gainedExp + partyGainedExp` = 75%, everyone else `partyGainedExp` = 50%. (For 100% for everyone, the `beq` at
     0x02245A4A became `b` so fighters skipped `gainedExp`, and `partyGainedExp` was the full EXP.)
   - `Task_GetExp`, message: `ldr r0, [sp, #0x38]; cmp r0, #0` at 0x02245B3E -> `bl 0x0223E7E2`; the `beq` after it goes to
     0x02245B76, whose `mov r0, #0x25` is nopped so it stores the routine's r0 as the state.
@@ -39,3 +40,17 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   accepted `bl`, so it never matched and never patched (Kenny, SoulSilver USA, 2026-10-24). Fixed in `isBl()`.
 - HG and SS overlay 12 differ only by one immediate (`cmp r0, #GAME_VERSION` in overlay_12_022378C0.s), same size.
 - Tested only against fake RAM here (no ROM in the repo). If it misbehaves, ask Kenny whether the console shows "Exp. Share: battle code patched".
+
+## +5 trainer levels
+
+- Every NPC trainer's Pokémon is 5 levels higher (`LEVEL_UP` in `js/expshare.js`; Kenny's choice 2026-10-25, because the
+  Exp. Share left his team ~15 levels ahead). Wild Pokémon are unchanged. Same code in the same file, same DS RAM base.
+- `CreateNPCTrainerParty` (ARM9 static code, 0x02073604 in HG US; from pre-decompilation `asm/trainer_data.s`, commit
+  aeba178b^) calls `CreateMon(mon, species, level, iv, ...)` once per trainer data layout (4 calls, at 0x02073702,
+  0x020737EC, 0x020738F6, 0x020739F6 in HG US). Each is preceded by the same 14 halfwords apart from two
+  `ldr rX, [sp, #n]` stack offsets. `iv` is at most 31, so its `lsl r3, r3, #0x18 ... lsr r3, r3, #0x18` truncation is a
+  no-op: the lsl becomes a nop and the lsr becomes `adds r2, #5` (r2 = level). The personality seed reads the level
+  separately, so the Pokémon's nature/gender/ability stay what they'd normally be.
+- The ARM9 range 0x02000000-0x02110000 is searched every 5s until exactly 4 matches lie within 0x400 bytes (any other
+  count: nothing is written). Then those 4 spots are checked every 0.5s and re-patched if the original bytes come back
+  (a reset or a save state). Console: "Trainer levels +5: patched at 0x...". Checked in unicorn (level 30 -> 35, iv kept).

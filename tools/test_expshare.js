@@ -20,6 +20,11 @@ const sites = [
 ];
 const load = (shift) => { heap.fill(0, base + 0x200000, base + 0x280000); for (const [a, c] of sites) c.forEach((v, i) => w16(a + shift + i * 2, v)); };
 const dump = (shift) => sites.map(([a, c]) => c.map((_, i) => r16(a + shift + i * 2).toString(16)).join(" ")).join("\n");
+// The 4 CreateMon calls in CreateNPCTrainerParty (ARM9), with different stack offsets.
+const trainerAt = [0x02073740, 0x02073840, 0x02073940, 0x02073a40];
+const trainerCode = (k) => [0x1c03, 0x2001, 0x9000, 0x061b, 0x9701, 0x2002, 0x9002, 0x2000, 0x9003, 0x9a11 + k, 0x990f - k, 0x8852, 0x1c30, 0x0e1b];
+trainerAt.forEach((a, k) => trainerCode(k).forEach((v, i) => w16(a + i * 2, v)));
+const trainerDump = () => trainerAt.map((a) => r16(a + 6).toString(16) + " " + r16(a + 26).toString(16)).join(", ");
 const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer }) });
 (async () => {
   await ExpShare.prepare(romBlob());
@@ -28,6 +33,10 @@ const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer 
   let fn; global.setInterval = (f) => { fn = f; }; ExpShare.started();
   for (let i = 0; i < 12; i++) fn();
   console.log("patched US:\n" + dump(0));
+  console.log("trainer level sites (lsl -> nop, lsr -> adds r2, #5):", trainerDump());
+  trainerAt.forEach((a, k) => trainerCode(k).forEach((v, i) => w16(a + i * 2, v))); // as after a reset
+  for (let i = 0; i < 2; i++) fn();
+  console.log("re-patched after reset:", trainerDump());
   for (let i = 0; i < 12; i++) fn();
   console.log("still patched, written once:", dump(0).split("\n")[0]);
   // a different overlay in that memory: nothing written
