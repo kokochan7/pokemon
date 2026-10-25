@@ -214,6 +214,11 @@ body.playing #scene { display: none; }
 .guide .story .todo li.ok { color: #585868; text-decoration: line-through; }
 .guide .story .todo li.ok::before { content: "✓"; color: #389048; }
 .guide .story .todo li.info::before { content: "•"; }
+.guide .story .otitle { margin-top: 4px; font: 700 10px/1.2 var(--read); color: #585868; text-transform: uppercase; letter-spacing: .5px; }
+.guide .story .opt li::before { content: "☆"; }
+.guide .story .opt li.ok::before { content: "✓"; }
+.guide .story .opt li.info::before { content: "☆"; }
+.guide .story .opt li { color: #484858; }
 .guide .story .boss { margin-top: 5px; padding: 3px 6px; border: 2px solid var(--ink); background: var(--paper-2); }
 .guide .story .boss.beaten { opacity: .6; }
 .guide .story .bhead, .guide .story .weak { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }

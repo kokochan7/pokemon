@@ -7,6 +7,7 @@ const Story = (() => {
   const TRAINER_FLAGS = 0x550;           // FLAG_TRAINER(id) in the decomp
   const BADGES = [0x64 + 0x1a, 0x64 + 0x1f]; // trainer block: Johto, Kanto badge bits
   const STARTER = 0x4030;                // VAR_PLAYER_STARTER: species of the player's starter
+  const DEX = 0x12B8, DEX_MAGIC = 0xBEEFCAFE; // Pokedex in the general block: magic, then caught bits (species - 1)
   const STARTERS = [152, 155, 158];      // Chikorita, Cyndaquil, Totodile: index into a rival's t list
   let steps = null, bosses = { teams: {}, dex: {} }, ver = "hg";
 
@@ -27,14 +28,21 @@ const Story = (() => {
   // "f:0x6A|t:20&b:0": | is any, & is all. An empty condition is never true.
   function test(h, base, cond) {
     if (!cond) return false;
+    cond = pick(cond); // "{f:0x117|f:0x116}": HeartGold's condition, then SoulSilver's
     return cond.split("|").some((any) => any.split("&").every((c) => {
       const [k, x] = [c[0], c.slice(2)];
       if (k === "f") return flag(h, base, Number(x));
       if (k === "t") return flag(h, base, TRAINER_FLAGS + Number(x));
       if (k === "b" || k === "k") return [].concat(base).some((b) => (h[b + BADGES[k === "k" ? 1 : 0]] >> Number(x) & 1) === 1);
+      if (k === "c") return [].concat(base).some((b) => caught(h, b, Number(x)));
       if (k === "v") { const [id, min] = x.split(">="); return getVar(h, base, parseInt(id, 16)) >= Number(min); }
       return false;
     }));
+  }
+
+  function caught(h, b, species) {
+    const o = b + DEX, magic = (h[o] | h[o + 1] << 8 | h[o + 2] << 16 | h[o + 3] << 24) >>> 0;
+    return magic === DEX_MAGIC && (h[o + 4 + (species - 1 >> 3)] >> (species - 1 & 7) & 1) === 1;
   }
 
   // The first step not done yet. A step also counts as done once a later step is, unless it is
@@ -52,7 +60,7 @@ const Story = (() => {
   function key(h, base) {
     if (!steps) return null;
     const i = current(h, base);
-    return i + ":" + (steps[i].todo || []).map(([, c]) => test(h, base, c) ? 1 : 0).join("");
+    return i + ":" + [...steps[i].todo || [], ...steps[i].opt || []].map(([, c]) => test(h, base, c) ? 1 : 0).join("");
   }
 
   const pick = (t) => t.replace(/\{([^{}|]*)\|([^{}]*)\}/g, (m, hg, ss) => ver === "ss" ? ss : hg);
@@ -99,6 +107,12 @@ const Story = (() => {
     const ul = el("ul", "todo");
     for (const [text, cond] of s.todo) ul.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
     box.append(ul);
+    // Optional side quests worth doing at this point; they tick themselves the same way.
+    if (s.opt) {
+      const ol = el("ul", "todo opt");
+      for (const [text, cond] of s.opt) ol.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
+      box.append(el("div", "otitle", "Optional"), ol);
+    }
 
     const starter = STARTERS.indexOf(getVar(h, base, STARTER));
     for (const b of s.boss || []) {
