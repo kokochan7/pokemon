@@ -811,7 +811,7 @@ const Guide = (() => {
           const img = node("img");
           img.src = SPRITE + dex + ".png"; img.alt = name; img.title = name; img.loading = "lazy";
           img.onerror = () => { img.style.visibility = "hidden"; };
-          mon.append(img, node("span", null, name + " " + lv));
+          mon.append(img, node("span", null, name + " " + (lv + ExpShare.LEVEL_UP)));
           p.append(mon);
         }
         li.append(p);
