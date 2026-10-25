@@ -68,7 +68,7 @@ const Story = (() => {
       const mon = el("span", "pm"), img = el("img");
       img.src = sprite + dex + ".png"; img.alt = name; img.title = name; img.loading = "lazy";
       img.onerror = () => { img.style.visibility = "hidden"; };
-      mon.append(img, el("span", null, name + " " + lv));
+      mon.append(img, el("span", null, name + " " + (lv + ExpShare.LEVEL_UP)));
       p.append(mon);
     }
     return p;
