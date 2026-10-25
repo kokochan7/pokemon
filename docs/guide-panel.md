@@ -103,6 +103,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   words (40 steps from the starter to Red). Each step is a title plus short to-do bullets, each with its own
   condition so it ticks itself; a bullet with no condition shows as a plain dot. Kenny wants everything visible at a
   glance: no fold, no long paragraphs, no trainer list, icons over words.
+- "Optional" (Kenny's ask, 2026-10-25): a step's `opt` list in story.json holds side quests worth doing at that
+  point (in-game trades, Bike, Exp. Share for the Red Scale, Lapras, Snorlax, legendaries...), ticked the same way
+  (☆, ✓ when done). Flags come from the decomp's scripts (the SetFlag next to the GiveItem/GivePokemon). `c:N` =
+  National Dex N caught: Pokédex at general block +0x12B8 (magic 0xBEEFCAFE, then caught bits, bit species-1).
+  Conditions can be per version like text: `{f:0x117|f:0x116}` (HG's, then SS's).
 - Under the bullets: each boss (name, type icons, "Weakness" + type icons, team sprites; dimmed with a tick once beaten)
   The step's "RECOMMEND CATCH" grid (sprites + where) goes in the right panel between WILD and TRAINERS (`Story.catches()`). Type icons are PokeAPI's Gen IV HGSS type sprites
   (hot-linked, `sprites/types/generation-iv/heartgold-soulsilver/<type id>.png`).

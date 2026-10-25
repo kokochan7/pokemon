@@ -1,5 +1,5 @@
 {
- "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition]; conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons.",
+ "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition]; conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
  "steps": [
   {
    "title": "Get your first Pokémon",
@@ -44,6 +44,12 @@
     [
      "Sentret",
      "Route 29"
+    ]
+   ],
+   "opt": [
+    [
+     "Mystic Water from the man by the water in Cherrygrove (boosts Water moves)",
+     "f:0xF3"
     ]
    ]
   },
@@ -108,10 +114,6 @@
      "f:0x9bd"
     ],
     [
-     "Trade a Bellsprout for Onix in Violet (optional)",
-     "f:0x71"
-    ],
-    [
      "Climb Sprout Tower and beat Elder Li (TM70 Flash)",
      "f:0x76"
     ]
@@ -144,6 +146,20 @@
     [
      "Bellsprout",
      "Route 31"
+    ]
+   ],
+   "opt": [
+    [
+     "Trade a Bellsprout for an Onix in Violet City",
+     "f:0x71"
+    ],
+    [
+     "Ruins of Alph (west of Route 32): solve the Kabuto puzzle",
+     "f:0x977"
+    ],
+    [
+     "Unown Report from the Ruins of Alph research center",
+     "f:0x110"
     ]
    ]
   },
@@ -186,6 +202,12 @@
     [
      "Keep the Egg in your party: it hatches into Togepi",
      ""
+    ]
+   ],
+   "opt": [
+    [
+     "Hatch the Egg: it's Togepi",
+     "f:0x983"
     ]
    ]
   },
@@ -240,6 +262,16 @@
      "Hoppip",
      "Route 32-33"
     ]
+   ],
+   "opt": [
+    [
+     "TM05 Roar from a man on Route 32",
+     "f:0x6E"
+    ],
+    [
+     "Lure Ball from Kurt's fan on Route 32",
+     "f:0x174"
+    ]
    ]
   },
   {
@@ -268,6 +300,16 @@
       "rock"
      ]
     }
+   ],
+   "opt": [
+    [
+     "Apricorn Box from Kurt: he turns Apricorns into special Poké Balls",
+     "f:0x6D"
+    ],
+    [
+     "King's Rock from the man in Slowpoke Well",
+     "f:0x7A"
+    ]
    ]
   },
   {
@@ -326,6 +368,16 @@
      "Paras",
      "Ilex Forest"
     ]
+   ],
+   "opt": [
+    [
+     "Charcoal from the charcoal kiln in Azalea (boosts Fire moves)",
+     "f:0x81"
+    ],
+    [
+     "TM12 Taunt from the woman in the north Ilex Forest gate",
+     "f:0x83"
+    ]
    ]
   },
   {
@@ -335,22 +387,6 @@
     [
      "Go north on Route 34 to Goldenrod City",
      "f:0x9bf"
-    ],
-    [
-     "Free Bicycle at the Bike Shop",
-     ""
-    ],
-    [
-     "Radio Card from the Radio Tower 1F quiz",
-     "f:0x8A"
-    ],
-    [
-     "Eevee from Bill at his house",
-     "f:0x95"
-    ],
-    [
-     "Trade a Drowzee for Machop (Dept. Store 5F)",
-     "f:0x8D"
     ],
     [
      "Beat Whitney (talk to her again if she cries)",
@@ -385,6 +421,28 @@
     [
      "Ditto",
      "Route 34-35"
+    ]
+   ],
+   "opt": [
+    [
+     "Free Bicycle from the Bike Shop",
+     "f:0x89"
+    ],
+    [
+     "Radio Card from the Radio Tower 1F quiz",
+     "f:0x8A"
+    ],
+    [
+     "Eevee from Bill at his house",
+     "f:0x95"
+    ],
+    [
+     "Trade a Drowzee for Machop (Dept. Store 5F)",
+     "f:0x8D"
+    ],
+    [
+     "Pokéathlon Dome, north of Goldenrod on Route 35",
+     "f:0x9D3"
     ]
    ]
   },
@@ -425,6 +483,16 @@
     [
      "Stantler",
      "Route 36-37"
+    ]
+   ],
+   "opt": [
+    [
+     "Bug-Catching Contest in National Park (Tue, Thu, Sat): prizes include stones",
+     ""
+    ],
+    [
+     "Quick Claw from the woman in National Park",
+     "f:0x10E"
     ]
    ]
   },
@@ -567,6 +635,24 @@
      "{Mantine|Shellder}",
      "Route 41"
     ]
+   ],
+   "opt": [
+    [
+     "Good Rod from the fisherman in Olivine",
+     "f:0xBD"
+    ],
+    [
+     "Trade a Krabby for a Voltorb in Olivine",
+     "f:0xBE"
+    ],
+    [
+     "Nurse the sick Miltank at MooMoo Farm (Route 39): TM83 and cheap Moomoo Milk",
+     "f:0xAB"
+    ],
+    [
+     "Catch Lapras in Union Cave B2F (Fridays, needs Surf)",
+     "c:131"
+    ]
    ]
   },
   {
@@ -580,9 +666,11 @@
     [
      "Get the SecretPotion at the Pharmacy",
      "f:0xB9"
-    ],
+    ]
+   ],
+   "opt": [
     [
-     "Borrow Kirk's Shuckle (optional)",
+     "Borrow Kirk's Shuckle in Cianwood",
      "f:0xBF"
     ]
    ]
@@ -656,6 +744,20 @@
     [
      "Machop",
      "Mt. Mortar"
+    ]
+   ],
+   "opt": [
+    [
+     "Trade the Red Scale for an Exp. Share at Mr. Pokémon's house",
+     "f:0x6C"
+    ],
+    [
+     "TM10 Hidden Power from the man at Lake of Rage",
+     "f:0xC7"
+    ],
+    [
+     "Black Belt from Wesley at Lake of Rage (Wednesdays)",
+     "f:0xD5"
     ]
    ]
   },
@@ -902,10 +1004,12 @@
     [
      "Answer the Dragon Master kindly: Rising Badge",
      "b:7"
-    ],
+    ]
+   ],
+   "opt": [
     [
      "All kind answers earn a Dratini with ExtremeSpeed",
-     ""
+     "f:0xDC|f:0xDD"
     ]
    ]
   },
@@ -1102,6 +1206,16 @@
      "Ride the S.S. Aqua from Olivine to Vermilion",
      "f:0x9b5"
     ]
+   ],
+   "opt": [
+    [
+     "Rare Candy from the Fan Club chairman in Vermilion",
+     "f:0xF8"
+    ],
+    [
+     "PP Max from a man in Vermilion",
+     "f:0xF7"
+    ]
    ]
   },
   {
@@ -1220,6 +1334,12 @@
     [
      "Snorlax",
      "Route 11-12"
+    ]
+   ],
+   "opt": [
+    [
+     "Catch Snorlax on Route 11 (Poké Flute channel on the Pokégear)",
+     "f:0x173"
     ]
    ]
   },
@@ -1411,6 +1531,32 @@
     [
      "Complete the Pokédex",
      ""
+    ]
+   ],
+   "opt": [
+    [
+     "Get a Kanto starter from Prof. Oak",
+     "c:1|c:4|c:7"
+    ],
+    [
+     "Catch Suicune on Route 25",
+     "f:0x175"
+    ],
+    [
+     "Catch {Lugia|Ho-Oh} too",
+     "{f:0x117|f:0x116}"
+    ],
+    [
+     "Catch Articuno, Zapdos and Moltres",
+     "f:0x16C&f:0x14A&f:0x16D"
+    ],
+    [
+     "Catch Mewtwo in Cerulean Cave",
+     "f:0x16B"
+    ],
+    [
+     "Hoenn starter from Steven",
+     "f:0x177"
     ]
    ]
   }
