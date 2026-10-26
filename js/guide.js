@@ -800,7 +800,7 @@ const Guide = (() => {
   /* --- the way to a NEXT bullet's place: click a bullet, get the route and a path on the map --- */
   // Fly points (FLAG_SYS_FLYPOINT_*) and the town map each one lands in.
   const FLY = { 0x9B0: 49, 0x9B1: 50, 0x9B2: 51, 0x9B3: 52, 0x9B4: 53, 0x9B5: 54, 0x9B6: 55, 0x9B7: 56, 0x9B8: 57,
-    0x9B9: 58, 0x9BA: 59, 0x9BB: 60, 0x9BC: 67, 0x9BD: 73, 0x9BE: 74, 0x9BF: 76, 0x9C0: 78, 0x9C1: 77, 0x9C2: 75,
+    0x9B9: 58, 0x9BA: 59, 0x9BB: 60, 0x9BC: 67, 0x9BD: 73, 0x9BE: 74, 0x9BF: 75, 0x9C0: 76, 0x9C1: 77, 0x9C2: 78,
     0x9C3: 87, 0x9C4: 88, 0x9C5: 89, 0x9C6: 90 };
   // Neighbouring maps you can't walk between: Route 44 and Blackthorn (the Ice Path is the way), and up the
   // Route 45 ledges from Route 46.

@@ -109,8 +109,8 @@ const Story = (() => {
     const i = current(h, base), s = steps[i];
     const box = el("div", "story");
     box.append(el("div", "stitle", s.title));
-    const bullet = (kind, j, [text, cond, place]) => {
-      const li = el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text);
+    const bullet = (kind, j, [text, cond, place], done) => {
+      const li = el("li", done ? "ok" : cond ? "" : "info", text);
       if (place != null && nav) {
         const key = i + kind + j, at = where(place);
         li.classList.add("go");
@@ -121,12 +121,19 @@ const Story = (() => {
       return li;
     };
     const ul = el("ul", "todo");
-    s.todo.forEach((t, j) => ul.append(bullet("t", j, t)));
+    // The todo bullets are in game order, so a later one being done means the earlier ones are too
+    // (a town's fly point, say, is only set on some ways in).
+    const done = s.todo.map(([, cond]) => !!cond && test(h, base, cond));
+    for (let j = done.length - 1, later = false; j >= 0; j--) {
+      if (later && s.todo[j][1]) done[j] = true;
+      later = later || done[j];
+    }
+    s.todo.forEach((t, j) => ul.append(bullet("t", j, t, done[j])));
     box.append(ul);
     // Optional side quests worth doing at this point; they tick themselves the same way.
     if (s.opt) {
       const ol = el("ul", "todo opt");
-      s.opt.forEach((t, j) => ol.append(bullet("o", j, t)));
+      s.opt.forEach((t, j) => ol.append(bullet("o", j, t, t[1] && test(h, base, t[1]))));
       box.append(el("div", "otitle", "Optional"), ol);
     }
 
