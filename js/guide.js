@@ -79,6 +79,8 @@ const Guide = (() => {
   function follow() {
     if (idle()) return;
     const h = heap(), dot = document.querySelector(".guide .me"), c = dot && dot.parentElement.querySelector("canvas");
+    // A new map id shows within 0.2s instead of waiting for the next poll.
+    if (h && cands.length && cands.some((b, i) => mapAt(h, b) !== last[i])) poll();
     if (!h || !dot || !c || !c.geo) return;
     const p = player(h), g = c.geo;
     if (p && lastPos && Math.abs(p[0] - lastPos[0]) + Math.abs(p[1] - lastPos[1]) > 3 && !warpAt) { warpAt = Date.now(); warpFrom = shown; }
@@ -799,11 +801,16 @@ const Guide = (() => {
   const mapState = (m) => [...(m.items || []), ...(m.hidden || [])].map((it) => got(it[3]) ? 1 : 0).join("") + ":" +
     (m.trainers || []).map((t) => beaten(t[4]) ? 1 : 0).join("");
   const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55));
+  // The rooms you can walk into next are read from the ROM ahead of time, so they show at once.
+  const prewarm = (m) => (window.requestIdleCallback || setTimeout)(() => {
+    for (const [, , to] of m.warps || []) if (data[to]) layout(data[to]);
+  });
   async function drawMap(m, canvas, highlight) {
     canvas.want = m;
     const L = await layout(m);
     if (canvas.want !== m) return; // a newer map was asked for while this one was loading
     if (!L) return false;
+    prewarm(m);
     const { W, H } = L;
     // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
     // follows the player (see follow()). The box is always the same height, so the panel doesn't
