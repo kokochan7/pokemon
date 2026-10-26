@@ -230,10 +230,22 @@ body.playing #scene { display: none; }
 .guide .story .todo li.go { cursor: pointer; }
 .guide .story .todo li.go:hover { background: var(--paper-2); }
 .guide .story .todo li.nav { background: var(--paper-2); box-shadow: -4px 0 0 #d83030; }
-.guide .story .boss { margin: 3px 0 5px; padding: 3px 6px; border: 2px solid var(--ink); background: var(--paper-2); }
-.guide .story .boss.beaten { opacity: .6; }
+/* Boss box: a dark battle card with red trim, so a gym leader reads as a boss at a glance (Kenny, 2026-10-26). */
+.guide .story .boss { position: relative; margin: 4px 0 6px; padding: 0 8px 6px; color: #f0f0f0; overflow: hidden;
+  background: radial-gradient(120% 90% at 100% 0, rgba(216, 56, 32, .35), transparent 60%), linear-gradient(#262632, #14141c);
+  border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--red), 3px 3px 0 var(--shade); }
+.guide .story .brole { margin: 0 -8px 4px; padding: 4px 8px 3px; background: var(--red); color: #fff;
+  font: 8px/1 var(--pixel); letter-spacing: 1px; text-shadow: 1px 1px 0 #600; border-bottom: 2px solid var(--ink); }
+.guide .story .bhead b { font: 12px/1.2 var(--pixel); color: var(--gold); text-transform: uppercase;
+  text-shadow: 2px 2px 0 #000; }
 .guide .story .bhead, .guide .story .weak { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.guide .story .weak { margin-top: 2px; font-size: 12px; color: #585868; }
+.guide .story .weak { margin-top: 3px; font-size: 12px; color: #c8c8d0; }
+.guide .story .boss .pm { color: #e0e0e8; }
+.guide .story .boss .pm img { width: 40px; height: 40px; filter: drop-shadow(1px 1px 0 #000); }
+.guide .story .boss.beaten { filter: grayscale(1); opacity: .55; box-shadow: inset 0 0 0 2px #808088; }
+.guide .story .boss.beaten .brole { background: #606068; text-shadow: none; }
+.guide .story .bstamp { position: absolute; right: 6px; top: 22px; transform: rotate(-12deg); padding: 3px 5px 2px;
+  border: 2px solid #f0f0f0; color: #f0f0f0; font: 9px/1 var(--pixel); }
 .guide .story .types { display: inline-flex; flex-wrap: wrap; gap: 3px; }
 .guide .story .types img { width: 48px; height: 16px; image-rendering: pixelated; }
 .guide .story .tname { font-size: 11px; text-transform: uppercase; border: 1px solid var(--ink); padding: 0 3px; }
