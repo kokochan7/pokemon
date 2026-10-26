@@ -469,16 +469,37 @@ const Guide = (() => {
       }
     }
     let x0 = W, z0 = H, x1 = -1, z1 = -1;
-    const keep = new Uint8Array(W * H);
     for (let i = 0; i < W * H; i++) {
       if (!seen[i]) continue;
       const x = i % W, z = (i / W) | 0;
-      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
-        const xx = x + dx, zz = z + dz;
-        if (xx < 0 || zz < 0 || xx >= W || zz >= H) continue;
-        keep[zz * W + xx] = 1;
-        x0 = Math.min(x0, xx); x1 = Math.max(x1, xx); z0 = Math.min(z0, zz); z1 = Math.max(z1, zz);
+      x0 = Math.min(x0, x - 1); x1 = Math.max(x1, x + 1); z0 = Math.min(z0, z - 1); z1 = Math.max(z1, z + 1);
+    }
+    x0 = Math.max(0, x0); z0 = Math.max(0, z0); x1 = Math.min(W - 1, x1); z1 = Math.min(H - 1, z1);
+    // Left out: floor joined to the edge of the box without passing a wall (the unused rest of the block).
+    // Floor shut in by walls (behind a counter) stays, so it doesn't show as holes in the room.
+    const keep = new Uint8Array(W * H).fill(1), out = [];
+    const inBox = (x, z) => x >= x0 && x <= x1 && z >= z0 && z <= z1;
+    for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
+      const i = z * W + x;
+      if ((x === x0 || x === x1 || z === z0 || z === z1) && !seen[i] && floor(i)) { keep[i] = 0; out.push(i); }
+    }
+    while (out.length) {
+      const i = out.pop(), x = i % W, z = (i / W) | 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const j = (z + dz) * W + x + dx;
+        if (inBox(x + dx, z + dz) && keep[j] && !seen[j] && floor(j)) { keep[j] = 0; out.push(j); }
       }
+    }
+    // Walls with no room floor next to them (outside the room's own walls) go too.
+    for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
+      const i = z * W + x;
+      if (!keep[i] || floor(i)) continue;
+      let near = false;
+      for (let dz = -1; dz <= 1 && !near; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const j = (z + dz) * W + x + dx;
+        if (inBox(x + dx, z + dz) && keep[j] && floor(j)) { near = true; break; }
+      }
+      if (!near) keep[i] = 0;
     }
     const w = x1 - x0 + 1, h = z1 - z0 + 1, g = new Int32Array(w * h), dim = new Uint8Array(w * h);
     for (let z = 0; z < h; z++) for (let x = 0; x < w; x++) {
@@ -618,6 +639,17 @@ const Guide = (() => {
       if (STAIRS.has(b)) { R(X, Z, T, T, "#b8a888"); for (let i = 0; i < 4; i++) R(X + 1, Z + 1 + i * 4, 14, 2, i % 2 ? "#a09070" : "#d8c8a8"); }
       if (b === 103) { R(X + 2, Z + 2, 12, 12, "#60b0e8"); R(X + 5, Z + 5, 6, 6, "#c0e8f8"); } // warp panel
       if (isWall(x, z - 1)) { R(X, Z, T, 4, "rgba(40,30,20,.16)"); R(X, Z, T, 2, "rgba(40,30,20,.12)"); }
+    }
+    // The Poké Ball on the floor in front of a Pokémon Center's nurse.
+    for (const [sx, sz, kind] of th === ROOM.center ? m.staff || [] : []) {
+      const X = (sx - L.ox) * T + 8, Z = (sz - L.oz + 3) * T + 8, r = 20;
+      if (kind || at(sx - L.ox, sz - L.oz + 3) < 0) continue;
+      c.fillStyle = "rgba(255,255,255,.35)"; c.beginPath(); c.arc(X, Z, r + 2, 0, 7); c.fill();
+      c.fillStyle = "#e86870"; c.beginPath(); c.arc(X, Z, r, Math.PI, 0); c.fill();
+      c.fillStyle = "#f4f0f0"; c.beginPath(); c.arc(X, Z, r, 0, Math.PI); c.fill();
+      R(X - r, Z - 2, 2 * r, 4, "#704850");
+      c.fillStyle = "#704850"; c.beginPath(); c.arc(X, Z, 6, 0, 7); c.fill();
+      c.fillStyle = "#f4f0f0"; c.beginPath(); c.arc(X, Z, 4, 0, 7); c.fill();
     }
     // Walls and furniture.
     for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
