@@ -124,6 +124,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   words (40 steps from the starter to Red). Each step is a title plus short to-do bullets, each with its own
   condition so it ticks itself; a bullet with no condition shows as a plain dot. Kenny wants everything visible at a
   glance: no fold, no long paragraphs, no trainer list, icons over words.
+- ◀ ▶ beside the step title (Kenny's ask, 2026-10-26: check he didn't miss anything) page back through earlier
+  steps and forward to the current one, with an "Earlier step (n of m)" note. `Story.nodes()` keeps the viewed
+  step and redraws its own box; the view snaps back when the current step changes. Bullets there still show the
+  way; the guide drops the picked way only when the current step changes (`navStep`).
 - "Optional" (Kenny's ask, 2026-10-25): a step's `opt` list in story.json holds side quests worth doing at that
   point (in-game trades, Bike, Exp. Share for the Red Scale, Lapras, Snorlax, legendaries...), ticked the same way
   (☆, ✓ when done). Flags come from the decomp's scripts (the SetFlag next to the GiveItem/GivePokemon). `c:N` =

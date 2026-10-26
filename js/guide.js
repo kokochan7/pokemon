@@ -826,6 +826,7 @@ const Guide = (() => {
   }
 
   let nav = null; // { key, to, x, z } while a bullet is picked
+  let navStep = -1;
   function pickNav(key, at, li) {
     nav = key ? { key, to: at[0], x: at[1], z: at[2] } : null;
     for (const x of document.querySelectorAll(".guide .todo li.go")) x.classList.toggle("nav", !!nav && x === li);
@@ -1207,7 +1208,8 @@ const Guide = (() => {
     }
 
     if (story != null) {
-      if (nav && parseInt(nav.key) !== Story.step(heap(), storyBase)) nav = null; // a new step: the old way is done
+      const cur = Story.step(heap(), storyBase);
+      if (cur !== navStep) { nav = null; navStep = cur; } // a new step: the old way is done
       main.append(...Story.nodes(heap(), storyBase, SPRITE, { key: nav && nav.key, pick: pickNav }));
     }
 
