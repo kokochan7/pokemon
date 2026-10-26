@@ -91,6 +91,7 @@ const Guide = (() => {
     const x = c.offsetLeft + c.clientLeft + (p[0] - g.x0) * g.k, y = c.offsetTop + c.clientTop + (p[1] - g.z0) * g.k;
     dot.style.left = x + "px";
     dot.style.top = y + "px";
+    updateNav();
     // Keep the player in the middle of the box when the map is bigger than it (the browser stops the
     // scroll at the map's edges), unless you just scrolled it yourself.
     const box = c.parentElement;
@@ -747,11 +748,14 @@ const Guide = (() => {
       if (!at) continue;
       // Keep the label just inside the map on that side.
       const x = dx ? (dx < 0 ? 0 : W) : at[0], z = dz ? (dz < 0 ? 0 : H) : at[1];
-      label("edge " + d, d === "E" ? name + " " + arrow : arrow + " " + name, x, z).side = d;
+      const tag = label("edge " + d, d === "E" ? name + " " + arrow : arrow + " " + name, x, z);
+      tag.side = d; tag.to = to;
     }
     for (const [x, z, to] of m.warps || []) {
       const name = exitName(m, to);
-      if (name) label("door", name, x - L.ox + 0.5, z - L.oz, name).k = g.k;
+      if (!name) continue;
+      const tag = label("door", name, x - L.ox + 0.5, z - L.oz, name);
+      tag.k = g.k; tag.to = to;
     }
     // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
     const tags = [...box.querySelectorAll(".exit")];
@@ -791,6 +795,196 @@ const Guide = (() => {
       if (el.below !== below) { el.below = below; el.classList.toggle("below", below); el.style.top = el.y + (below ? el.k : 0) + "px"; }
       if (!hide) taken.push(r);
     }
+  }
+
+  /* --- the way to a NEXT bullet's place: click a bullet, get the route and a path on the map --- */
+  // Fly points (FLAG_SYS_FLYPOINT_*) and the town map each one lands in.
+  const FLY = { 0x9B0: 49, 0x9B1: 50, 0x9B2: 51, 0x9B3: 52, 0x9B4: 53, 0x9B5: 54, 0x9B6: 55, 0x9B7: 56, 0x9B8: 57,
+    0x9B9: 58, 0x9BA: 59, 0x9BB: 60, 0x9BC: 67, 0x9BD: 73, 0x9BE: 74, 0x9BF: 76, 0x9C0: 78, 0x9C1: 77, 0x9C2: 75,
+    0x9C3: 87, 0x9C4: 88, 0x9C5: 89, 0x9C6: 90 };
+  // Neighbouring maps you can't walk between: Route 44 and Blackthorn (the Ice Path is the way), and up the
+  // Route 45 ledges from Route 46.
+  const BLOCKED = new Set(["46>89", "89>46", "48>47"]);
+  const CAN_FLY = "f:0xBB&b:4", SHIP = 307, SS_TICKET = "f:0xF2"; // HM02 + Storm Badge; the S.S. Aqua needs the ticket
+  // hgss.json names come from the decomp's constants; a few read better fixed up.
+  const NAMES = { "Dragons Den": "Dragon's Den", "Team Rocket Hq": "Rocket Hideout", "Mt Silver": "Mt. Silver",
+    "Mt Silver Cave": "Mt. Silver Cave", "Mt Mortar": "Mt. Mortar", "Mt Moon": "Mt. Moon", "Digletts Cave": "Diglett's Cave",
+    "Victory Road Jk": "Victory Road", "Pokeathlon Dome": "Pokéathlon Dome" };
+  const PLACES = { 299: "Pokémon League Gate", 330: "Olivine Port", 387: "Vermilion Port", 240: "Olivine Port",
+    386: "Vermilion Port", 489: "Power Plant", 467: "Power Plant", 106: "Diglett's Cave" };
+  const areaName = (id) => data[id] ? NAMES[data[id].name] || data[id].name : "?";
+  function placeName(id) {
+    const m = data[id];
+    if (!m) return "?";
+    if (PLACES[id]) return PLACES[id];
+    const name = areaName(id), town = /(.*) (City|Town|Island)$/.exec(name);
+    const p = (m.place || "").replace(/^(Goldenrod|Olivine|Mount Silver Cave|Mount Silver|Headquarters) ?/, "");
+    if (!p) return name;
+    if (town) return town[1] + " " + p;
+    if (/^(Pokémon Center|Poké Mart)/.test(p)) return name + " " + p.replace(/ 1F$/, "");
+    return /^(B?\d+F|Entrance|Roof|Shrine|Summit|Interior)\b/.test(p) ? name + " " + p : p;
+  }
+
+  let nav = null; // { key, to, x, z } while a bullet is picked
+  function pickNav(key, at, li) {
+    nav = key ? { key, to: at[0], x: at[1], z: at[2] } : null;
+    for (const x of document.querySelectorAll(".guide .todo li.go")) x.classList.toggle("nav", !!nav && x === li);
+    updateNav(true);
+  }
+
+  // Fewest steps from map to map: edge exits and doors cost 1, flying 3 (so a short walk beats it).
+  // Returns [{ to, how: "exit" | "warp" | "fly" }...], [] when already there, or null.
+  function route(from, to) {
+    const h = heap(), ok = (c) => !!(h && storyBase != null && Story.test(h, storyBase, c));
+    const towns = ok(CAN_FLY) ? Object.keys(FLY).filter((f) => Story.flag(h, storyBase, +f)).map((f) => FLY[f]) : [];
+    const ship = ok(SS_TICKET), cost = new Map([[from, 0]]), prev = new Map(), open = [from];
+    while (open.length) {
+      let bi = 0;
+      for (let i = 1; i < open.length; i++) if (cost.get(open[i]) < cost.get(open[bi])) bi = i;
+      const id = open.splice(bi, 1)[0], m = data[id];
+      if (id === to) break;
+      if (!m) continue;
+      const out = (m.exits || []).filter(([, t]) => !BLOCKED.has(id + ">" + t)).map(([, t]) => [t, 1, "exit"]);
+      for (const [, , t] of m.warps || []) if (t !== SHIP || ship) out.push([t, 1, "warp"]);
+      // An elevator has no warps of its own in the data: it goes back to every floor that leads into it.
+      if (!m.warps && !m.exits) for (const t of into(id)) out.push([t, 1, "warp"]);
+      if (m.exits) for (const t of towns) out.push([t, 3, "fly"]);
+      for (const [t, c, how] of out) {
+        const nc = cost.get(id) + c;
+        if (!data[t] || !data[t].blocks || (cost.has(t) && cost.get(t) <= nc)) continue;
+        if (!cost.has(t)) open.push(t);
+        cost.set(t, nc); prev.set(t, [id, how]);
+      }
+    }
+    if (from !== to && !prev.has(to)) return null;
+    const path = [];
+    for (let t = to; t !== from; t = prev.get(t)[0]) path.unshift({ to: t, how: prev.get(t)[1] });
+    return path;
+  }
+  let intoMap = null;
+  function into(id) {
+    if (!intoMap) {
+      intoMap = new Map();
+      for (const k in data) for (const [, , t] of data[k].warps || []) {
+        if (!intoMap.has(t)) intoMap.set(t, []);
+        intoMap.get(t).push(+k);
+      }
+    }
+    return intoMap.get(id) || [];
+  }
+  // The route as text: areas in a row with the same name (a tower's floors, a route and its gatehouse)
+  // are one stop, the area you're in is left out, and the last stop is the place itself.
+  function routeText(from, path) {
+    const stops = [];
+    let area = data[from].name;
+    for (const { to, how } of path) {
+      if (how !== "fly" && data[to].name === area) continue;
+      area = data[to].name;
+      stops.push((how === "fly" ? "Fly to " : "") + areaName(to));
+    }
+    const last = path[path.length - 1].to, final = placeName(last);
+    if (stops.length && data[last].name === area && !stops[stops.length - 1].startsWith("Fly")) stops[stops.length - 1] = final;
+    else if (stops[stops.length - 1] !== "Fly to " + final) stops.push(final);
+    return stops;
+  }
+
+  // Tiles to head for on this map: where the edge exit or door to the next map is, or the spot itself.
+  function goals(m, L, next) {
+    const set = new Set(), { W, H, grid } = L;
+    const open = (x, z) => x >= 0 && z >= 0 && x < W && z < H && grid[z * W + x] >= 0 && !(grid[z * W + x] & 0x8000);
+    if (!next) {
+      if (nav.x != null) set.add((nav.z - L.oz) * W + nav.x - L.ox);
+      return set;
+    }
+    for (const [x, z, to] of m.warps || []) if (to === next) set.add((z - L.oz) * W + x - L.ox);
+    for (const [d, to] of m.exits || []) {
+      const t = data[to], [dx, dz] = DIR[d] || [];
+      if (to !== next || !t || !t.blocks || dx == null) continue;
+      const theirs = new Set(t.blocks.map(([bx, bz]) => bx + "," + bz));
+      for (const [bx, bz] of m.blocks) {
+        if (!theirs.has(bx + dx + "," + (bz + dz))) continue;
+        const lx = bx * 32 - L.ox, lz = bz * 32 - L.oz;
+        for (let i = 0; i < 32; i++) {
+          const [x, z] = dz ? [lx + i, dz < 0 ? lz : lz + 31] : [dx < 0 ? lx : lx + 31, lz + i];
+          if (open(x, z)) set.add(z * W + x);
+        }
+      }
+    }
+    return set;
+  }
+  // Cheapest walk on the map's terrain: walls are out, water costs more (Surf), ledges only go the way
+  // you jump (behaviours 56-59 = east, west, north, south). Returns tile points, corners only.
+  const STEPS = [[1, 0, 56], [-1, 0, 57], [0, -1, 58], [0, 1, 59]];
+  function walk(L, sx, sz, ends) {
+    const { grid, W, H } = L;
+    if (!ends.size || sx < 0 || sz < 0 || sx >= W || sz >= H) return null;
+    const cost = new Int32Array(W * H).fill(1e9), from = new Int32Array(W * H).fill(-1), start = sz * W + sx;
+    cost[start] = 0;
+    const buckets = [[start]];
+    let end = -1;
+    for (let c = 0; c < buckets.length && end < 0; c++) for (const i of buckets[c] || []) {
+      if (cost[i] !== c) continue;
+      if (ends.has(i)) { end = i; break; }
+      const x = i % W, z = (i / W) | 0;
+      for (const [dx, dz, ledge] of STEPS) {
+        const nx = x + dx, nz = z + dz;
+        if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
+        const j = nz * W + nx, v = grid[j];
+        let k = 1;
+        if (!ends.has(j)) {
+          if (v < 0 || v & 0x8000) continue;
+          const b = v & 0xff;
+          if (b >= 56 && b <= 59 && b !== ledge) continue;
+          if (tiles[b] === 2) k = 3;
+        }
+        if (c + k >= cost[j]) continue;
+        cost[j] = c + k; from[j] = i;
+        (buckets[c + k] = buckets[c + k] || []).push(j);
+      }
+    }
+    if (end < 0) return null;
+    const pts = [];
+    for (let i = end; i >= 0; i = from[i]) pts.unshift([i % W, (i / W) | 0]);
+    return pts.filter((p, n) => n === 0 || n === pts.length - 1 ||
+      (pts[n - 1][0] === p[0]) !== (pts[n + 1][0] === p[0]) || (pts[n - 1][1] === p[1]) !== (pts[n + 1][1] === p[1]));
+  }
+
+  // Redraws the way when the map, the player's tile or the pick changes (called from follow() and drawMap()).
+  let navDrawn = null;
+  function updateNav(force) {
+    const c = mapWrap && mapWrap.canvas;
+    if (!c) return;
+    const { svg, bar } = mapWrap, m = c.m, L = c.L, g = c.geo;
+    if (!nav || !m || !L || !g || m !== data[shown]) {
+      svg.style.display = "none"; bar.hidden = true;
+      for (const t of c.parentElement.querySelectorAll(".exit.go")) t.classList.remove("go");
+      navDrawn = null;
+      return;
+    }
+    const tx = lastPos ? Math.floor(lastPos[0]) - L.ox : -1, tz = lastPos ? Math.floor(lastPos[1]) - L.oz : -1;
+    const k = [nav.key, shown, tx, tz, story].join(":");
+    if (!force && k === navDrawn) return;
+    navDrawn = k;
+    const path = route(shown, nav.to), next = path && path[0];
+    // The bar under the map: where to, and the stops on the way.
+    const where = placeName(nav.to);
+    bar.replaceChildren(node("b", null, "➜"), node("span", null, !path ? "No way found to " + where + " from here" :
+      path.length ? routeText(shown, path).join(" › ") : "You're at " + where + (nav.x != null ? ": follow the line" : "")));
+    const x = node("button", null, "✕");
+    x.title = "Stop showing the way";
+    x.onclick = () => pickNav(null);
+    bar.append(x);
+    bar.hidden = false;
+    for (const t of c.parentElement.querySelectorAll(".exit")) t.classList.toggle("go", !!next && next.how !== "fly" && t.to === next.to);
+    const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to));
+    if (!pts || pts.length < 2) { svg.style.display = "none"; return; }
+    svg.style.display = "";
+    svg.setAttribute("viewBox", "0 0 " + g.w + " " + g.h);
+    Object.assign(svg.style, { left: c.offsetLeft + c.clientLeft + "px", top: c.offsetTop + c.clientTop + "px", width: c.style.width, height: c.style.height });
+    const line = pts.map(([px, pz]) => px + 0.5 + "," + (pz + 0.5)).join(" ");
+    for (const pl of svg.querySelectorAll("polyline")) pl.setAttribute("points", line);
+    const [ex, ez] = pts[pts.length - 1], dot = svg.querySelector("circle");
+    dot.setAttribute("cx", ex + 0.5); dot.setAttribute("cy", ez + 0.5);
   }
 
   // The last few painted maps (each up to a few MB), oldest first.
@@ -886,6 +1080,8 @@ const Guide = (() => {
       }
     }
     placeExits(m, canvas, L);
+    canvas.L = L; canvas.m = m;
+    updateNav(true);
     return true;
   }
 
@@ -922,14 +1118,20 @@ const Guide = (() => {
         box.style.height = mapBoxH() + 6 + "px";
         const dot = node("div", "me");
         dot.hidden = true;
-        box.append(c, dot);
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "navpath");
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.innerHTML = '<polyline class="line"/><polyline class="dash"/><circle r="0.6"/>';
+        box.append(c, svg, dot);
         for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
         const legend = node("div", "legend");
         // Each key is a small CSS copy of the marker drawn on the map.
         for (const label of ["you", "item", "hidden", "trainer", "beaten"]) legend.append(node("span", "key " + label, label));
+        const bar = node("div", "navbar");
+        bar.hidden = true;
         mapWrap = node("div", "mapwrap");
-        mapWrap.append(box, legend);
-        mapWrap.canvas = c;
+        mapWrap.append(box, bar, legend);
+        mapWrap.canvas = c; mapWrap.svg = svg; mapWrap.bar = bar;
       }
       const wrap = mapWrap;
       canvas = wrap.canvas;
@@ -937,7 +1139,10 @@ const Guide = (() => {
       drawMap(m, canvas, highlight).then((ok) => { if (ok === false && shown === id) { wrap.remove(); canvas = null; } });
     }
 
-    if (story != null) main.append(...Story.nodes(heap(), storyBase, SPRITE));
+    if (story != null) {
+      if (nav && parseInt(nav.key) !== Story.step(heap(), storyBase)) nav = null; // a new step: the old way is done
+      main.append(...Story.nodes(heap(), storyBase, SPRITE, { key: nav && nav.key, name: (at) => placeName(at[0]), pick: pickNav }));
+    }
 
     const enc = m[ver];
     if (enc) {
