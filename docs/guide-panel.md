@@ -51,12 +51,14 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   - Walls next to the outside, or below such a wall, are the room's walls. Other wall groups are furniture,
     and a lone tile is drawn as a plant.
   - Groups next to a member of staff are counters, and the wall behind the nurse is the healing machine.
+    A Pokémon Center also gets the Poké Ball floor emblem three tiles in front of the nurse.
     `staff` in hgss.json is `[x, z, 0 nurse | 1 clerk | 2 receptionist]`, from the event objects' sprites.
   - PC (131), TV (134), town map (133), bookshelves, mart shelves, bin, stairs/ladders/escalators, mats
     and warp panels come from tile behaviours. Behaviour 128 is assumed to be a counter.
   - The colours follow the place name: Pokémon Center, Mart/Department Store, or home.
   - `cropRoom()` cuts the grid down to the floor you can reach from the room's warps, items and people,
-    plus the walls around it. The rest of the 32x32 block is plain floor in the data, so it used to show
+    plus the walls around it. Floor shut in by walls (behind a counter) is kept, so it doesn't show as
+    black holes; only floor joined to the edge of the box without passing a wall is left out. The rest of the 32x32 block is plain floor in the data, so it used to show
     as a big empty floor around the room. `layout()` keeps each map's (cropped) grid, with `ox`/`oz` as
     its top-left global tile.
   - Tested only with a dummy room built to match the Pokémon Center 1F events (all centres share land
