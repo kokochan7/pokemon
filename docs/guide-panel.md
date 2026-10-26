@@ -140,14 +140,21 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   On the map, `walk()` finds the way from the player to the exit or door for the next stop (or, on the bullet's own
   map, to its spot), over the terrain: water costs 3, walls and wrong-way ledges (behaviours 56-59 = E, W, N, S) cost 40 rather
   than being ruled out, so a line always shows (Kenny saw it vanish at times, 2026-10-26: the terrain marks some
-  walkable tiles as walls). When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
+  walkable tiles as walls). Trap tiles cost 200: hgss.json's `traps` ([x, z, w, h], from step triggers whose
+  script warps you back into the same map or runs `RocketTrapBattle`: the Ecruteak Gym's hidden pits, the Rocket
+  Hideout's trap floor, a few in the Blackthorn and Saffron Gyms). Ice (behaviour 32) slides you until the next
+  tile is blocked or you're off the ice, and slide tiles (64-67) turn you, so `slide()` makes the line solve the
+  Mahogany Gym and the Ice Path (Kenny asked for maze solutions, 2026-10-26). Boulders and other objects aren't
+  known. When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
   It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
   2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
 - Spots: most bullets carry `[map, x, z]`, the person, object, sign or trigger that does what the bullet's
   condition checks, found with the decomp: the object whose script (following its GoTo/Call labels) runs that
   bullet's `SetFlag` or `TrainerBattle` (gym bullets use the step's boss), or the object hidden by a
   `FLAG_HIDE_*` flag; a few were picked by hand (Chuck's wife, Amphy, the Surf gentleman, Lance). "Reach town"
-  bullets stay map-only. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
+  bullets stay map-only. A bullet's optional 4th value is a small help line under it (quiz answers and puzzle
+  tips taken from the decomp's scripts and messages: Radio Card quiz, Dragon's Den, Rocket Hideout passwords and
+  switch, Vermilion trash cans), hidden once ticked. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
   connect, not story blocks inside them (a Rocket in the way, a Strength boulder), and inside a multi-floor cave
   the line goes to the warp that leads on in the data. Tested with fake terrain and RAM only.
 - Under the bullets: each boss (name, type icons, "Weakness" + type icons, team sprites; dimmed with a tick once beaten)
@@ -168,7 +175,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   `SetTrainerFlag` list). Scripted battles (rivals, gym leaders, Rocket executives, Elite Four, Red) never set
   their own flag (decomp `scrcmd_battle.c`: only ScrCmd_224 for the interacted object does), so `t:` on them
   never ticks (Kenny's Azalea rival, 2026-10-26). Bullets and each boss's `won` use what the script sets after the
-  win instead: e.g. Azalea rival var 0x4075 >= 2, Burned Tower 0x1C6, Rocket hideout Ariana 0x1F3 / Petrel 0x1F4,
+  win instead: e.g. Azalea rival var 0x4075 >= 2, Burned Tower 0x1C6, Rocket hideout var 0x40AC >= 4 Petrel / >= 9 Ariana
+  (not their FLAG_HIDE_* flags, which the B1F map script sets on the way in),
   tunnel rival var 0x40A0 >= 1, Radio Tower Petrel 0x2C7, Clair 0xD1, Victory Road 0x20A, Red 0x25F.
 - Conditions: `f:` flag, `t:` trainer beaten, `b:`/`k:` Johto/Kanto badge bit, `v:4108>=3` var; `|` any, `&` all.
   The shown step is the first one not done; a step also counts as done once a later one is, except steps marked

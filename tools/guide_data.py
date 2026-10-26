@@ -1,7 +1,7 @@
 # Builds guide/hgss.json, the per-map data behind the in-game guide panel, from a checkout of the
 # pret/pokeheartgold decompilation (https://github.com/pret/pokeheartgold). Only game facts are
 # extracted: map names, wild encounter tables, item balls, hidden items, trainers and their parties,
-# exits, and which land-data blocks make up each map (the page reads the terrain itself from the ROM).
+# trap tiles, exits, and which land-data blocks make up each map (the page reads the terrain itself from the ROM).
 #
 #   git clone --depth 1 https://github.com/pret/pokeheartgold
 #   python3 tools/guide_data.py path/to/pokeheartgold > guide/hgss.json
@@ -132,6 +132,15 @@ def matrix(num):
     return w, h, hdr, models
 matrices = {}
 
+# Script bodies by label, to spot trap tiles: a step trigger whose script warps you back into the same
+# map (the Ecruteak Gym's invisible floor and the like) or springs a Rocket trap battle.
+scripts = {}
+for f in (root / "files/fielddata/script/scr_seq").glob("*.s"):
+    for m in re.finditer(r"^(scr_seq_\w+):\n(.*?)^\tEnd$", f.read_text(), re.M | re.S): scripts[m.group(1)] = m.group(2)
+def trap(script, const):
+    m = re.match(r"_EV_(scr_seq_\w+)", script) if isinstance(script, str) else None
+    return bool(m) and re.search(rf"\tWarp {const},|\tRocketTrapBattle ", scripts.get(m.group(1), "")) is not None
+
 DIRS = {(0, -1): "N", (0, 1): "S", (-1, 0): "W", (1, 0): "E"}
 STAFF = {"SPRITE_PCWOMAN1": 0, "SPRITE_SHOPM1_2": 1, "SPRITE_PCWOMAN2": 2, "SPRITE_PCWOMAN3": 2}
 
@@ -172,6 +181,9 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
         if trainers: entry["trainers"] = trainers
         if warps: entry["warps"] = warps
         if staff: entry["staff"] = staff
+        # Trap tiles (back to the start, or a trap battle): [x, z, w, h]
+        traps = [[c["x"], c["z"], c["w"], c["h"]] for c in z.get("coords", []) if trap(c["scriptId"], const)]
+        if traps: entry["traps"] = traps
 
     # Blocks that make up the map: [bx, bz, landDataId]; exits to neighbouring overworld maps.
     if h["matrix"] not in matrices: matrices[h["matrix"]] = matrix(h["matrix"])

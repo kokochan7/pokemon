@@ -923,11 +923,33 @@ const Guide = (() => {
     return set;
   }
   // Cheapest walk on the map's terrain: walls are a last resort, water costs more (Surf), ledges go the way
-  // you jump (behaviours 56-59 = east, west, north, south). Returns tile points, corners only.
+  // you jump (behaviours 56-59 = east, west, north, south), and trap tiles (the Ecruteak Gym's hidden pits,
+  // the Rocket Hideout's trap battles) are avoided harder than walls. Returns tile points, corners only.
   const STEPS = [[1, 0, 56], [-1, 0, 57], [0, -1, 58], [0, 1, 59]];
-  function walk(L, sx, sz, ends) {
+  // Ice (behaviour 32) keeps you sliding the same way until the next tile is blocked or you're off the ice;
+  // slide arrows (64-67 = east, west, north, south) turn you their way. Returns [tile you stop on, steps].
+  const ICE = 32, SLIDES = { 64: [1, 0], 65: [-1, 0], 66: [0, -1], 67: [0, 1] };
+  function slide(L, j, dx, dz) {
+    const { grid, W, H } = L;
+    for (let k = 1; k < W * H; k++) {
+      const b = grid[j] & 0xff;
+      if (SLIDES[b]) [dx, dz] = SLIDES[b];
+      else if (b !== ICE) return [j, k];
+      const x = j % W + dx, z = ((j / W) | 0) + dz, n = z * W + x;
+      if (x < 0 || z < 0 || x >= W || z >= H || grid[n] < 0 || grid[n] & 0x8000) return [j, k];
+      j = n;
+    }
+    return [j, W * H];
+  }
+  function walk(L, sx, sz, ends, traps) {
     const { grid, W, H } = L;
     if (!ends.size || sx < 0 || sz < 0 || sx >= W || sz >= H) return null;
+    const trap = new Uint8Array(W * H);
+    for (const [x, z, w, h] of traps || [])
+      for (let j = z; j < z + h; j++) for (let i = x; i < x + w; i++) {
+        const gx = i - L.ox, gz = j - L.oz;
+        if (gx >= 0 && gz >= 0 && gx < W && gz < H) trap[gz * W + gx] = 1;
+      }
     const cost = new Int32Array(W * H).fill(1e9), from = new Int32Array(W * H).fill(-1), start = sz * W + sx;
     cost[start] = 0;
     const buckets = [[start]];
@@ -939,15 +961,16 @@ const Guide = (() => {
       for (const [dx, dz, ledge] of STEPS) {
         const nx = x + dx, nz = z + dz;
         if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
-        const j = nz * W + nx, v = grid[j];
-        let k = 1;
+        let j = nz * W + nx, v = grid[j], k = 1;
         if (!ends.has(j)) {
           if (v < 0) continue;
           const b = v & 0xff;
           // A wall or a ledge the wrong way is very dear but not ruled out: the terrain data marks some
           // walkable tiles (bridges, gaps by people) as walls, and no line at all helps nobody.
-          if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = 40;
+          if (trap[j]) k = 200;
+          else if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = 40;
           else if (tiles[b] === 2) k = 3;
+          else if (b === ICE || (b >= 64 && b <= 67)) [j, k] = slide(L, j, dx, dz);
         }
         if (c + k >= cost[j]) continue;
         cost[j] = c + k; from[j] = i;
@@ -988,7 +1011,7 @@ const Guide = (() => {
     bar.append(x);
     bar.hidden = false;
     for (const t of c.parentElement.querySelectorAll(".exit")) t.classList.toggle("go", !!next && next.how !== "fly" && t.to === next.to);
-    const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to));
+    const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to), m.traps);
     if (!pts || pts.length < 2) { svg.style.display = "none"; svg.pts = null; return; }
     svg.style.display = "";
     svg.setAttribute("viewBox", "0 0 " + g.w + " " + g.h);
