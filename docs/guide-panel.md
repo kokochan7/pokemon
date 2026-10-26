@@ -138,7 +138,9 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   `BLOCKED` lists neighbours you can't walk between (Route 44/Blackthorn, up the Route 45 ledges). The bar under
   the map lists the stops (maps with the same name, like a tower's floors or a route's gatehouse, are one stop).
   On the map, `walk()` finds the way from the player to the exit or door for the next stop (or, on the bullet's own
-  map, to its spot), over the terrain: no walls, water costs 3, ledges one way (behaviours 56-59 = E, W, N, S).
+  map, to its spot), over the terrain: water costs 3, walls and wrong-way ledges (behaviours 56-59 = E, W, N, S) cost 40 rather
+  than being ruled out, so a line always shows (Kenny saw it vanish at times, 2026-10-26: the terrain marks some
+  walkable tiles as walls). When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
   It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
   2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
 - Spots: most bullets carry `[map, x, z]`, the person, object, sign or trigger that does what the bullet's
