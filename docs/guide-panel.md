@@ -159,6 +159,12 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   starts at +0xDE4 (u16 vars for ids 0x4000-0x416F), its flag bits at +0x10C4. Trainer N beaten = flag 0x550 + N.
   Fly-point flags 0x9B0-0x9D5 mark towns visited (0x9BD Violet, 0x9BF Goldenrod...). Johto/Kanto badges at
   +0x7E/+0x83. The player's starter species is var 0x4030 (picks the rival's team).
+- Trainer-beaten flags (0x550 + id) are only set for ordinary trainers (`std_trainer` objects, or a gym's
+  `SetTrainerFlag` list). Scripted battles (rivals, gym leaders, Rocket executives, Elite Four, Red) never set
+  their own flag (decomp `scrcmd_battle.c`: only ScrCmd_224 for the interacted object does), so `t:` on them
+  never ticks (Kenny's Azalea rival, 2026-10-26). Bullets and each boss's `won` use what the script sets after the
+  win instead: e.g. Azalea rival var 0x4075 >= 2, Burned Tower 0x1C6, Rocket hideout Ariana 0x1F3 / Petrel 0x1F4,
+  tunnel rival var 0x40A0 >= 1, Radio Tower Petrel 0x2C7, Clair 0xD1, Victory Road 0x20A, Red 0x25F.
 - Conditions: `f:` flag, `t:` trainer beaten, `b:`/`k:` Johto/Kanto badge bit, `v:4108>=3` var; `|` any, `&` all.
   The shown step is the first one not done; a step also counts as done once a later one is, except steps marked
   `free` (Kanto gyms, any order).
