@@ -434,24 +434,74 @@ const Guide = (() => {
     return any ? { grid, dim } : null;
   }
 
-  // Draw the terrain once per map; markers go on top of this cached copy. The tile art is 16px (T),
-  // drawn at ts px per tile: about the size the map is shown at, so big maps don't hold big canvases.
-  async function paintTerrain(m, blocks, bx0, bz0, W, H, ts) {
+  // Each map's terrain laid out once: one grid over all its blocks, with ox/oz = the global tile
+  // coordinates of its top-left corner. Indoors, a room only fills part of its 32x32 block and the
+  // rest is plain floor in the data, so the grid is cut down to the room (see cropRoom()).
+  const layouts = new Map();
+  const layout = (m) => { if (!layouts.has(m)) layouts.set(m, buildLayout(m)); return layouts.get(m); };
+  async function buildLayout(m) {
+    const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
+    if (!blocks.length) return null;
+    const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
+    const W = (Math.max(...blocks.map((b) => b[0])) - bx0 + 1) * 32, H = (Math.max(...blocks.map((b) => b[1])) - bz0 + 1) * 32;
     const tg = await terrainGrid(blocks, bx0, bz0, W, H);
     if (!tg) return null;
-    const { grid, dim } = tg, art = tileArt();
+    let caveTiles = 0;
+    for (const v of tg.grid) if (v >= 0 && (v & 0xff) === 8) caveTiles++;
+    const env = m.exits && m.exits.length ? "out" : caveTiles > tg.grid.length / 10 ? "cave" : "in";
+    const L = { ...tg, W, H, ox: bx0 * 32, oz: bz0 * 32, env };
+    return env === "in" ? cropRoom(m, L) : L;
+  }
+  // The room is the floor you can walk to from its doors, items and people, plus the walls around it.
+  // Everything else is left out (-1) and the grid is cropped to what's left.
+  function cropRoom(m, L) {
+    const { grid, W, H } = L, seen = new Uint8Array(W * H), stack = [];
+    const floor = (i) => grid[i] >= 0 && !(grid[i] & 0x8000);
+    for (const [x, z] of [...(m.warps || []), ...(m.items || []), ...(m.trainers || []), ...(m.staff || [])]) {
+      const lx = x - L.ox, lz = z - L.oz, i = lz * W + lx;
+      if (lx >= 0 && lz >= 0 && lx < W && lz < H && floor(i) && !seen[i]) { seen[i] = 1; stack.push(i); }
+    }
+    if (!stack.length) return L;
+    while (stack.length) {
+      const i = stack.pop(), x = i % W;
+      for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, i - W, i + W]) {
+        if (j >= 0 && j < W * H && !seen[j] && floor(j)) { seen[j] = 1; stack.push(j); }
+      }
+    }
+    let x0 = W, z0 = H, x1 = -1, z1 = -1;
+    const keep = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      if (!seen[i]) continue;
+      const x = i % W, z = (i / W) | 0;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, zz = z + dz;
+        if (xx < 0 || zz < 0 || xx >= W || zz >= H) continue;
+        keep[zz * W + xx] = 1;
+        x0 = Math.min(x0, xx); x1 = Math.max(x1, xx); z0 = Math.min(z0, zz); z1 = Math.max(z1, zz);
+      }
+    }
+    const w = x1 - x0 + 1, h = z1 - z0 + 1, g = new Int32Array(w * h), dim = new Uint8Array(w * h);
+    for (let z = 0; z < h; z++) for (let x = 0; x < w; x++) {
+      const i = (z + z0) * W + x + x0;
+      g[z * w + x] = keep[i] ? grid[i] : -1;
+      dim[z * w + x] = L.dim[i];
+    }
+    return { ...L, grid: g, dim, W: w, H: h, ox: L.ox + x0, oz: L.oz + z0 };
+  }
+
+  // Draw the terrain once per map; markers go on top of this cached copy. The tile art is 16px (T),
+  // drawn at ts px per tile: about the size the map is shown at, so big maps don't hold big canvases.
+  function paintTerrain(m, L, ts) {
+    const { grid, dim, W, H, env } = L, art = tileArt();
     const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
     const wall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
     const cls = (v) => tiles[v & 0xff] || 0;
-    let caveTiles = 0;
-    for (const v of grid) if (v >= 0 && (v & 0xff) === 8) caveTiles++;
-    const env = m.exits && m.exits.length ? "out" : caveTiles > grid.length / 10 ? "cave" : "in";
 
     // Outdoors, the block of walls right above a door or warp is a building (rows above its bottom
     // row are roof); a lone blocked tile is a sign or boulder; other walls are trees.
     const house = new Int8Array(W * H); // 0 none, 1.. roof colour + 1 for the front row, -1 boulder
     if (env === "out") {
-      const doors = (m.warps || []).map(([x, z]) => [x - bx0 * 32, z - bz0 * 32]);
+      const doors = (m.warps || []).map(([x, z]) => [x - L.ox, z - L.oz]);
       for (let i = 0; i < grid.length; i++) if (grid[i] >= 0 && !(grid[i] & 0x8000) && cls(grid[i]) === 4) doors.push([i % W, (i / W) | 0]);
       doors.forEach(([dx, dz], n) => {
         if (!wall(dx, dz - 1) || house[(dz - 1) * W + dx]) return;
@@ -478,7 +528,8 @@ const Guide = (() => {
     const c = cv.getContext("2d");
     c.scale(ts / T, ts / T);
     c.fillStyle = "#181820"; c.fillRect(0, 0, W * T, H * T);
-    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+    if (env === "in") paintRoom(c, m, L);
+    else for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
       const v = grid[z * W + x];
       if (v < 0) continue;
       const b = v & 0xff, k = cls(v);
@@ -504,6 +555,115 @@ const Guide = (() => {
     return cv;
   }
 
+  /* --- rooms: original art in a "looks 3D" style (light tops, dark front faces, soft shadows) --- */
+  // The data only says wall or floor plus each tile's behaviour, so the furniture is worked out:
+  // walls joined to the room's outline are its walls; other wall groups are furniture (a lone tile
+  // is a plant); groups next to someone working a counter (hgss.json "staff") are counters, and the
+  // wall behind the nurse is the healing machine. PCs, TVs, shelves, stairs and mats come from
+  // their tile behaviours (decomp metatile_behavior.h). Painted once per room like the other maps.
+  const ROOM = {
+    center: { floor: ["#f4ead2", "#ecdfc0"], cap: "#b83c30", rim: "#c8b4a4", face: "#f0e6d8", stripe: "#d04838", top: "#c89060", front: "#8a5a30", desk: ["#f8f0e0", "#d05040"] },
+    mart: { floor: ["#e8eef8", "#d8e2f0"], cap: "#3860a8", rim: "#a8b4c8", face: "#eef2f8", stripe: "#4878c8", top: "#c89060", front: "#8a5a30", desk: ["#f8f8f0", "#4878c8"] },
+    home: { floor: ["#e8c890", "#dcb87c"], cap: "#806048", rim: "#a08468", face: "#f0e2c8", stripe: "#c8a070", top: "#b07848", front: "#704828", desk: ["#e8d0a8", "#906038"] },
+  };
+  const STAIRS = new Set([60, 61, 62, 94, 95, 106, 107]), MATS = new Set([98, 99, 100, 101]);
+  const SHELVES = new Set([224, 225, 226, 234]), MART_SHELVES = new Set([229, 235, 236]);
+  function paintRoom(c, m, L) {
+    const { grid, W, H } = L, place = m.place || "";
+    const th = /Pok.mon Center/.test(place) ? ROOM.center : /Mart|Department Store|Shop/.test(place) ? ROOM.mart : ROOM.home;
+    const R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+    const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
+    const isWall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
+    // Wall groups: 1 = the room's own walls (next to the outside, or below such a wall: the back wall
+    // is two tiles deep), 2+ = a piece of furniture (so a plant against a wall stays a plant).
+    const group = new Int32Array(W * H), size = [0, 0];
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      if (!isWall(x, z)) continue;
+      let out = group[(z - 1) * W + x] === 1 && z > 0;
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (at(x + dx, z + dz) < 0) out = true;
+      if (out) group[z * W + x] = 1;
+    }
+    let next = 2;
+    for (let i = 0; i < W * H; i++) {
+      if (!isWall(i % W, (i / W) | 0) || group[i]) continue;
+      const tiles = [i], id = next++;
+      group[i] = id;
+      for (let n = 0; n < tiles.length; n++) {
+        const x = tiles[n] % W, z = (tiles[n] / W) | 0;
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const j = (z + dz) * W + x + dx;
+          if (isWall(x + dx, z + dz) && !group[j]) { group[j] = id; tiles.push(j); }
+        }
+      }
+      size[id] = tiles.length;
+    }
+    // Counters: furniture next to a member of staff. The nurse's healing machine is the wall behind her.
+    const counter = new Set(), machines = [];
+    for (const [sx, sz, kind] of m.staff || []) {
+      const x = sx - L.ox, z = sz - L.oz;
+      for (const [dx, dz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const gid = group[(z + dz) * W + x + dx]; if (isWall(x + dx, z + dz) && gid > 1) counter.add(gid); }
+      if (kind === 0 && isWall(x, z - 1) && isWall(x, z + 1)) machines.push([x, z - 1]);
+    }
+    const kindOf = (x, z) => { const gid = group[z * W + x]; return gid === 1 ? "wall" : counter.has(gid) || (at(x, z) & 0xff) === 128 ? "desk" : size[gid] === 1 ? "plant" : "furniture"; };
+
+    // Floor, with a soft shadow under anything standing north of it.
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      const v = at(x, z);
+      if (v < 0) continue;
+      const X = x * T, Z = z * T, b = v & 0xff;
+      R(X, Z, T, T, th.floor[(x + z) & 1]);
+      R(X, Z, T, 1, "rgba(0,0,0,.05)"); R(X, Z, 1, T, "rgba(0,0,0,.05)");
+      if (v & 0x8000) continue;
+      if (MATS.has(b) || tiles[b] === 4) { R(X + 1, Z + 3, 14, 11, "#c84838"); R(X + 3, Z + 5, 10, 7, "#e86858"); }
+      if (STAIRS.has(b)) { R(X, Z, T, T, "#b8a888"); for (let i = 0; i < 4; i++) R(X + 1, Z + 1 + i * 4, 14, 2, i % 2 ? "#a09070" : "#d8c8a8"); }
+      if (b === 103) { R(X + 2, Z + 2, 12, 12, "#60b0e8"); R(X + 5, Z + 5, 6, 6, "#c0e8f8"); } // warp panel
+      if (isWall(x, z - 1)) { R(X, Z, T, 4, "rgba(40,30,20,.16)"); R(X, Z, T, 2, "rgba(40,30,20,.12)"); }
+    }
+    // Walls and furniture.
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      if (!isWall(x, z)) continue;
+      const X = x * T, Z = z * T, b = at(x, z) & 0xff, kind = kindOf(x, z);
+      const front = at(x, z + 1) >= 0 && !isWall(x, z + 1); // the face you'd see from the room
+      const sameAbove = isWall(x, z - 1) && group[(z - 1) * W + x] === group[z * W + x];
+      if (kind === "wall") {
+        if (front) { R(X, Z, T, T, th.face); R(X, Z, T, 3, th.cap); R(X, Z + 5, T, 2, th.stripe); R(X, Z + T - 2, T, 2, "rgba(0,0,0,.12)"); }
+        else { R(X, Z, T, T, th.rim); R(X, Z, T, 1, "rgba(255,255,255,.3)"); R(X, Z + T - 2, T, 2, "rgba(0,0,0,.15)"); }
+      } else if (kind === "plant") {
+        R(X + 5, Z + 10, 6, 5, "#a86838"); R(X + 5, Z + 14, 6, 1, "#704828");
+        c.fillStyle = "#3c9040"; c.beginPath(); c.arc(X + 8, Z + 7, 6, 0, 7); c.fill();
+        c.fillStyle = "#68c060"; c.beginPath(); c.arc(X + 6, Z + 5, 3, 0, 7); c.fill();
+      } else {
+        const [top, face] = kind === "desk" ? th.desk : [th.top, th.front];
+        R(X, Z, T, T - (front ? 5 : 0), top);
+        if (!sameAbove) R(X, Z, T, 1, "rgba(255,255,255,.4)");
+        if (front) { R(X, Z + T - 5, T, 5, face); if (kind === "desk") R(X, Z + T - 6, T, 1, "#f8d048"); }
+      }
+      // Objects from tile behaviours, drawn on whatever is there.
+      if (b === 131) { R(X + 2, Z + 2, 12, 9, "#606878"); R(X + 3, Z + 3, 10, 6, "#68c0e8"); R(X + 6, Z + 11, 4, 2, "#606878"); } // PC
+      else if (b === 134) { R(X + 2, Z + 3, 12, 9, "#303038"); R(X + 3, Z + 4, 10, 6, "#78a8d8"); } // TV
+      else if (b === 133) { R(X + 2, Z + 2, 12, 9, "#f8f0d8"); R(X + 3, Z + 3, 10, 7, "#78b868"); R(X + 6, Z + 5, 4, 2, "#5888d0"); } // town map
+      else if (SHELVES.has(b)) { R(X + 1, Z + 1, 14, 13, "#8a5a30"); for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) R(X + 2 + j * 3, Z + 2 + i * 4, 2, 3, ["#d05040", "#4878c8", "#58a048", "#e0b030"][(i + j + x) % 4]); }
+      else if (MART_SHELVES.has(b)) { R(X + 1, Z + 1, 14, 13, "#d8dce8"); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) R(X + 2 + j * 4, Z + 2 + i * 4, 3, 3, ["#e05848", "#f0c040", "#58a8e0"][(i + j) % 3]); }
+      else if (b === 228) { R(X + 4, Z + 4, 8, 10, "#7880a0"); R(X + 3, Z + 3, 10, 2, "#a0a8c0"); } // bin
+    }
+    // The healing machine: six Poké Balls in a white case.
+    for (const [x, z] of machines) {
+      const X = x * T, Z = z * T;
+      R(X - 3, Z + 1, T + 6, 12, "#d8dce8"); R(X - 3, Z + 13, T + 6, 2, "#9098b0");
+      for (let i = 0; i < 6; i++) { R(X - 1 + (i % 3) * 7, Z + 3 + (i / 3 | 0) * 5, 4, 4, "#e04848"); R(X - 1 + (i % 3) * 7, Z + 5 + (i / 3 | 0) * 5, 4, 2, "#f8f8f8"); }
+    }
+    // The people at the counters: a little figure each (nurse, clerk, receptionist).
+    for (const [sx, sz, kind] of m.staff || []) {
+      const X = (sx - L.ox) * T, Z = (sz - L.oz) * T;
+      if (at(sx - L.ox, sz - L.oz) < 0) continue;
+      const [hair, body] = [["#f088a8", "#f8f8f8"], ["#604028", "#4878c8"], ["#f088a8", "#e86878"]][kind] || ["#604028", "#888"];
+      c.fillStyle = "rgba(40,30,20,.25)"; c.beginPath(); c.ellipse(X + 8, Z + 14, 5, 2, 0, 0, 7); c.fill();
+      R(X + 4, Z + 7, 8, 7, body);
+      c.fillStyle = "#f8d0b0"; c.beginPath(); c.arc(X + 8, Z + 5, 3.5, 0, 7); c.fill();
+      R(X + 4, Z + 1, 8, 3, hair);
+    }
+  }
+
   // Name of the map an exit leads to, as short as it can be: "Route 31", or just "Mart" for a
   // building in the same town.
   function exitName(m, to) {
@@ -515,11 +675,11 @@ const Guide = (() => {
   // Exits as labels on the map: one at each edge that leads to a neighbouring map (placed at the
   // widest walkable gap on that edge), and one over each door.
   const DIR = { N: [0, -1, "▲"], S: [0, 1, "▼"], W: [-1, 0, "◀"], E: [1, 0, "▶"] };
-  function placeExits(m, canvas, base, bx0, bz0) {
+  function placeExits(m, canvas, L) {
     const box = canvas.parentElement;
     if (!box) return;
     for (const el of box.querySelectorAll(".exit")) el.remove();
-    const g = canvas.geo, W = g.w, H = g.h, grid = base.grid;
+    const g = canvas.geo, W = g.w, H = g.h, grid = L.grid;
     const ox = canvas.offsetLeft + canvas.clientLeft, oy = canvas.offsetTop + canvas.clientTop;
     const open = (x, z) => x >= 0 && z >= 0 && x < W && z < H && grid[z * W + x] >= 0 && !(grid[z * W + x] & 0x8000);
     const own = new Set((m.blocks || []).map(([bx, bz]) => bx + "," + bz));
@@ -540,7 +700,7 @@ const Guide = (() => {
       let best = null, edge = null;
       for (const [bx, bz] of m.blocks) {
         if (!theirs.has(bx + dx + "," + (bz + dz)) || !own.has(bx + "," + bz)) continue;
-        const lx = (bx - bx0) * 32, lz = (bz - bz0) * 32;
+        const lx = bx * 32 - L.ox, lz = bz * 32 - L.oz;
         const along = (i) => dz ? [lx + i, dz < 0 ? lz : lz + 31] : [dx < 0 ? lx : lx + 31, lz + i];
         edge = edge || along(16);
         for (let i = 0, run = 0; i <= 32; i++) {
@@ -557,7 +717,7 @@ const Guide = (() => {
     }
     for (const [x, z, to] of m.warps || []) {
       const name = exitName(m, to);
-      if (name) label("door", name, x - bx0 * 32 + 0.5, z - bz0 * 32, name).k = g.k;
+      if (name) label("door", name, x - L.ox + 0.5, z - L.oz, name).k = g.k;
     }
     // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
     const tags = [...box.querySelectorAll(".exit")];
@@ -608,11 +768,11 @@ const Guide = (() => {
     (m.trainers || []).map((t) => beaten(t[4]) ? 1 : 0).join("");
   const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55));
   async function drawMap(m, canvas, highlight) {
-    const blocks = (m.blocks || []).map((b) => [...b, false]).concat((m.near || []).map((b) => [...b, true]));
-    if (!blocks.length) return false;
-    const bx0 = Math.min(...blocks.map((b) => b[0])), bz0 = Math.min(...blocks.map((b) => b[1]));
-    const bw = Math.max(...blocks.map((b) => b[0])) - bx0 + 1, bh = Math.max(...blocks.map((b) => b[1])) - bz0 + 1;
-    const W = bw * 32, H = bh * 32;
+    canvas.want = m;
+    const L = await layout(m);
+    if (canvas.want !== m) return; // a newer map was asked for while this one was loading
+    if (!L) return false;
+    const { W, H } = L;
     // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
     // follows the player (see follow()). The box is always the same height, so the panel doesn't
     // jump when you change area; a shorter map sits in the middle of it.
@@ -625,27 +785,24 @@ const Guide = (() => {
     let p = painted.get(m);
     if (p && p.ts !== ts) p = null;
     if (p) painted.delete(m); // move to the newest end
-    else p = { ts, base: paintTerrain(m, blocks, bx0, bz0, W, H, ts) };
+    else p = { ts, base: paintTerrain(m, L, ts) };
     painted.set(m, p);
     while (painted.size > PAINTED_MAX) painted.delete(painted.keys().next().value);
-    canvas.want = m;
-    const base = await p.base;
-    if (canvas.want !== m) return; // a newer map was asked for while this one was painting
-    if (!base) return false;
+    const base = p.base;
     if (box) box.style.height = boxH + 6 + "px";
     if (canvas.width !== W * ts || canvas.height !== H * ts) { canvas.width = W * ts; canvas.height = H * ts; }
     canvas.style.width = Math.round(W * k) + "px";
     canvas.style.height = Math.round(H * k) + "px";
     canvas.style.marginTop = Math.max(0, Math.floor((boxH - Math.round(H * k)) / 2)) + "px";
     canvas.style.imageRendering = k >= ts ? "pixelated" : "auto";
-    canvas.geo = { x0: bx0 * 32, z0: bz0 * 32, w: W, h: H, k: Math.round(W * k) / W };
+    canvas.geo = { x0: L.ox, z0: L.oz, w: W, h: H, k: Math.round(W * k) / W };
     const c = canvas.getContext("2d");
     // Markers are worked out in 16px-tile units, scaled down to the canvas.
     c.setTransform(ts / T, 0, 0, ts / T, 0, 0);
     c.drawImage(base, 0, 0, W * T, H * T);
     // Markers, drawn bigger when the map is shown small so they stay visible.
     const grow = Math.max(1, 8 / k);
-    const at = (x, z) => [(x - bx0 * 32 + 0.5) * T, (z - bz0 * 32 + 0.5) * T];
+    const at = (x, z) => [(x - L.ox + 0.5) * T, (z - L.oz + 0.5) * T];
     const ring = (x, y, r) => { c.strokeStyle = "#e0b030"; c.lineWidth = 3 * grow; c.strokeRect(x - r, y - r, 2 * r, 2 * r); };
     const ball = ([x, z], i, key, hidden) => {
       const [cx, cy] = at(x, z), r = 5 * grow;
@@ -689,7 +846,7 @@ const Guide = (() => {
         followPause = Date.now() + 4000;
       }
     }
-    placeExits(m, canvas, base, bx0, bz0);
+    placeExits(m, canvas, L);
     return true;
   }
 

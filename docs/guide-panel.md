@@ -45,6 +45,22 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
   centred in it), and the map section is built once and reused by each render, so the previous map stays
   on screen until the new one is painted: no resizing or flicker when you change area.
+- Rooms (indoor maps, `env` "in") are drawn by `paintRoom()` in a "looks 3D" style (Kenny liked the mockup,
+  2026-10-25): light tops, dark front faces, soft shadows, original art. A room's furniture is part of its 3D
+  model in the ROM, not a list we can read, so it is worked out:
+  - Walls next to the outside, or below such a wall, are the room's walls. Other wall groups are furniture,
+    and a lone tile is drawn as a plant.
+  - Groups next to a member of staff are counters, and the wall behind the nurse is the healing machine.
+    `staff` in hgss.json is `[x, z, 0 nurse | 1 clerk | 2 receptionist]`, from the event objects' sprites.
+  - PC (131), TV (134), town map (133), bookshelves, mart shelves, bin, stairs/ladders/escalators, mats
+    and warp panels come from tile behaviours. Behaviour 128 is assumed to be a counter.
+  - The colours follow the place name: Pokémon Center, Mart/Department Store, or home.
+  - `cropRoom()` cuts the grid down to the floor you can reach from the room's warps, items and people,
+    plus the walls around it. The rest of the 32x32 block is plain floor in the data, so it used to show
+    as a big empty floor around the room. `layout()` keeps each map's (cropped) grid, with `ox`/`oz` as
+    its top-left global tile.
+  - Tested only with a dummy room built to match the Pokémon Center 1F events (all centres share land
+    block 221: nurse at 8,11, exit 8,19, B1F stairs 14,17). Ask Kenny for screenshots of real rooms.
 - Exits are HTML tags over the map (`placeExits()`), not a list. Each edge exit (`exits` in hgss.json) is an
   arrow tag at the widest walkable gap on the edge it shares with the neighbour's blocks; edge tags stay
   pinned inside the visible part of the map while it scrolls (`clampExits()`). Each warp gets a name tag

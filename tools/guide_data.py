@@ -133,6 +133,7 @@ def matrix(num):
 matrices = {}
 
 DIRS = {(0, -1): "N", (0, 1): "S", (-1, 0): "W", (1, 0): "E"}
+STAFF = {"SPRITE_PCWOMAN1": 0, "SPRITE_SHOPM1_2": 1, "SPRITE_PCWOMAN2": 2, "SPRITE_PCWOMAN3": 2}
 
 out = {}
 for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
@@ -158,6 +159,9 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
         hidden = [[b["x"], b["z"], n, hidden_scripts[b["scriptId"]] - 8000 + 800 if b["scriptId"] in hidden_scripts else 0]
                   for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
         trainers = [[o["x"], o["z"], *t] for o in z.get("objects", []) if (t := trainer(o["scriptId"]))]
+        # People behind counters, so the mini map can draw the counter (and the nurse's healing machine):
+        # [x, z, 0 nurse | 1 shop clerk | 2 reception desk]
+        staff = [[o["x"], o["z"], STAFF[o["spriteId"]]] for o in z.get("objects", []) if o["spriteId"] in STAFF]
         warps = []
         for wp in z.get("warps", []):
             dest = maps.get(wp["header"])
@@ -167,6 +171,7 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
         if hidden: entry["hidden"] = hidden
         if trainers: entry["trainers"] = trainers
         if warps: entry["warps"] = warps
+        if staff: entry["staff"] = staff
 
     # Blocks that make up the map: [bx, bz, landDataId]; exits to neighbouring overworld maps.
     if h["matrix"] not in matrices: matrices[h["matrix"]] = matrix(h["matrix"])
