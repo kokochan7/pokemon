@@ -25,6 +25,30 @@ const Guide = (() => {
     setTimeout(() => window.dispatchEvent(new Event("resize")), 0); // let the emulator refit
   }
 
+  // The panels grow to fill the width the game leaves free (Kenny, 2026-10-26: tiny on a 24" monitor at
+  // 100% scaling). The DS screens are stacked (256x384), so the game is 2/3 as wide as it is tall; the
+  // rest of the width goes to the panels, zoomed up from their normal size (never down). The zoom is also
+  // kept to the screen's height over FIT_H, so a tall panel doesn't turn into a long scroll; at FIT_H or
+  // less (Kenny's 200% screen) the panels keep their normal size.
+  // Sizes inside the panels stay in their own unzoomed px; only window sizes need dividing by `zoom`.
+  const ZOOM_MAX = 2.5, FIT_H = 620;
+  let zoom = 1;
+  function fit() {
+    const g = el(), gl = $("guideL"), scr = g.parentElement;
+    if (!scr || !scr.clientHeight) return;
+    const bar = parseFloat(getComputedStyle($("game")).getPropertyValue("--ejs-bar")) || 0;
+    const gameW = Math.min(1100, (scr.clientHeight - bar) * 2 / 3);
+    const split = wide.matches, panelW = split ? 320 : 300;
+    const room = (scr.clientWidth - gameW - 8) / (split ? 2 : 1);
+    const z = Math.max(1, Math.floor(Math.min(ZOOM_MAX, room / panelW, scr.clientHeight / FIT_H) * 20) / 20);
+    if (z === zoom) return;
+    zoom = z;
+    g.style.zoom = gl.style.zoom = z === 1 ? "" : z;
+    if (shown != null) render(shown);
+    setTimeout(() => window.dispatchEvent(new Event("resize")), 0); // let the emulator refit
+  }
+  addEventListener("resize", () => setTimeout(fit, 150)); // after app.js has measured the menu bar
+
   async function prepare(blob) {
     const h = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
     ver = GAMES[String.fromCharCode(...h.slice(12, 15))] || null;
@@ -48,6 +72,7 @@ const Guide = (() => {
   function started() {
     if (!ver) return;
     render(null, "Waiting for the game…");
+    fit();
     timer = setInterval(poll, 1000);
     setInterval(follow, 200);
     setInterval(markTrainers, 250);
@@ -1124,7 +1149,7 @@ const Guide = (() => {
   const beaten = (tid) => { const h = heap(); return !!(tid && h && storyBase != null && Story.beaten(h, storyBase, tid)); };
   const mapState = (m) => [...(m.items || []), ...(m.hidden || [])].map((it) => got(it[3]) ? 1 : 0).join("") + ":" +
     (m.trainers || []).map((t) => beaten(t[4]) ? 1 : 0).join("");
-  const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55));
+  const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55 / zoom));
   // The rooms you can walk into next are read from the ROM ahead of time, so they show at once.
   const prewarm = (m) => (window.requestIdleCallback || setTimeout)(() => {
     for (const [, , to] of m.warps || []) if (data[to]) layout(data[to]);
@@ -1144,7 +1169,7 @@ const Guide = (() => {
     const boxH = mapBoxH();
     const fit = Math.min(boxW / W, boxH / H);
     const k = fit;
-    const ts = Math.max(8, Math.min(T, Math.ceil(k * (window.devicePixelRatio || 1))));
+    const ts = Math.max(8, Math.min(T, Math.ceil(k * zoom * (window.devicePixelRatio || 1))));
     let p = painted.get(m);
     if (p && p.ts !== ts) p = null;
     if (p) painted.delete(m); // move to the newest end
