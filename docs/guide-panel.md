@@ -126,6 +126,19 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   (☆, ✓ when done). Flags come from the decomp's scripts (the SetFlag next to the GiveItem/GivePokemon). `c:N` =
   National Dex N caught: Pokédex at general block +0x12B8 (magic 0xBEEFCAFE, then caught bits, bit species-1).
   Conditions can be per version like text: `{f:0x117|f:0x116}` (HG's, then SS's).
+- Places and the way there (Kenny's ask, 2026-10-26): a bullet's optional 3rd value in story.json is where it
+  happens: a map id, `[map id, x, z]` for a spot, or `"HG id|SS id"`. The panel shows its name (📍, `placeName()`
+  tidies hgss.json's decomp names, `PLACES`/`NAMES` fix the odd ones). Clicking the bullet picks it (gold bar;
+  click again or ✕ to stop, a new step clears it). Then `route()` finds the fewest-steps way over maps: edge
+  exits and doors cost 1, Fly 3 (only with HM02 + Storm Badge, to fly points visited, `FLY` = flag -> town). An
+  elevator (no warps in the data) links back to every floor that leads into it; the S.S. Aqua needs the ticket;
+  `BLOCKED` lists neighbours you can't walk between (Route 44/Blackthorn, up the Route 45 ledges). The bar under
+  the map lists the stops (maps with the same name, like a tower's floors or a route's gatehouse, are one stop).
+  On the map, `walk()` draws a dashed gold line from the player to the exit or door for the next stop (or to the
+  spot), over the terrain: no walls, water costs 3, ledges one way (behaviours 56-59 = E, W, N, S); that exit's
+  tag turns gold. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
+  connect, not story blocks inside them (a Rocket in the way, a Strength boulder), and inside a multi-floor cave
+  the line goes to the warp that leads on in the data. Tested with fake terrain and RAM only.
 - Under the bullets: each boss (name, type icons, "Weakness" + type icons, team sprites; dimmed with a tick once beaten)
   The step's "RECOMMEND CATCH" grid (sprites + where) goes in the right panel between WILD and TRAINERS (`Story.catches()`). Type icons are PokeAPI's Gen IV HGSS type sprites
   (hot-linked, `sprites/types/generation-iv/heartgold-soulsilver/<type id>.png`).

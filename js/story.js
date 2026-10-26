@@ -99,18 +99,35 @@ const Story = (() => {
 
   // The NEXT section, all at a glance: the step's to-do bullets (ticked from the save data), the
   // boss teams with type and weakness icons. What to catch goes in the right panel (catches()).
-  function nodes(h, base, sprite) {
+  // A bullet's place in story.json: a map id, [map id, x, z], or "HeartGold id|SoulSilver id".
+  const where = (p) => typeof p === "string" ? [Number(p.split("|")[ver === "ss" ? 1 : 0])] : [].concat(p);
+
+  // nav (from the guide) names a bullet's place and shows the way there when it is clicked:
+  // { key: the picked bullet, name(place), pick(key, place) }.
+  function nodes(h, base, sprite, nav) {
     if (!steps) return [];
     const i = current(h, base), s = steps[i];
     const box = el("div", "story");
     box.append(el("div", "stitle", s.title));
+    const bullet = (kind, j, [text, cond, place]) => {
+      const li = el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text);
+      if (place != null && nav) {
+        const key = i + kind + j, at = where(place);
+        li.append(el("span", "at", nav.name(at)));
+        li.classList.add("go");
+        li.classList.toggle("nav", key === nav.key);
+        li.title = "Show the way";
+        li.onclick = () => nav.pick(key === nav.key ? null : key, at, li);
+      }
+      return li;
+    };
     const ul = el("ul", "todo");
-    for (const [text, cond] of s.todo) ul.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
+    s.todo.forEach((t, j) => ul.append(bullet("t", j, t)));
     box.append(ul);
     // Optional side quests worth doing at this point; they tick themselves the same way.
     if (s.opt) {
       const ol = el("ul", "todo opt");
-      for (const [text, cond] of s.opt) ol.append(el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text));
+      s.opt.forEach((t, j) => ol.append(bullet("o", j, t)));
       box.append(el("div", "otitle", "Optional"), ol);
     }
 
@@ -155,5 +172,7 @@ const Story = (() => {
 
   const beaten = (h, base, tid) => flag(h, base, TRAINER_FLAGS + tid);
 
-  return { load, key, nodes, catches, beaten, flag };
+  const step = (h, base) => steps ? current(h, base) : -1;
+
+  return { load, key, nodes, catches, beaten, flag, test, step };
 })();
