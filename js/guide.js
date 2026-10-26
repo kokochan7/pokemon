@@ -92,14 +92,8 @@ const Guide = (() => {
     dot.style.left = x + "px";
     dot.style.top = y + "px";
     updateNav();
-    // Keep the player in the middle of the box when the map is bigger than it (the browser stops the
-    // scroll at the map's edges), unless you just scrolled it yourself.
-    const box = c.parentElement;
-    if (Date.now() < followPause) return;
-    const sl = Math.round(x - box.clientWidth / 2), st = Math.round(y - box.clientHeight / 2);
-    if (sl !== box.lastL || st !== box.lastT) { box.lastL = sl; box.lastT = st; box.scrollLeft = sl; box.scrollTop = st; }
   }
-  let followPause = 0, lastPos = null;
+  let lastPos = null;
 
   // The trainer you're battling: the one standing next to you. The field's map objects sit in one array
   // (0x12C bytes each) with the player's; a trainer's script id is 3000 + trainer id - 1 (std_trainer, or
@@ -1142,14 +1136,14 @@ const Guide = (() => {
     if (!L) return false;
     prewarm(m);
     const { W, H } = L;
-    // Fill the column. Tiles stay at least 6px so they read; a bigger map scrolls in its box and
-    // follows the player (see follow()). The box is always the same height, so the panel doesn't
-    // jump when you change area; a shorter map sits in the middle of it.
+    // The whole map always fits its box, so it never scrolls (Kenny's choice, 2026-10-26: following the
+    // player moved it too much). The box is always the same height, so the panel doesn't jump when you
+    // change area; a smaller map sits in the middle of it.
     const box = canvas.parentElement;
     const boxW = (box && box.clientWidth || 268) - 6;
     const boxH = mapBoxH();
     const fit = Math.min(boxW / W, boxH / H);
-    const k = fit >= 6 ? fit : Math.max(6, boxW / W); // too tall: fill the width; too wide: 6px tiles
+    const k = fit;
     const ts = Math.max(8, Math.min(T, Math.ceil(k * (window.devicePixelRatio || 1))));
     let p = painted.get(m);
     if (p && p.ts !== ts) p = null;
@@ -1207,14 +1201,6 @@ const Guide = (() => {
     // Items you've picked up are left off.
     (m.hidden || []).forEach((it, i) => { if (!got(it[3])) ball(it, i, "h", true); });
     (m.items || []).forEach((it, i) => { if (!got(it[3])) ball(it, i, "i", false); });
-    if (highlight && box) {
-      const list = { i: m.items, h: m.hidden, t: m.trainers }[highlight[0]], it = list && list[+highlight.slice(1)];
-      if (it) {
-        const [cx, cy] = at(it[0], it[1]);
-        box.scrollTo({ left: cx / T * canvas.geo.k - box.clientWidth / 2, top: cy / T * canvas.geo.k - box.clientHeight / 2, behavior: "smooth" });
-        followPause = Date.now() + 4000;
-      }
-    }
     placeExits(m, canvas, L);
     canvas.L = L; canvas.m = m;
     updateNav(true);
@@ -1259,7 +1245,6 @@ const Guide = (() => {
         svg.setAttribute("preserveAspectRatio", "none");
         svg.innerHTML = '<polyline class="band"/><g class="arrows"></g><circle r="0.55"/>';
         box.append(c, svg, dot);
-        for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
         const legend = node("div", "legend");
         // Each key is a small CSS copy of the marker drawn on the map.
         for (const label of ["you", "item", "hidden", "trainer", "beaten"]) legend.append(node("span", "key " + label, label));

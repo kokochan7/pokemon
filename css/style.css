@@ -255,7 +255,7 @@ body.playing #scene { display: none; }
 .guide .cgrid .where { display: block; }
 /* the mini map stays in view while you scroll the lists below it */
 .guide .mapwrap { position: sticky; top: -8px; z-index: 1; background: var(--paper); padding-bottom: 4px; margin: 0 -4px; padding-left: 4px; }
-.guide .mapbox { overflow: auto; position: relative; scrollbar-width: thin; }
+.guide .mapbox { overflow: hidden; position: relative; }
 .guide .me {
   position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
   background: #3870e8; box-shadow: 0 0 0 2px #f8f8f0, 0 0 0 3px #181820; pointer-events: none;
