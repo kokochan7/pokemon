@@ -130,8 +130,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   National Dex N caught: Pokédex at general block +0x12B8 (magic 0xBEEFCAFE, then caught bits, bit species-1).
   Conditions can be per version like text: `{f:0x117|f:0x116}` (HG's, then SS's).
 - Places and the way there (Kenny's ask, 2026-10-26): a bullet's optional 3rd value in story.json is where it
-  happens: a map id, `[map id, x, z]` for a spot, or `"HG id|SS id"`. The panel shows its name (📍, `placeName()`
-  tidies hgss.json's decomp names, `PLACES`/`NAMES` fix the odd ones). Clicking the bullet picks it (gold bar;
+  happens: a map id, `[map id, x, z]` for a spot, or `"HG id|SS id"`. The name isn't shown under the bullet (Kenny removed the 📍 tags,
+  2026-10-26: he just clicks); `placeName()` (with `PLACES`/`NAMES` fixing decomp names) names stops in the bar. Clicking the bullet picks it (gold bar;
   click again or ✕ to stop, a new step clears it). Then `route()` finds the fewest-steps way over maps: edge
   exits and doors cost 1, Fly 3 (only with HM02 + Storm Badge, to fly points visited, `FLY` = flag -> town). An
   elevator (no warps in the data) links back to every floor that leads into it; the S.S. Aqua needs the ticket;

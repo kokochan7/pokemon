@@ -219,12 +219,10 @@ body.playing #scene { display: none; }
 .guide .story .opt li.ok::before { content: "✓"; }
 .guide .story .opt li.info::before { content: "☆"; }
 .guide .story .opt li { color: #484858; }
-/* a bullet with a place: its name after the text; click it to show the way (.nav = picked) */
+/* a bullet with a place: click it to show the way (.nav = picked) */
 .guide .story .todo li.go { cursor: pointer; }
 .guide .story .todo li.go:hover { background: var(--paper-2); }
 .guide .story .todo li.nav { background: var(--paper-2); box-shadow: -4px 0 0 #d83030; }
-.guide .story .todo .at { margin-left: 5px; font-size: 11px; color: #3870a8; white-space: nowrap; text-decoration: none; display: inline-block; }
-.guide .story .todo .at::before { content: "📍"; font-size: 10px; margin-right: 1px; }
 .guide .story .boss { margin-top: 5px; padding: 3px 6px; border: 2px solid var(--ink); background: var(--paper-2); }
 .guide .story .boss.beaten { opacity: .6; }
 .guide .story .bhead, .guide .story .weak { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
