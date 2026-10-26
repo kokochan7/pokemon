@@ -8,7 +8,11 @@
     [
      "Go next door to Prof. Elm's Lab and pick a starter",
      "f:0x6A",
-     61
+     [
+      61,
+      8,
+      4
+     ]
     ],
     [
      "Cyndaquil is the easiest start; Chikorita is the hard mode",
@@ -39,7 +43,11 @@
     [
      "Get the Mystery Egg, and the Pokédex from Prof. Oak",
      "f:0x6B",
-     143
+     [
+      143,
+      9,
+      7
+     ]
     ]
    ],
    "catch": [
@@ -56,7 +64,11 @@
     [
      "Mystic Water from the man by the water in Cherrygrove (boosts Water moves)",
      "f:0xF3",
-     67
+     [
+      67,
+      530,
+      406
+     ]
     ]
    ]
   },
@@ -121,7 +133,11 @@
     [
      "Catching lesson on Route 29 (5 Poké Balls)",
      "f:0x9A",
-     33
+     [
+      33,
+      666,
+      399
+     ]
     ],
     [
      "Go north via Routes 30 and 31 to Violet City",
@@ -131,7 +147,11 @@
     [
      "Climb Sprout Tower and beat Elder Li (TM70 Flash)",
      "f:0x76",
-     156
+     [
+      156,
+      12,
+      9
+     ]
     ]
    ],
    "boss": [
@@ -168,7 +188,11 @@
     [
      "Trade a Bellsprout for an Onix in Violet City",
      "f:0x71",
-     162
+     [
+      162,
+      2,
+      5
+     ]
     ],
     [
      "Ruins of Alph (west of Route 32): solve the Kabuto puzzle",
@@ -189,7 +213,11 @@
     [
      "Beat Falkner: Zephyr Badge and TM51 Roost",
      "b:0",
-     135
+     [
+      135,
+      15,
+      4
+     ]
     ],
     [
      "Aim for level 12-14; Rock or Electric types make it easy",
@@ -240,7 +268,11 @@
     [
      "Get the Old Rod in the Route 32 Pokémon Center",
      "f:0x75",
-     169
+     [
+      169,
+      4,
+      15
+     ]
     ],
     [
      "Go through Union Cave",
@@ -255,7 +287,11 @@
     [
      "Chase Team Rocket out of Slowpoke Well, beat Proton",
      "f:0x7B",
-     177
+     [
+      177,
+      27,
+      3
+     ]
     ]
    ],
    "boss": [
@@ -293,12 +329,20 @@
     [
      "TM05 Roar from a man on Route 32",
      "f:0x6E",
-     36
+     [
+      36,
+      471,
+      312
+     ]
     ],
     [
      "Lure Ball from Kurt's fan on Route 32",
      "f:0x174",
-     169
+     [
+      169,
+      1,
+      18
+     ]
     ]
    ]
   },
@@ -309,7 +353,11 @@
     [
      "Beat Bugsy: Hive Badge and TM89 U-turn",
      "b:1",
-     180
+     [
+      180,
+      9,
+      5
+     ]
     ],
     [
      "Level 17-18; take Scyther out fast",
@@ -335,12 +383,20 @@
     [
      "Apricorn Box from the Route 30 Apricorn House: Kurt turns Apricorns into special Poké Balls",
      "f:0x6D",
-     127
+     [
+      127,
+      5,
+      5
+     ]
     ],
     [
      "King's Rock from the man in Slowpoke Well",
      "f:0x7A",
-     181
+     [
+      181,
+      10,
+      7
+     ]
     ]
    ]
   },
@@ -351,7 +407,11 @@
     [
      "Walk west toward Ilex Forest and beat the rival",
      "t:266|t:269|t:1",
-     74
+     [
+      74,
+      395,
+      464
+     ]
     ],
     [
      "Normal and Fighting moves can't hit his Gastly",
@@ -389,7 +449,11 @@
     [
      "Get HM01 Cut from the charcoal man",
      "f:0x80",
-     117
+     [
+      117,
+      11,
+      75
+     ]
     ],
     [
      "Cut the tree blocking the north exit",
@@ -411,12 +475,20 @@
     [
      "Charcoal from the charcoal kiln in Azalea (boosts Fire moves)",
      "f:0x81",
-     163
+     [
+      163,
+      5,
+      5
+     ]
     ],
     [
      "TM12 Taunt from the woman in the north Ilex Forest gate",
      "f:0x83",
-     171
+     [
+      171,
+      9,
+      7
+     ]
     ]
    ]
   },
@@ -432,7 +504,11 @@
     [
      "Beat Whitney (talk to her again if she cries)",
      "b:2",
-     137
+     [
+      137,
+      13,
+      4
+     ]
     ],
     [
      "Use Fighting moves; female Pokémon dodge Attract",
@@ -470,22 +546,38 @@
     [
      "Free Bicycle from the Bike Shop",
      "f:0x89",
-     182
+     [
+      182,
+      8,
+      6
+     ]
     ],
     [
      "Radio Card from the Radio Tower 1F quiz",
      "f:0x8A",
-     112
+     [
+      112,
+      13,
+      12
+     ]
     ],
     [
      "Eevee from Bill at his house",
      "f:0x95",
-     203
+     [
+      203,
+      8,
+      5
+     ]
     ],
     [
      "Trade a Drowzee for Machop (Dept. Store 5F)",
      "f:0x8D",
-     195
+     [
+      195,
+      2,
+      6
+     ]
     ],
     [
      "Pokéathlon Dome, north of Goldenrod on Route 35",
@@ -506,12 +598,20 @@
     [
      "Go north on Route 35, then east on Route 36",
      "f:0x1C2",
-     40
+     [
+      40,
+      415,
+      246
+     ]
     ],
     [
      "Water the odd tree: Sudowoodo battle (level 20)",
      "f:0x1C2",
-     40
+     [
+      40,
+      415,
+      246
+     ]
     ],
     [
      "Get HM06 Rock Smash from the man nearby",
@@ -546,7 +646,11 @@
     [
      "Quick Claw from the woman in National Park",
      "f:0x10E",
-     96
+     [
+      96,
+      62,
+      76
+     ]
     ]
    ]
   },
@@ -567,7 +671,11 @@
     [
      "Beat the rival in the Burned Tower",
      "t:267|t:270|t:263",
-     7
+     [
+      7,
+      22,
+      19
+     ]
     ],
     [
      "Drop to the basement and wake the legendary beasts",
@@ -605,7 +713,11 @@
     [
      "Beat Morty: Fog Badge and TM30 Shadow Ball",
      "b:3",
-     80
+     [
+      80,
+      10,
+      8
+     ]
     ],
     [
      "Walk the hidden path; bring Awakenings, level 25+",
@@ -637,12 +749,20 @@
     [
      "Beat the Rocket grunt bothering a Kimono Girl",
      "f:0xA2",
-     86
+     [
+      86,
+      7,
+      6
+     ]
     ],
     [
      "Get HM03 Surf from the gentleman",
      "f:0xA2",
-     86
+     [
+      86,
+      8,
+      12
+     ]
     ]
    ]
   },
@@ -668,7 +788,11 @@
     [
      "Beat Chuck: Storm Badge and TM01 Focus Punch",
      "b:4",
-     139
+     [
+      139,
+      13,
+      10
+     ]
     ]
    ],
    "boss": [
@@ -706,17 +830,29 @@
     [
      "Good Rod from the fisherman in Olivine",
      "f:0xBD",
-     230
+     [
+      230,
+      5,
+      5
+     ]
     ],
     [
      "Trade a Krabby for a Voltorb in Olivine",
      "f:0xBE",
-     228
+     [
+      228,
+      5,
+      5
+     ]
     ],
     [
      "Nurse the sick Miltank at MooMoo Farm (Route 39): TM83 and cheap Moomoo Milk",
      "f:0xAB",
-     214
+     [
+      214,
+      9,
+      5
+     ]
     ],
     [
      "Catch Lapras in Union Cave B2F (Fridays, needs Surf)",
@@ -732,19 +868,31 @@
     [
      "Get HM02 Fly from Chuck's wife",
      "f:0xBB",
-     75
+     [
+      75,
+      173,
+      360
+     ]
     ],
     [
      "Get the SecretPotion at the Pharmacy",
      "f:0xB9",
-     233
+     [
+      233,
+      5,
+      5
+     ]
     ]
    ],
    "opt": [
     [
      "Borrow Kirk's Shuckle in Cianwood",
      "f:0xBF",
-     232
+     [
+      232,
+      5,
+      5
+     ]
     ]
    ]
   },
@@ -755,12 +903,20 @@
     [
      "Give the SecretPotion to Amphy at the Lighthouse top",
      "v:40A5>=2|b:5",
-     225
+     [
+      225,
+      8,
+      8
+     ]
     ],
     [
      "Beat Jasmine: Mineral Badge and TM23 Iron Tail",
      "b:5",
-     138
+     [
+      138,
+      6,
+      5
+     ]
     ]
    ],
    "boss": [
@@ -800,12 +956,20 @@
     [
      "Battle the red Gyarados (level 30) for the Red Scale",
      "f:0xC9",
-     88
+     [
+      88,
+      525,
+      71
+     ]
     ],
     [
      "Meet Lance on the shore",
      "f:0xC9",
-     88
+     [
+      88,
+      525,
+      72
+     ]
     ]
    ],
    "catch": [
@@ -830,17 +994,29 @@
     [
      "Trade the Red Scale for an Exp. Share at Mr. Pokémon's house",
      "f:0x6C",
-     143
+     [
+      143,
+      9,
+      7
+     ]
     ],
     [
      "TM10 Hidden Power from the man at Lake of Rage",
      "f:0xC7",
-     294
+     [
+      294,
+      5,
+      5
+     ]
     ],
     [
      "Black Belt from Wesley at Lake of Rage (Wednesdays)",
      "f:0xD5",
-     88
+     [
+      88,
+      495,
+      48
+     ]
     ]
    ]
   },
@@ -851,22 +1027,38 @@
     [
      "Go under the Mahogany souvenir shop with Lance",
      "t:479|f:0xCA",
-     116
+     [
+      116,
+      5,
+      7
+     ]
     ],
     [
      "Beat Ariana with Lance",
      "t:479",
-     248
+     [
+      248,
+      31,
+      19
+     ]
     ],
     [
      "Beat Petrel",
      "t:488",
-     249
+     [
+      249,
+      24,
+      12
+     ]
     ],
     [
      "Knock out the three Electrode",
      "f:0xCA",
-     248
+     [
+      248,
+      21,
+      12
+     ]
     ],
     [
      "Get HM05 Whirlpool from Lance",
@@ -913,7 +1105,11 @@
     [
      "Beat Pryce: Glacier Badge and TM07 Hail",
      "b:6",
-     140
+     [
+      140,
+      7,
+      4
+     ]
     ],
     [
      "Slide across the ice; level 32-35",
@@ -949,12 +1145,20 @@
     [
      "Beat Petrel on 5F for the Basement Key",
      "v:4077>=3",
-     189
+     [
+      189,
+      5,
+      13
+     ]
     ],
     [
      "Beat the rival in the Goldenrod Tunnel",
      "t:289|t:271|t:288",
-     201
+     [
+      201,
+      19,
+      5
+     ]
     ],
     [
      "Free the Director in the warehouse (Card Key)",
@@ -964,12 +1168,20 @@
     [
      "Beat Ariana on 5F",
      "t:478",
-     189
+     [
+      189,
+      11,
+      4
+     ]
     ],
     [
      "Beat Archer on the Observation Deck",
      "f:0xC6",
-     190
+     [
+      190,
+      8,
+      3
+     ]
     ]
    ],
    "boss": [
@@ -1058,7 +1270,11 @@
     [
      "Beat Clair",
      "t:35",
-     141
+     [
+      141,
+      12,
+      3
+     ]
     ],
     [
      "Level 38-40; bring Ice moves and Paralyze Heals",
@@ -1117,7 +1333,11 @@
     [
      "All kind answers earn a Dratini with ExtremeSpeed",
      "f:0xDC|f:0xDD",
-     288
+     [
+      288,
+      6,
+      9
+     ]
     ]
    ]
   },
@@ -1144,12 +1364,20 @@
     [
      "Beat the five Kimono Girls at the Dance Theater",
      "v:410C>=6|f:0x103|f:0x104",
-     86
+     [
+      86,
+      7,
+      6
+     ]
     ],
     [
      "Get the {Clear Bell|Tidal Bell}",
      "v:410C>=6|f:0x103|f:0x104",
-     86
+     [
+      86,
+      7,
+      6
+     ]
     ],
     [
      "Meet {Ho-Oh at the Bell Tower top|Lugia deep in the Whirl Islands}",
@@ -1205,7 +1433,11 @@
     [
      "Beat the rival in Victory Road",
      "t:268|t:272|t:264",
-     179
+     [
+      179,
+      38,
+      21
+     ]
     ],
     [
      "Reach Indigo Plateau and stock up",
@@ -1215,27 +1447,47 @@
     [
      "Beat Will",
      "f:0xE4",
-     301
+     [
+      301,
+      6,
+      10
+     ]
     ],
     [
      "Beat Koga",
      "f:0xE5",
-     302
+     [
+      302,
+      6,
+      11
+     ]
     ],
     [
      "Beat Bruno",
      "f:0xE6",
-     303
+     [
+      303,
+      6,
+      10
+     ]
     ],
     [
      "Beat Karen",
      "f:0xE7",
-     304
+     [
+      304,
+      6,
+      10
+     ]
     ],
     [
      "Beat Champion Lance",
      "f:0x964",
-     305
+     [
+      305,
+      6,
+      6
+     ]
     ]
    ],
    "boss": [
@@ -1325,7 +1577,11 @@
     [
      "Get the S.S. Ticket from Elm",
      "f:0xF2",
-     61
+     [
+      61,
+      6,
+      5
+     ]
     ],
     [
      "Ride the S.S. Aqua from Olivine to Vermilion",
@@ -1337,12 +1593,20 @@
     [
      "Rare Candy from the Fan Club chairman in Vermilion",
      "f:0xF8",
-     362
+     [
+      362,
+      14,
+      5
+     ]
     ],
     [
      "PP Max from a man in Vermilion",
      "f:0xF7",
-     54
+     [
+      54,
+      1326,
+      309
+     ]
     ]
    ]
   },
@@ -1357,7 +1621,11 @@
     [
      "Solve the trash-can switches and beat Lt. Surge",
      "k:2",
-     365
+     [
+      365,
+      6,
+      4
+     ]
     ]
    ],
    "boss": [
@@ -1386,7 +1654,11 @@
     [
      "Beat Sabrina",
      "k:5",
-     410
+     [
+      410,
+      15,
+      13
+     ]
     ]
    ],
    "boss": [
@@ -1417,7 +1689,11 @@
     [
      "Beat Erika",
      "k:3",
-     395
+     [
+      395,
+      7,
+      3
+     ]
     ]
    ],
    "boss": [
@@ -1445,7 +1721,11 @@
     [
      "Hear the manager's story at the Route 10 Power Plant",
      "f:0x120",
-     467
+     [
+      467,
+      13,
+      8
+     ]
     ],
     [
      "Find the stolen part in the Cerulean Gym",
@@ -1460,7 +1740,11 @@
     [
      "Get the EXPN Card at the Lavender Radio Tower",
      "f:0x11F",
-     439
+     [
+      439,
+      9,
+      3
+     ]
     ],
     [
      "Play the Poké Flute channel to wake Snorlax",
@@ -1478,7 +1762,11 @@
     [
      "Catch Snorlax on Route 11 (Poké Flute channel on the Pokégear)",
      "f:0x173",
-     19
+     [
+      19,
+      1354,
+      304
+     ]
     ]
    ]
   },
@@ -1494,7 +1782,11 @@
     [
      "Beat Misty",
      "k:1",
-     427
+     [
+      427,
+      10,
+      1
+     ]
     ]
    ],
    "boss": [
@@ -1524,7 +1816,11 @@
     [
      "Find the real Janine and beat her",
      "k:4",
-     480
+     [
+      480,
+      7,
+      16
+     ]
     ]
    ],
    "boss": [
@@ -1559,7 +1855,11 @@
     [
      "Beat Brock",
      "k:0",
-     473
+     [
+      473,
+      7,
+      4
+     ]
     ]
    ],
    "boss": [
@@ -1592,7 +1892,11 @@
     [
      "Beat Blaine in the Seafoam Islands",
      "k:6",
-     457
+     [
+      457,
+      13,
+      12
+     ]
     ]
    ],
    "boss": [
@@ -1618,7 +1922,11 @@
     [
      "Beat Blue in Viridian City (after the other 7)",
      "k:7",
-     496
+     [
+      496,
+      5,
+      4
+     ]
     ]
    ],
    "boss": [
@@ -1638,7 +1946,11 @@
     [
      "Talk to Prof. Oak in Pallet Town",
      "f:0x12B",
-     505
+     [
+      505,
+      8,
+      6
+     ]
     ],
     [
      "Take Routes 22 and 28 to Mt. Silver",
@@ -1648,7 +1960,11 @@
     [
      "Beat the trainer at the summit",
      "t:260",
-     465
+     [
+      465,
+      30,
+      11
+     ]
     ],
     [
      "Level 75+, Full Restores and Revives",
@@ -1696,7 +2012,11 @@
     [
      "Catch Suicune on Route 25",
      "f:0x175",
-     29
+     [
+      29,
+      1421,
+      37
+     ]
     ],
     [
      "Catch {Lugia|Ho-Oh} too",
@@ -1706,17 +2026,29 @@
     [
      "Catch Articuno, Zapdos and Moltres",
      "f:0x16C&f:0x14A&f:0x16D",
-     456
+     [
+      456,
+      27,
+      22
+     ]
     ],
     [
      "Catch Mewtwo in Cerulean Cave",
      "f:0x16B",
-     451
+     [
+      451,
+      56,
+      24
+     ]
     ],
     [
      "Hoenn starter from Steven",
      "f:0x177",
-     402
+     [
+      402,
+      14,
+      8
+     ]
     ]
    ]
   }
