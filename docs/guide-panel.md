@@ -48,8 +48,9 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   (a warp) but the map id hasn't changed 3s later, the copies are taken as stale and DS RAM is scanned again.
   Tapping the location name shows a debug line: scan summary, picked copy, every copy's current map id,
   time since the last warp and the last poll error. Ask Kenny for a screenshot of it if the guide sticks. Tiles are shown at least 6px: a map that doesn't fit
-  scrolls in its box and keeps the player's dot in the middle (stopping at the map's edges; paused 4s
-  after you scroll it or pick a row). The map box keeps one fixed height for every map (a smaller map is
+  scrolls in its box: it starts centred on the player's dot, then stays still until the dot comes within
+  30% (`EDGE`) of an edge of the box and glides along (Kenny: re-centring on every step moved it too much,
+  2026-10-26). It stops at the map's edges and pauses 4s after you scroll it or pick a row. The map box keeps one fixed height for every map (a smaller map is
   centred in it), and the map section is built once and reused by each render, so the previous map stays
   on screen until the new one is painted: no resizing or flicker when you change area.
 - Rooms (indoor maps, `env` "in") are drawn by `paintRoom()` in a "looks 3D" style (Kenny liked the mockup,

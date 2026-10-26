@@ -92,14 +92,25 @@ const Guide = (() => {
     dot.style.left = x + "px";
     dot.style.top = y + "px";
     updateNav();
-    // Keep the player in the middle of the box when the map is bigger than it (the browser stops the
-    // scroll at the map's edges), unless you just scrolled it yourself.
+    // When the map is bigger than its box, it stays still while the player walks around the middle and
+    // only glides along once the dot comes within a margin of an edge (Kenny found re-centring on every
+    // step moved it too much, 2026-10-26). On a new map it starts centred on the player. The browser
+    // stops the scroll at the map's edges. Paused while you've just scrolled it yourself.
     const box = c.parentElement;
     if (Date.now() < followPause) return;
-    const sl = Math.round(x - box.clientWidth / 2), st = Math.round(y - box.clientHeight / 2);
-    if (sl !== box.lastL || st !== box.lastT) { box.lastL = sl; box.lastT = st; box.scrollLeft = sl; box.scrollTop = st; }
+    const bw = box.clientWidth, bh = box.clientHeight, mx = bw * EDGE, my = bh * EDGE;
+    if (box.followed !== c.m) {
+      box.followed = c.m;
+      box.scrollLeft = Math.round(x - bw / 2); box.scrollTop = Math.round(y - bh / 2);
+      return;
+    }
+    const L0 = box.scrollLeft, T0 = box.scrollTop;
+    const sl = x - L0 < mx ? x - mx : x - L0 > bw - mx ? x - bw + mx : L0;
+    const st = y - T0 < my ? y - my : y - T0 > bh - my ? y - bh + my : T0;
+    if (Math.abs(sl - L0) >= 1 || Math.abs(st - T0) >= 1) box.scrollTo({ left: Math.round(sl), top: Math.round(st), behavior: "smooth" });
   }
   let followPause = 0, lastPos = null;
+  const EDGE = 0.3; // the dot keeps this share of the box's width/height from its edges before the map moves
 
   // The trainer you're battling: the one standing next to you. The field's map objects sit in one array
   // (0x12C bytes each) with the player's; a trainer's script id is 3000 + trainer id - 1 (std_trainer, or
