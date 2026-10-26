@@ -79,7 +79,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   current position lives there (general block +0x1234 = map id, u32; trainer name/ID at +0x64).
   EmulatorJS 4.2.3's DeSmuME core has no memory API, but `EJS_emulator.gameManager.Module.HEAPU8` (the
   whole wasm heap) is readable. `Guide` scans it (4-byte aligned) for the trainer name + ID taken from
-  the newest slot of the current save file, every 5s until found, then reads the map id every second.
+  the newest slot of the current save file, every 5s until found, then reads the map id every second. `follow()` (5 a second) also checks
+  the followed map ids and calls `poll()` as soon as one changes, so a new room shows within 0.2s. After
+  a map is drawn, `prewarm()` builds the layouts of the maps its warps lead to in idle time, so walking
+  into a building doesn't wait on ROM reads (the painted canvas is still made on entry, ~50ms).
 - The trainer name + ID also turns up in other structs (first live test locked onto one and showed
   "Mystery Zone, Map 0"). Each match is scored by how much of the save's general block it reproduces;
   only matches above 50% with a map id above 1 count.
