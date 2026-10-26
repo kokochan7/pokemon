@@ -109,8 +109,9 @@ const Story = (() => {
     const i = current(h, base), s = steps[i];
     const box = el("div", "story");
     box.append(el("div", "stitle", s.title));
-    const bullet = (kind, j, [text, cond, place], done) => {
+    const bullet = (kind, j, [text, cond, place, help], done) => {
       const li = el("li", done ? "ok" : cond ? "" : "info", text);
+      if (help) li.append(el("div", "help", help)); // quiz answers, puzzle tips
       if (place != null && nav) {
         const key = i + kind + j, at = where(place);
         li.classList.add("go");

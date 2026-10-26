@@ -1,5 +1,5 @@
 {
- "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. A boss's \"won\" condition ticks it (scripted battles like rivals, leaders and executives never set the trainer-beaten flag, so t:N only works for ordinary trainers). Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
+ "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place, help]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. help (optional) is a small line under it: quiz answers, puzzle tips. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. A boss's \"won\" condition ticks it (scripted battles like rivals, leaders and executives never set the trainer-beaten flag, so t:N only works for ordinary trainers). Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
  "steps": [
   {
    "title": "Get your first Pokémon",
@@ -514,7 +514,8 @@
       112,
       13,
       12
-     ]
+     ],
+     "Quiz answers: Yes, Yes, No, Yes, No"
     ],
     [
      "Beat Whitney (talk to her again if she cries)",
@@ -725,10 +726,11 @@
       80,
       10,
       8
-     ]
+     ],
+     "The floor hides pits that drop you back at the door. The arrows stay on the safe path."
     ],
     [
-     "Walk the hidden path; bring Awakenings, level 25+",
+     "Bring Awakenings; level 25+",
      "",
      80
     ]
@@ -1037,29 +1039,31 @@
    "todo": [
     [
      "Go under the Mahogany souvenir shop with Lance",
-     "f:0x1F3|f:0xCA",
+     "v:40AC>=1|f:0xCA",
      [
       116,
       5,
       7
-     ]
-    ],
-    [
-     "Beat Ariana with Lance",
-     "f:0x1F3",
-     [
-      248,
-      31,
-      19
-     ]
+     ],
+     "B1F: the Persian statues call grunts on you. Press the secret switch next to the scientist to turn them off. The arrows go around the trap floor."
     ],
     [
      "Beat Petrel",
-     "f:0x1F4",
+     "v:40AC>=4|f:0xCA",
      [
       249,
       24,
       12
+     ],
+     "His office needs two passwords, SLOWPOKETAIL and RATICATETAIL: beat the two grunts who say them. After the win his Murkrow says \"Hail Giovanni\", which opens the transmitter door."
+    ],
+    [
+     "Beat Ariana with Lance",
+     "v:40AC>=9|f:0xCA",
+     [
+      248,
+      31,
+      19
      ]
     ],
     [
@@ -1088,7 +1092,7 @@
       "psychic",
       "ground"
      ],
-     "won": "f:0x1F4"
+     "won": "v:40AC>=4|f:0xCA"
     },
     {
      "t": 479,
@@ -1101,7 +1105,7 @@
       "psychic",
       "ground"
      ],
-     "won": "f:0x1F3"
+     "won": "v:40AC>=9|f:0xCA"
     }
    ],
    "catch": [
@@ -1127,7 +1131,8 @@
     [
      "Slide across the ice; level 32-35",
      "",
-     140
+     140,
+     "On ice you slide until something stops you. The arrows show the slides that reach Pryce."
     ]
    ],
    "boss": [
@@ -1277,7 +1282,8 @@
       120,
       47,
       10
-     ]
+     ],
+     "On ice you slide until something stops you; the arrows show the slides to take."
     ],
     [
      "Reach Blackthorn City",
@@ -1344,7 +1350,8 @@
     [
      "Answer the Dragon Master kindly: Rising Badge",
      "b:7",
-     288
+     288,
+     "Answers: Friend, Strategy, Strong, Love, Both. Only Junior, Cheating, Weak, Violence or Strength fail."
     ]
    ],
    "opt": [
@@ -1650,7 +1657,8 @@
       365,
       6,
       4
-     ]
+     ],
+     "The first switch is in a random can and the second is in a can right next to it. A wrong second can resets the first."
     ]
    ],
    "boss": [
