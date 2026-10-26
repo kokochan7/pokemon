@@ -910,9 +910,19 @@ const Guide = (() => {
         }
       }
     }
+    // No shared block edge found (the neighbour only touches a corner, or via dimmed blocks): head for
+    // that whole side of the map.
+    if (!set.size) for (const [d, to] of m.exits || []) {
+      const [dx, dz] = DIR[d] || [];
+      if (to !== next || dx == null) continue;
+      for (let i = 0; i < (dz ? W : H); i++) {
+        const [x, z] = dz ? [i, dz < 0 ? 0 : H - 1] : [dx < 0 ? 0 : W - 1, i];
+        if (open(x, z)) set.add(z * W + x);
+      }
+    }
     return set;
   }
-  // Cheapest walk on the map's terrain: walls are out, water costs more (Surf), ledges only go the way
+  // Cheapest walk on the map's terrain: walls are a last resort, water costs more (Surf), ledges go the way
   // you jump (behaviours 56-59 = east, west, north, south). Returns tile points, corners only.
   const STEPS = [[1, 0, 56], [-1, 0, 57], [0, -1, 58], [0, 1, 59]];
   function walk(L, sx, sz, ends) {
@@ -932,10 +942,12 @@ const Guide = (() => {
         const j = nz * W + nx, v = grid[j];
         let k = 1;
         if (!ends.has(j)) {
-          if (v < 0 || v & 0x8000) continue;
+          if (v < 0) continue;
           const b = v & 0xff;
-          if (b >= 56 && b <= 59 && b !== ledge) continue;
-          if (tiles[b] === 2) k = 3;
+          // A wall or a ledge the wrong way is very dear but not ruled out: the terrain data marks some
+          // walkable tiles (bridges, gaps by people) as walls, and no line at all helps nobody.
+          if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = 40;
+          else if (tiles[b] === 2) k = 3;
         }
         if (c + k >= cost[j]) continue;
         cost[j] = c + k; from[j] = i;
