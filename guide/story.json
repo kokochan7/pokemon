@@ -1,5 +1,5 @@
 {
- "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
+ "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. A boss's \"won\" condition ticks it (scripted battles like rivals, leaders and executives never set the trainer-beaten flag, so t:N only works for ordinary trainers). Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
  "steps": [
   {
    "title": "Get your first Pokémon",
@@ -101,7 +101,8 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "v:4073>=4"
     }
    ]
   },
@@ -167,7 +168,8 @@
       "flying",
       "ice",
       "rock"
-     ]
+     ],
+     "won": "f:0x76"
     }
    ],
    "catch": [
@@ -236,7 +238,8 @@
       "electric",
       "rock",
       "ice"
-     ]
+     ],
+     "won": "b:0"
     }
    ]
   },
@@ -304,7 +307,8 @@
      "weak": [
       "psychic",
       "ground"
-     ]
+     ],
+     "won": "f:0x7B"
     }
    ],
    "catch": [
@@ -376,7 +380,8 @@
       "fire",
       "flying",
       "rock"
-     ]
+     ],
+     "won": "b:1"
     }
    ],
    "opt": [
@@ -402,11 +407,11 @@
   },
   {
    "title": "Rival battle at the Azalea exit",
-   "done": "t:266|t:269|t:1",
+   "done": "v:4075>=2",
    "todo": [
     [
      "Walk west toward Ilex Forest and beat the rival",
-     "t:266|t:269|t:1",
+     "v:4075>=2",
      [
       74,
       395,
@@ -428,7 +433,8 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "v:4075>=2"
     }
    ]
   },
@@ -525,7 +531,8 @@
      ],
      "weak": [
       "fighting"
-     ]
+     ],
+     "won": "b:2"
     }
    ],
    "catch": [
@@ -670,7 +677,7 @@
     ],
     [
      "Beat the rival in the Burned Tower",
-     "t:267|t:270|t:263",
+     "f:0x1C6",
      [
       7,
       22,
@@ -692,7 +699,8 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "f:0x1C6"
     }
    ],
    "catch": [
@@ -738,7 +746,8 @@
       "dark",
       "psychic",
       "ground"
-     ]
+     ],
+     "won": "b:3"
     }
    ]
   },
@@ -805,7 +814,8 @@
      "weak": [
       "flying",
       "psychic"
-     ]
+     ],
+     "won": "b:4"
     }
    ],
    "catch": [
@@ -930,7 +940,8 @@
       "fire",
       "fighting",
       "ground"
-     ]
+     ],
+     "won": "b:5"
     }
    ]
   },
@@ -1026,7 +1037,7 @@
    "todo": [
     [
      "Go under the Mahogany souvenir shop with Lance",
-     "t:479|f:0xCA",
+     "f:0x1F3|f:0xCA",
      [
       116,
       5,
@@ -1035,7 +1046,7 @@
     ],
     [
      "Beat Ariana with Lance",
-     "t:479",
+     "f:0x1F3",
      [
       248,
       31,
@@ -1044,7 +1055,7 @@
     ],
     [
      "Beat Petrel",
-     "t:488",
+     "f:0x1F4",
      [
       249,
       24,
@@ -1076,7 +1087,8 @@
      "weak": [
       "psychic",
       "ground"
-     ]
+     ],
+     "won": "f:0x1F4"
     },
     {
      "t": 479,
@@ -1088,7 +1100,8 @@
      "weak": [
       "psychic",
       "ground"
-     ]
+     ],
+     "won": "f:0x1F3"
     }
    ],
    "catch": [
@@ -1129,7 +1142,8 @@
       "fighting",
       "rock",
       "steel"
-     ]
+     ],
+     "won": "b:6"
     }
    ]
   },
@@ -1153,7 +1167,7 @@
     ],
     [
      "Beat the rival in the Goldenrod Tunnel",
-     "t:289|t:271|t:288",
+     "v:40A0>=1",
      [
       201,
       19,
@@ -1193,7 +1207,8 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "v:40A0>=1"
     },
     {
      "t": 706,
@@ -1215,7 +1230,8 @@
      "weak": [
       "psychic",
       "ground"
-     ]
+     ],
+     "won": "f:0x2C7"
     },
     {
      "t": 478,
@@ -1240,13 +1256,14 @@
       "water",
       "ground",
       "fighting"
-     ]
+     ],
+     "won": "f:0xC6"
     }
    ]
   },
   {
    "title": "Ice Path to Blackthorn and Clair",
-   "done": "t:35",
+   "done": "f:0xD1",
    "todo": [
     [
      "Go east on Route 44 into the Ice Path",
@@ -1269,7 +1286,7 @@
     ],
     [
      "Beat Clair",
-     "t:35",
+     "f:0xD1",
      [
       141,
       12,
@@ -1292,7 +1309,8 @@
      "weak": [
       "ice",
       "dragon"
-     ]
+     ],
+     "won": "f:0xD1"
     }
    ],
    "catch": [
@@ -1401,7 +1419,8 @@
      ],
      "name": "Kimono Girls",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "f:0x103|f:0x104"
     }
    ],
    "catch": [
@@ -1432,7 +1451,7 @@
     ],
     [
      "Beat the rival in Victory Road",
-     "t:268|t:272|t:264",
+     "f:0x20A",
      [
       179,
       38,
@@ -1499,7 +1518,8 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "f:0x20A"
     },
     {
      "t": 245,
@@ -1511,7 +1531,8 @@
       "dark",
       "ghost",
       "bug"
-     ]
+     ],
+     "won": "f:0xE4"
     },
     {
      "t": 247,
@@ -1522,7 +1543,8 @@
      "weak": [
       "ground",
       "psychic"
-     ]
+     ],
+     "won": "f:0xE5"
     },
     {
      "t": 418,
@@ -1533,7 +1555,8 @@
      "weak": [
       "flying",
       "psychic"
-     ]
+     ],
+     "won": "f:0xE6"
     },
     {
      "t": 246,
@@ -1544,7 +1567,8 @@
      "weak": [
       "fighting",
       "bug"
-     ]
+     ],
+     "won": "f:0xE7"
     },
     {
      "t": 244,
@@ -1556,7 +1580,8 @@
       "ice",
       "dragon",
       "rock"
-     ]
+     ],
+     "won": "f:0x964"
     }
    ],
    "catch": [
@@ -1637,7 +1662,8 @@
      ],
      "weak": [
       "ground"
-     ]
+     ],
+     "won": "k:2"
     }
    ],
    "free": true
@@ -1672,7 +1698,8 @@
       "dark",
       "ghost",
       "bug"
-     ]
+     ],
+     "won": "k:5"
     }
    ],
    "free": true
@@ -1709,7 +1736,8 @@
       "ice",
       "poison",
       "bug"
-     ]
+     ],
+     "won": "k:3"
     }
    ],
    "free": true
@@ -1799,7 +1827,8 @@
      "weak": [
       "electric",
       "grass"
-     ]
+     ],
+     "won": "k:1"
     }
    ],
    "free": true
@@ -1833,7 +1862,8 @@
      "weak": [
       "ground",
       "psychic"
-     ]
+     ],
+     "won": "k:4"
     }
    ],
    "free": true
@@ -1875,7 +1905,8 @@
       "fighting",
       "ground",
       "steel"
-     ]
+     ],
+     "won": "k:0"
     }
    ],
    "free": true
@@ -1910,7 +1941,8 @@
       "water",
       "ground",
       "rock"
-     ]
+     ],
+     "won": "k:6"
     }
    ],
    "free": true
@@ -1934,14 +1966,15 @@
      "t": 261,
      "name": "Blue",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "k:7"
     }
    ],
    "free": true
   },
   {
    "title": "Mt. Silver: the final battle",
-   "done": "t:260",
+   "done": "f:0x25F",
    "todo": [
     [
      "Talk to Prof. Oak in Pallet Town",
@@ -1959,7 +1992,7 @@
     ],
     [
      "Beat the trainer at the summit",
-     "t:260",
+     "f:0x25F",
      [
       465,
       30,
@@ -1977,7 +2010,8 @@
      "t": 260,
      "name": "Red",
      "types": [],
-     "weak": []
+     "weak": [],
+     "won": "f:0x25F"
     }
    ]
   },

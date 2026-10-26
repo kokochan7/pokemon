@@ -135,7 +135,9 @@ const Story = (() => {
     for (const b of s.boss || []) {
       const ids = Array.isArray(b.t) ? b.t : [b.t];
       const shown = b.name === "Rival" && ids.length === 3 ? [ids[Math.max(starter, 0)]] : ids;
-      const beaten = shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
+      // Scripted battles (rivals, leaders, executives) never set the trainer-beaten flag: "won" is what
+      // the script sets after the win instead.
+      const beaten = b.won ? test(h, base, b.won) : shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
       const div = el("div", "boss" + (beaten ? " beaten" : ""));
       const head = el("div", "bhead");
       head.append(el("b", null, b.name + (beaten ? " ✓" : "")));
