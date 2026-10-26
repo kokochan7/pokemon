@@ -10,6 +10,13 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   `#guideL` on the left (location, map, next, items) and `#guide` on the right (wild Pokémon,
   trainers), 320px each. Both have class `.guide`. The map is scaled to the column width, up to ~55%
   of the screen height, keeping its shape.
+- Auto-scale (Kenny's ask, 2026-10-26: tiny on a 24" 1080p screen at 100%): `fit()` in guide.js sets CSS
+  `zoom` on both panels so they fill the width the game leaves free (the DS screens are stacked, so the
+  game is 2/3 as wide as the screen area is tall). The zoom never goes below 1, and is capped at 2.5 and at
+  screen-area height / 620 (`FIT_H`), so a short window (Kenny's 200% screen) keeps today's size and a
+  big one doesn't turn the panels into a long scroll. It is redone on window resize. Everything inside the
+  panels stays in unzoomed px; only window-based sizes divide by `zoom` (`mapBoxH()`), and the map canvas
+  multiplies by it for sharp tiles.
 - Kept compact so the panels need little scrolling (Kenny's ask): 13px text, tight spacing, wild Pokémon
   as three small tiles per row, 32px party sprites. NEXT shows only the step title, no "Step N of 40".
   The map and the next step have no MAP / NEXT headings (Kenny: they're implied).
