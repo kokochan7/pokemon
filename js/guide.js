@@ -449,9 +449,12 @@ const Guide = (() => {
     const W = (Math.max(...blocks.map((b) => b[0])) - bx0 + 1) * 32, H = (Math.max(...blocks.map((b) => b[1])) - bz0 + 1) * 32;
     const tg = await terrainGrid(blocks, bx0, bz0, W, H);
     if (!tg) return null;
-    let caveTiles = 0;
-    for (const v of tg.grid) if (v >= 0 && (v & 0xff) === 8) caveTiles++;
-    const env = m.exits && m.exits.length ? "out" : caveTiles > tg.grid.length / 10 ? "cave" : "in";
+    let caveTiles = 0, green = 0;
+    for (const v of tg.grid) if (v >= 0) { if ((v & 0xff) === 8) caveTiles++; else if (!(v & 0x8000) && (tiles[v & 0xff] === 1 || tiles[v & 0xff] === 2)) green++; }
+    // Outdoors: edge exits, or (for parks and forests with only doors out, like Ilex Forest or the
+    // Pokéathlon Dome) four or more blocks or real grass/water. Rooms are one or two blocks of floor.
+    const env = m.exits && m.exits.length ? "out" : caveTiles > tg.grid.length / 10 ? "cave"
+      : blocks.length >= 4 || green > tg.grid.length / 50 ? "out" : "in";
     const L = { ...tg, W, H, ox: bx0 * 32, oz: bz0 * 32, env };
     return env === "in" ? cropRoom(m, L) : L;
   }
@@ -573,10 +576,75 @@ const Guide = (() => {
       else img = env === "in" ? art.floor : env === "cave" || b === 8 ? art.cave : art.path;
       c.drawImage(img, x * T, z * T);
     }
+    relief(c, L, house);
     c.fillStyle = "rgba(24,24,32,.45)";
     for (let i = 0; i < dim.length; i++) if (dim[i] && grid[i] >= 0) c.fillRect((i % W) * T, ((i / W) | 0) * T, T, T);
     cv.grid = grid;
     return cv;
+  }
+
+  // The "looks 3D" pass for every map, painted once with its terrain so it costs nothing per frame.
+  // Light comes from the top left: walls get a lit top edge and a dark right side, raised things
+  // (cave cliffs, tree tops, roofs) show a front face, and cast a soft shadow down and to the right
+  // onto the ground. Water sits below its banks, so it is shaded under its top and left edges.
+  function relief(c, L, house) {
+    const { grid, W, H, env } = L;
+    const R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+    const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
+    const wall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
+    const open = (x, z) => { const v = at(x, z); return v >= 0 && !(v & 0x8000); };
+    const water = (x, z) => open(x, z) && tiles[at(x, z) & 0xff] === 2;
+    const hs = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? 0 : house[z * W + x];
+    const shade = env === "out" ? "rgba(16,40,16," : env === "cave" ? "rgba(30,18,6," : "rgba(40,30,20,";
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      const X = x * T, Z = z * T;
+      if (wall(x, z)) {
+        const h = hs(x, z), lone = !wall(x - 1, z) && !wall(x + 1, z) && !wall(x, z - 1) && !wall(x, z + 1);
+        if (env === "out" && h === 0) {
+          // A tree on the edge of a wood pokes its crown up into the tile above it.
+          if (open(x, z - 1)) {
+            const disc = (y, r, col) => { c.fillStyle = col; c.beginPath(); c.ellipse(X + 8, Z + y, r, r - 1, 0, Math.PI, 0); c.fill(); };
+            disc(5, 7, "#204818"); disc(5, 6, "#48a040"); disc(3, 3, "#78c860"); R(X + 6, Z, 2, 1, "#a8e090");
+          }
+          if (!wall(x + 1, z)) R(X + T - 3, Z + 1, 3, T - 2, "rgba(0,0,0,.25)");
+          continue;
+        }
+        if (h > 1) { // roof: lit ridge, shaded eaves over the front wall, dark gable end on the right
+          if (hs(x, z - 1) < 2) R(X, Z, T, 3, "rgba(255,255,255,.28)");
+          if (hs(x, z + 1) === 1) R(X, Z + T - 3, T, 3, "rgba(0,0,0,.3)");
+          if (hs(x + 1, z) < 2) R(X + T - 3, Z, 3, T, "rgba(0,0,0,.22)");
+          if (hs(x - 1, z) < 2) R(X, Z, 2, T, "rgba(255,255,255,.18)");
+          continue;
+        }
+        if (h === 1) { if (hs(x + 1, z) !== 1) R(X + T - 3, Z, 3, T, "rgba(0,0,0,.18)"); continue; }
+        if (lone) continue; // boulders and indoor plants are already drawn round
+        if (env === "cave") {
+          if (open(x, z + 1)) { // the cliff face you see from the cave floor: the whole tile, lit along its top
+            R(X, Z, T, T, "#4c3a22"); R(X, Z, T, 2, "#b09468"); R(X, Z + 2, T, 1, "#2e2010");
+            R(X + 3, Z + 4, 1, 9, "#382814"); R(X + 9, Z + 6, 1, 8, "#382814"); R(X + 13, Z + 3, 1, 6, "#382814");
+            R(X + 4, Z + 4, 1, 9, "#60482c"); R(X + 10, Z + 6, 1, 8, "#60482c");
+            R(X, Z + T - 2, T, 2, "#241808");
+          } else if (open(x, z - 1)) R(X, Z, T, 3, "rgba(255,240,200,.35)");
+          else R(X, Z, T, T, "rgba(255,230,180,.08)"); // plateau tops sit higher than the floor
+        } else if (open(x, z - 1)) R(X, Z, T, 2, "rgba(255,255,255,.3)");
+        if (open(x - 1, z)) R(X, Z, 2, T, "rgba(255,255,255,.2)");
+        if (open(x + 1, z)) R(X + T - 2, Z, 2, T, "rgba(0,0,0,.18)");
+        continue;
+      }
+      if (!open(x, z)) continue;
+      // Shadows cast by whatever stands north, west or north-west of this tile (rooms already shade
+      // under their north walls in paintRoom()).
+      const n = wall(x, z - 1), w = wall(x - 1, z), nw = wall(x - 1, z - 1);
+      const deep = hs(x - 1, z) > 0 || hs(x, z - 1) > 0; // buildings are taller than trees and rocks
+      if (n && env !== "in") { R(X, Z, T, deep ? 9 : 7, shade + ".24)"); R(X, Z, T, 3, shade + ".18)"); }
+      if (w) { R(X, Z, deep ? 7 : 5, T, shade + ".22)"); R(X, Z, 2, T, shade + ".12)"); }
+      else if (nw) R(X, Z, deep ? 7 : 5, n ? 3 : 7, shade + ".18)");
+      if (water(x, z)) {
+        if (!water(x, z - 1)) { R(X, Z, T, 4, "rgba(16,40,110,.3)"); R(X, Z, T, 1, "rgba(16,40,110,.3)"); }
+        if (!water(x - 1, z)) R(X, Z, 3, T, "rgba(16,40,110,.22)");
+        if (!water(x, z + 1)) R(X, Z + T - 2, T, 2, "rgba(255,255,255,.45)");
+      }
+    }
   }
 
   /* --- rooms: original art in a "looks 3D" style (light tops, dark front faces, soft shadows) --- */

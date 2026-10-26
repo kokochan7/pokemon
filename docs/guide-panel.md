@@ -25,7 +25,14 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   map: trees outdoors (headbutt trees marked), rock in caves (cave-floor tiles > 10%), plain walls indoors
   (no exits). Outdoors, the wall rectangle sitting on a door or warp is drawn as a house (roof + front
   with windows), and a lone blocked tile as a boulder. The terrain is painted once per map and cached;
-  item balls, trainers and doors go on top. Trainers are big purple squares with a white outline; a
+  item balls, trainers and doors go on top.
+  Every map has the same "looks 3D" style as the rooms (Kenny's ask, 2026-10-26), done cheaply in
+  `relief()` as part of that one-time paint, so it costs nothing per frame (no WebGL or sprites):
+  light from the top left, walls lit on top and dark on the right, cave walls facing the floor drawn as a
+  cliff face, trees on the edge of a wood poke a round crown into the tile above, roofs get a lit ridge and
+  shaded eaves, and walls cast a soft shadow down and right (wider for buildings). Water is shaded under
+  its banks. A map with no edge exits counts as outdoors if it has 4+ land blocks or real grass/water
+  (Ilex Forest, National Park, Pokéathlon Dome); before that they were drawn as rooms. Trainers are big purple squares with a white outline; a
   beaten one (trainer flag) is dimmed with a green tick. Items already picked up are left off the map and
   struck through in ITEMS: hgss.json gives each item its flag as a 4th value ([x, z, name, flag]), an item
   ball's `eventFlag` (FLAG_HIDE_ITEMBALL_*) or, for a hidden item, 800 + (script number - 8000). `poll()`
