@@ -269,15 +269,6 @@
    "done": "f:0x7B",
    "todo": [
     [
-     "Get the Old Rod in the Route 32 Pokémon Center",
-     "f:0x75",
-     [
-      169,
-      4,
-      15
-     ]
-    ],
-    [
      "Go through Union Cave",
      "f:0x9cb",
      99
@@ -330,6 +321,15 @@
     ]
    ],
    "opt": [
+    [
+     "Get the Old Rod in the Route 32 Pokémon Center",
+     "f:0x75",
+     [
+      169,
+      4,
+      15
+     ]
+    ],
     [
      "TM05 Roar from a man on Route 32",
      "f:0x6E",
@@ -504,8 +504,17 @@
    "todo": [
     [
      "Go north on Route 34 to Goldenrod City",
-     "f:0x9bf",
+     "f:0x9c0",
      76
+    ],
+    [
+     "Get the Radio Card from the Radio Tower 1F quiz: a woman blocks the Gym door until you do",
+     "f:0x8A|f:0x318",
+     [
+      112,
+      13,
+      12
+     ]
     ],
     [
      "Beat Whitney (talk to her again if she cries)",
@@ -557,15 +566,6 @@
       182,
       8,
       6
-     ]
-    ],
-    [
-     "Radio Card from the Radio Tower 1F quiz",
-     "f:0x8A",
-     [
-      112,
-      13,
-      12
      ]
     ],
     [
@@ -667,7 +667,7 @@
    "todo": [
     [
      "Go north on Route 37 to Ecruteak City",
-     "f:0x9c0",
+     "f:0x9c2",
      78
     ],
     [
@@ -791,7 +791,7 @@
     ],
     [
      "Surf west across Routes 40-41 to Cianwood City",
-     "f:0x9c2",
+     "f:0x9bf",
      75
     ],
     [

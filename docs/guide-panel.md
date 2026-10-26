@@ -159,7 +159,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   (TRAINER_RIVAL_SILVER_8 is 267).
 - Progress is read live from the save data in DS RAM (general block, same base the map id uses): `SaveVarsFlags`
   starts at +0xDE4 (u16 vars for ids 0x4000-0x416F), its flag bits at +0x10C4. Trainer N beaten = flag 0x550 + N.
-  Fly-point flags 0x9B0-0x9D5 mark towns visited (0x9BD Violet, 0x9BF Goldenrod...). Johto/Kanto badges at
+  Fly-point flags 0x9B0-0x9D5 mark towns visited, set on arrival from the `sSpawnMaps` table (asm/unk_0203BA5C.s).
+  The decomp's FLAG_SYS_FLYPOINT_* names are wrong from 0x9BF to 0x9C2: really 0x9BF Cianwood, 0x9C0 Goldenrod,
+  0x9C1 Olivine, 0x9C2 Ecruteak (go by the spawn table's first field). A todo bullet also ticks once any later
+  todo bullet in its step is done, since they're in game order. Johto/Kanto badges at
   +0x7E/+0x83. The player's starter species is var 0x4030 (picks the rival's team).
 - Trainer-beaten flags (0x550 + id) are only set for ordinary trainers (`std_trainer` objects, or a gym's
   `SetTrainerFlag` list). Scripted battles (rivals, gym leaders, Rocket executives, Elite Four, Red) never set
