@@ -599,7 +599,11 @@
     [
      "Get HM06 Rock Smash from the man nearby",
      "",
-     40
+     [
+      40,
+      426,
+      246
+     ]
     ]
    ],
    "catch": [

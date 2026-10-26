@@ -49,8 +49,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   Tapping the location name shows a debug line: scan summary, picked copy, every copy's current map id,
   time since the last warp and the last poll error. Ask Kenny for a screenshot of it if the guide sticks. The whole map always fits its box and never scrolls
   (Kenny's choice, 2026-10-26: following the player moved it too much), so big maps get small tiles; markers are
-  drawn bigger to stay visible. The map box keeps one fixed height for every map (a smaller map is
-  centred in it), and the map section is built once and reused by each render, so the previous map stays
+  drawn bigger to stay visible. The map box is as tall as the map is shown, up to ~55% of the screen (a long wide route like Route 36
+  left a big empty gap, 2026-10-26), and the map section is built once and reused by each render, so the previous map stays
   on screen until the new one is painted: no resizing or flicker when you change area.
 - Rooms (indoor maps, `env` "in") are drawn by `paintRoom()` in a "looks 3D" style (Kenny liked the mockup,
   2026-10-25): light tops, dark front faces, soft shadows, original art. A room's furniture is part of its 3D

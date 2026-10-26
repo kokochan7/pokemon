@@ -1137,8 +1137,8 @@ const Guide = (() => {
     prewarm(m);
     const { W, H } = L;
     // The whole map always fits its box, so it never scrolls (Kenny's choice, 2026-10-26: following the
-    // player moved it too much). The box is always the same height, so the panel doesn't jump when you
-    // change area; a smaller map sits in the middle of it.
+    // player moved it too much). The box is as tall as the map is shown, up to mapBoxH(), so a long
+    // wide route like Route 36 doesn't leave a big empty gap above and below it.
     const box = canvas.parentElement;
     const boxW = (box && box.clientWidth || 268) - 6;
     const boxH = mapBoxH();
@@ -1152,11 +1152,10 @@ const Guide = (() => {
     painted.set(m, p);
     while (painted.size > PAINTED_MAX) painted.delete(painted.keys().next().value);
     const base = p.base;
-    if (box) box.style.height = boxH + 6 + "px";
+    if (box) box.style.height = Math.min(boxH, Math.round(H * k)) + 6 + "px";
     if (canvas.width !== W * ts || canvas.height !== H * ts) { canvas.width = W * ts; canvas.height = H * ts; }
     canvas.style.width = Math.round(W * k) + "px";
     canvas.style.height = Math.round(H * k) + "px";
-    canvas.style.marginTop = Math.max(0, Math.floor((boxH - Math.round(H * k)) / 2)) + "px";
     canvas.style.imageRendering = k >= ts ? "pixelated" : "auto";
     canvas.geo = { x0: L.ox, z0: L.oz, w: W, h: H, k: Math.round(W * k) / W };
     const c = canvas.getContext("2d");
