@@ -104,11 +104,27 @@ const Story = (() => {
 
   // nav (from the guide) shows the way to a bullet's place when it is clicked (the place isn't written
   // out: Kenny just clicks): { key: the picked bullet, pick(key, place) }.
+  // ◀ ▶ by the title step back through earlier steps (Kenny checks he didn't miss anything) and forward to
+  // the current one; the view snaps back to the current step when it changes.
+  let seen = -1, view = -1;
   function nodes(h, base, sprite, nav) {
     if (!steps) return [];
-    const i = current(h, base), s = steps[i];
+    const cur = current(h, base);
+    if (cur !== seen) seen = view = cur;
     const box = el("div", "story");
-    box.append(el("div", "stitle", s.title));
+    fill(box, h, base, sprite, nav, cur);
+    return [box];
+  }
+
+  function fill(box, h, base, sprite, nav, cur) {
+    const i = view, s = steps[i];
+    const go = (d) => { view = Math.max(0, Math.min(cur, view + d)); fill(box, h, base, sprite, nav, cur); };
+    const head = el("div", "shead"), back = el("button", "sback", "◀"), fwd = el("button", "sfwd", "▶");
+    back.title = "Earlier step"; back.disabled = i === 0; back.onclick = () => go(-1);
+    fwd.title = "Later step"; fwd.disabled = i >= cur; fwd.onclick = () => go(1);
+    head.append(back, el("div", "stitle", s.title), fwd);
+    box.replaceChildren(head);
+    if (i < cur) box.append(el("div", "spast", "Earlier step (" + (i + 1) + " of " + (cur + 1) + "): no ✓ means not done yet"));
     const bullet = (kind, j, [text, cond, place, help], done) => {
       const li = el("li", done ? "ok" : cond ? "" : "info", text);
       if (help) li.append(el("div", "help", help)); // quiz answers, puzzle tips
@@ -158,7 +174,6 @@ const Story = (() => {
       for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
       box.append(div);
     }
-    return [box];
   }
 
   // RECOMMEND CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
