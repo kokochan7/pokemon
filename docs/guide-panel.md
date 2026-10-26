@@ -137,9 +137,15 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   elevator (no warps in the data) links back to every floor that leads into it; the S.S. Aqua needs the ticket;
   `BLOCKED` lists neighbours you can't walk between (Route 44/Blackthorn, up the Route 45 ledges). The bar under
   the map lists the stops (maps with the same name, like a tower's floors or a route's gatehouse, are one stop).
-  On the map, `walk()` draws a dashed gold line from the player to the exit or door for the next stop (or to the
-  spot), over the terrain: no walls, water costs 3, ledges one way (behaviours 56-59 = E, W, N, S); that exit's
-  tag turns gold. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
+  On the map, `walk()` finds the way from the player to the exit or door for the next stop (or, on the bullet's own
+  map, to its spot), over the terrain: no walls, water costs 3, ledges one way (behaviours 56-59 = E, W, N, S).
+  It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
+  2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
+- Spots: most bullets carry `[map, x, z]`, the person, object, sign or trigger that does what the bullet's
+  condition checks, found with the decomp: the object whose script (following its GoTo/Call labels) runs that
+  bullet's `SetFlag` or `TrainerBattle` (gym bullets use the step's boss), or the object hidden by a
+  `FLAG_HIDE_*` flag; a few were picked by hand (Chuck's wife, Amphy, the Surf gentleman, Lance). "Reach town"
+  bullets stay map-only. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
   connect, not story blocks inside them (a Rocket in the way, a Strength boulder), and inside a multi-floor cave
   the line goes to the warp that leads on in the data. Tested with fake terrain and RAM only.
 - Under the bullets: each boss (name, type icons, "Weakness" + type icons, team sprites; dimmed with a tick once beaten)

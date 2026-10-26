@@ -977,14 +977,46 @@ const Guide = (() => {
     bar.hidden = false;
     for (const t of c.parentElement.querySelectorAll(".exit")) t.classList.toggle("go", !!next && next.how !== "fly" && t.to === next.to);
     const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to));
-    if (!pts || pts.length < 2) { svg.style.display = "none"; return; }
+    if (!pts || pts.length < 2) { svg.style.display = "none"; svg.pts = null; return; }
     svg.style.display = "";
     svg.setAttribute("viewBox", "0 0 " + g.w + " " + g.h);
     Object.assign(svg.style, { left: c.offsetLeft + c.clientLeft + "px", top: c.offsetTop + c.clientTop + "px", width: c.style.width, height: c.style.height });
-    const line = pts.map(([px, pz]) => px + 0.5 + "," + (pz + 0.5)).join(" ");
-    for (const pl of svg.querySelectorAll("polyline")) pl.setAttribute("points", line);
+    svg.querySelector(".band").setAttribute("points", pts.map(([px, pz]) => px + 0.5 + "," + (pz + 0.5)).join(" "));
     const [ex, ez] = pts[pts.length - 1], dot = svg.querySelector("circle");
     dot.setAttribute("cx", ex + 0.5); dot.setAttribute("cy", ez + 0.5);
+    // Arrows ride along the band like a conveyor (moveArrows()); the distance along it at each corner.
+    // Drawn bigger when the map is shown small (under ~9px a tile), like the markers.
+    svg.grow = Math.max(1, 9 / g.k);
+    svg.querySelector(".band").style.strokeWidth = 1.1 * svg.grow;
+    dot.setAttribute("r", 0.55 * svg.grow);
+    svg.pts = pts; svg.at = [0];
+    for (let n = 1; n < pts.length; n++) svg.at.push(svg.at[n - 1] + Math.abs(pts[n][0] - pts[n - 1][0]) + Math.abs(pts[n][1] - pts[n - 1][1]));
+    if (!svg.moving) { svg.moving = true; requestAnimationFrame(moveArrows); }
+  }
+  // White arrows every ARROW_GAP tiles, moving ARROW_SPEED tiles a second toward the goal.
+  const ARROW_GAP = 1.6, ARROW_SPEED = 2.5, ARROW = "M-.4,-.13H.02V-.32L.4,0L.02,.32V.13H-.4Z";
+  function moveArrows(now) {
+    const svg = mapWrap && mapWrap.svg, pts = svg && svg.pts;
+    if (!pts || !nav || svg.style.display === "none" || idle()) { if (svg) svg.moving = false; return; }
+    const at = svg.at, len = at[at.length - 1], g = svg.querySelector(".arrows");
+    const grow = svg.grow, gap = ARROW_GAP * grow, count = Math.min(300, Math.floor(len / gap));
+    while (g.childElementCount < count) {
+      const a = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      a.setAttribute("d", ARROW);
+      g.append(a);
+    }
+    const shift = (now / 1000 * ARROW_SPEED * grow) % gap;
+    [...g.children].forEach((a, k) => {
+      if (k >= count) { a.setAttribute("visibility", "hidden"); return; }
+      const d = k * gap + shift;
+      let n = 1;
+      while (n < at.length - 1 && at[n] < d) n++;
+      const [x0, z0] = pts[n - 1], [x1, z1] = pts[n], f = Math.min(1, (d - at[n - 1]) / (at[n] - at[n - 1] || 1));
+      const angle = Math.atan2(z1 - z0, x1 - x0) * 180 / Math.PI;
+      a.setAttribute("visibility", d > len - 0.6 * grow ? "hidden" : "visible");
+      a.setAttribute("transform", "translate(" + (x0 + (x1 - x0) * f + 0.5) + " " + (z0 + (z1 - z0) * f + 0.5) + ") rotate(" + angle + ") scale(" + grow + ")");
+    });
+    requestAnimationFrame(moveArrows);
   }
 
   // The last few painted maps (each up to a few MB), oldest first.
@@ -1121,7 +1153,7 @@ const Guide = (() => {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("class", "navpath");
         svg.setAttribute("preserveAspectRatio", "none");
-        svg.innerHTML = '<polyline class="line"/><polyline class="dash"/><circle r="0.6"/>';
+        svg.innerHTML = '<polyline class="band"/><g class="arrows"></g><circle r="0.55"/>';
         box.append(c, svg, dot);
         for (const ev of ["wheel", "pointerdown", "touchstart"]) box.addEventListener(ev, () => { followPause = Date.now() + 4000; }, { passive: true });
         const legend = node("div", "legend");
