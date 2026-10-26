@@ -82,6 +82,12 @@ const Story = (() => {
     return p;
   }
 
+  // The label over a boss box: what kind of fight it is.
+  const ROLES = { Rival: "RIVAL", Will: "ELITE FOUR", Koga: "ELITE FOUR", Bruno: "ELITE FOUR", Karen: "ELITE FOUR",
+    Lance: "CHAMPION", Red: "FINAL BOSS", Archer: "ROCKET BOSS", Ariana: "ROCKET BOSS", Petrel: "ROCKET BOSS",
+    Proton: "ROCKET BOSS", "Elder Li": "TOWER ELDER", "Kimono Girls": "KIMONO GIRLS" };
+  const role = (name) => ROLES[name] || "GYM LEADER";
+
   // Game-style type icons (PokeAPI sprites, hot-linked like the Pokémon sprites).
   const TYPE_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-iv/heartgold-soulsilver/";
   const TYPES = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
@@ -134,8 +140,10 @@ const Story = (() => {
       // the script sets after the win instead.
       const beaten = b.won ? test(h, base, b.won) : shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
       const div = el("div", "boss" + (beaten ? " beaten" : ""));
+      div.append(el("div", "brole", role(b.name)));
+      if (beaten) div.append(el("div", "bstamp", "DEFEATED"));
       const head = el("div", "bhead");
-      head.append(el("b", null, b.name + (beaten ? " ✓" : "")));
+      head.append(el("b", null, b.name));
       if (b.types.length) head.append(icons(b.types));
       div.append(head);
       if (b.weak.length) {
