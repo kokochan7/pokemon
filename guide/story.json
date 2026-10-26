@@ -85,11 +85,6 @@
      "Beat the red-haired rival in Cherrygrove",
      "v:4073>=4",
      67
-    ],
-    [
-     "Train your starter to level 7-8 first",
-     "",
-     33
     ]
    ],
    "boss": [
@@ -220,11 +215,6 @@
       15,
       4
      ]
-    ],
-    [
-     "Aim for level 12-14; Rock or Electric types make it easy",
-     "",
-     135
     ]
    ],
    "boss": [
@@ -362,11 +352,6 @@
       9,
       5
      ]
-    ],
-    [
-     "Level 17-18; take Scyther out fast",
-     "",
-     180
     ]
    ],
    "boss": [
@@ -417,11 +402,6 @@
       395,
       464
      ]
-    ],
-    [
-     "Normal and Fighting moves can't hit his Gastly",
-     "",
-     74
     ]
    ],
    "boss": [
@@ -525,11 +505,6 @@
       13,
       4
      ]
-    ],
-    [
-     "Use Fighting moves; female Pokémon dodge Attract",
-     "",
-     137
     ]
    ],
    "boss": [
@@ -728,11 +703,6 @@
       8
      ],
      "The floor hides pits that drop you back at the door. The arrows stay on the safe path."
-    ],
-    [
-     "Bring Awakenings; level 25+",
-     "",
-     80
     ]
    ],
    "boss": [
@@ -1129,7 +1099,7 @@
      ]
     ],
     [
-     "Slide across the ice; level 32-35",
+     "Slide across the ice to Pryce",
      "",
      140,
      "On ice you slide until something stops you. The arrows show the slides that reach Pryce."
@@ -1298,11 +1268,6 @@
       12,
       3
      ]
-    ],
-    [
-     "Level 38-40; bring Ice moves and Paralyze Heals",
-     "",
-     141
     ]
    ],
    "boss": [
@@ -2006,11 +1971,6 @@
       30,
       11
      ]
-    ],
-    [
-     "Level 75+, Full Restores and Revives",
-     "",
-     465
     ]
    ],
    "boss": [
