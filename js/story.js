@@ -102,8 +102,8 @@ const Story = (() => {
   // A bullet's place in story.json: a map id, [map id, x, z], or "HeartGold id|SoulSilver id".
   const where = (p) => typeof p === "string" ? [Number(p.split("|")[ver === "ss" ? 1 : 0])] : [].concat(p);
 
-  // nav (from the guide) names a bullet's place and shows the way there when it is clicked:
-  // { key: the picked bullet, name(place), pick(key, place) }.
+  // nav (from the guide) shows the way to a bullet's place when it is clicked (the place isn't written
+  // out: Kenny just clicks): { key: the picked bullet, pick(key, place) }.
   function nodes(h, base, sprite, nav) {
     if (!steps) return [];
     const i = current(h, base), s = steps[i];
@@ -113,7 +113,6 @@ const Story = (() => {
       const li = el("li", test(h, base, cond) ? "ok" : cond ? "" : "info", text);
       if (place != null && nav) {
         const key = i + kind + j, at = where(place);
-        li.append(el("span", "at", nav.name(at)));
         li.classList.add("go");
         li.classList.toggle("nav", key === nav.key);
         li.title = "Show the way";

@@ -1185,7 +1185,7 @@ const Guide = (() => {
 
     if (story != null) {
       if (nav && parseInt(nav.key) !== Story.step(heap(), storyBase)) nav = null; // a new step: the old way is done
-      main.append(...Story.nodes(heap(), storyBase, SPRITE, { key: nav && nav.key, name: (at) => placeName(at[0]), pick: pickNav }));
+      main.append(...Story.nodes(heap(), storyBase, SPRITE, { key: nav && nav.key, pick: pickNav }));
     }
 
     const enc = m[ver];
