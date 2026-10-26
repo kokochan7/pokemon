@@ -125,6 +125,27 @@ const Story = (() => {
     head.append(back, el("div", "stitle", s.title), fwd);
     box.replaceChildren(head);
     if (i < cur) box.append(el("div", "spast", "Earlier step (" + (i + 1) + " of " + (cur + 1) + "): no ✓ means not done yet"));
+    // The boss box sits right under the title (Kenny, 2026-10-26).
+    const starter = STARTERS.indexOf(getVar(h, base, STARTER));
+    for (const b of s.boss || []) {
+      const ids = Array.isArray(b.t) ? b.t : [b.t];
+      const shown = b.name === "Rival" && ids.length === 3 ? [ids[Math.max(starter, 0)]] : ids;
+      // Scripted battles (rivals, leaders, executives) never set the trainer-beaten flag: "won" is what
+      // the script sets after the win instead.
+      const beaten = b.won ? test(h, base, b.won) : shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
+      const div = el("div", "boss" + (beaten ? " beaten" : ""));
+      const head = el("div", "bhead");
+      head.append(el("b", null, b.name + (beaten ? " ✓" : "")));
+      if (b.types.length) head.append(icons(b.types));
+      div.append(head);
+      if (b.weak.length) {
+        const w = el("div", "weak");
+        w.append(el("span", null, "Weakness"), icons(b.weak));
+        div.append(w);
+      }
+      for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
+      box.append(div);
+    }
     const bullet = (kind, j, [text, cond, place, help], done) => {
       const li = el("li", done ? "ok" : cond ? "" : "info", text);
       if (help) li.append(el("div", "help", help)); // quiz answers, puzzle tips
@@ -154,26 +175,6 @@ const Story = (() => {
       box.append(el("div", "otitle", "Optional"), ol);
     }
 
-    const starter = STARTERS.indexOf(getVar(h, base, STARTER));
-    for (const b of s.boss || []) {
-      const ids = Array.isArray(b.t) ? b.t : [b.t];
-      const shown = b.name === "Rival" && ids.length === 3 ? [ids[Math.max(starter, 0)]] : ids;
-      // Scripted battles (rivals, leaders, executives) never set the trainer-beaten flag: "won" is what
-      // the script sets after the win instead.
-      const beaten = b.won ? test(h, base, b.won) : shown.every((t) => flag(h, base, TRAINER_FLAGS + t));
-      const div = el("div", "boss" + (beaten ? " beaten" : ""));
-      const head = el("div", "bhead");
-      head.append(el("b", null, b.name + (beaten ? " ✓" : "")));
-      if (b.types.length) head.append(icons(b.types));
-      div.append(head);
-      if (b.weak.length) {
-        const w = el("div", "weak");
-        w.append(el("span", null, "Weakness"), icons(b.weak));
-        div.append(w);
-      }
-      for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
-      box.append(div);
-    }
   }
 
   // RECOMMEND CATCH for the right panel, between WILD and TRAINERS: sprites of what's worth catching on this step.
