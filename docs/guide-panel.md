@@ -215,7 +215,7 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 ## Wild Pokémon IVs (js/ivs.js)
 
 - While you battle a wild Pokémon, a "WILD POKÉMON IVs" box sits at the top of the right-hand panel: name,
-  level, nature (▲/▼ on the stats it raises/lowers), the six IVs as bars (31 gold, 0 red) and a verdict from the
+  level, nature (▲/▼ on the stats it raises/lowers), the six IVs as bars (31 sparkling silver, 0 red) and a verdict from the
   IV total (0-186, a random Pokémon averages 93): EXCELLENT from 124, DECENT from 75, BAD below.
 - How it's found: a battle's enemy side is a `Party` (maxCount 6, curCount, then 236-byte party Pokémon). Every
   4-byte spot in DS RAM holding 6 then 1-6 is checked; each Pokémon is decrypted the usual Gen 4 way (blocks
