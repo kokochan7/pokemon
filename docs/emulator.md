@@ -1,6 +1,6 @@
 # Emulator (EmulatorJS)
 
-Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
+Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button, `fixCheatToggle()`).
 
 - Loaded from `https://cdn.emulatorjs.org/stable/data/` (v4.2.3 at time of writing).
 - **DS core defaults to DeSmuME.** An early melonDS test showed "A communication error has occurred" on
@@ -51,3 +51,9 @@ Code: `js/app.js` (`launch()`, `pinMenuBar()`, speed button).
   (no 3D), which showed no change. The gain is in HGSS's 3D overworld on a real game, so it is unmeasured here.
 - Avoid calling `gameManager.loadSaveFiles()` or writing saves mid-game. Saves go in before boot.
 
+- **Cheats menu: switching a cheat off.** EmulatorJS sends each toggle straight to the core's `retro_cheat_set(index,
+  enabled, code)`, and libretro DeSmuME ignores `enabled` and always adds the code, so "off" just added a second copy
+  and the code kept writing RAM. `fixCheatToggle()` (run at game start) replaces `EJS_emulator.cheatChanged`: every
+  toggle or delete calls `resetCheat()` and re-adds only the cheats still on. Whatever a code already wrote stays
+  in RAM until the game changes it (e.g. a Repel counter just counts down). Checked 2026-10-27 with a stub ROM:
+  AR codes only run on the ARM7 VBlank IRQ, so the stub's ARM7 must enable it (DISPSTAT bit 3, IE bit 0).
