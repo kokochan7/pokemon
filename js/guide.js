@@ -76,6 +76,7 @@ const Guide = (() => {
     timer = setInterval(poll, 1000);
     setInterval(follow, 200);
     setInterval(markTrainers, 250);
+    setInterval(wildTick, 1000);
   }
 
   // The player's map object in DS RAM: active (flag bit 0), id 255 (player) and movement 1 as the
@@ -1232,6 +1233,57 @@ const Guide = (() => {
   }
 
   let pickedTime = null, highlight = null, mapWrap = null, showDebug = false;
+  // The wild Pokémon you're battling, with its IVs (js/ivs.js). It shows as soon as a new one turns up in
+  // DS RAM and goes once you walk a tile after the battle (or catch it: it then counts as yours).
+  let wildSeen = new Set(), wildNow = [], wildTile = null, wildBox = null, dexNames = null;
+  function wildTick() {
+    const h = heap();
+    if (idle() || !h || ram == null || !cands.length) return;
+    const found = WildIVs.wild(h, ram, RAM_SIZE, cands);
+    const fresh = found.filter((m) => !wildSeen.has(m.pid));
+    for (const m of found) wildSeen.add(m.pid);
+    if (fresh.length) { wildNow = fresh; wildTile = null; drawWild(); return; }
+    if (!wildNow.length) return;
+    const p = player(h), t = p && p.map(Math.floor).join();
+    if (!t) return;
+    if (wildTile == null) wildTile = t;
+    else if (t !== wildTile) { wildNow = []; drawWild(); }
+  }
+  function drawWild() {
+    if (!wildBox) wildBox = node("div", "ivbox");
+    wildBox.replaceChildren();
+    wildBox.hidden = !wildNow.length;
+    if (!dexNames) {
+      dexNames = {};
+      for (const m of Object.values(data || {})) for (const enc of [m.hg, m.ss]) {
+        for (const rows of Object.values(enc || {})) for (const [dex, name] of rows) dexNames[dex] = name;
+      }
+    }
+    for (const m of wildNow) {
+      const { total, grade } = WildIVs.rate(m.ivs), nat = WildIVs.natureStats(m.nature);
+      const head = node("div", "ivhead"), img = node("img");
+      img.src = SPRITE + m.species + ".png"; img.alt = ""; img.loading = "lazy";
+      img.onerror = () => { img.style.visibility = "hidden"; };
+      const who = node("div", "ivwho");
+      who.append(node("b", null, (dexNames[m.species] || "#" + m.species) + " Lv " + m.level),
+        node("span", "ivnat", WildIVs.NATURES[m.nature] + (nat ? " (+" + WildIVs.STATS[nat[0]] + " \u2212" + WildIVs.STATS[nat[1]] + ")" : "")));
+      head.append(img, who, node("span", "ivgrade " + grade, grade.toUpperCase()));
+      const bars = node("ul", "ivbars");
+      m.ivs.forEach((v, i) => {
+        const li = node("li", v === 31 ? "max" : v === 0 ? "zero" : null);
+        const label = node("span", "ivk" + (nat && nat[0] === i ? " up" : nat && nat[1] === i ? " down" : ""), WildIVs.STATS[i]);
+        const bar = node("span", "ivbar"), fill = node("i");
+        fill.style.width = Math.max(3, v / 31 * 100) + "%";
+        bar.append(fill);
+        li.append(label, bar, node("span", "ivv", String(v)));
+        bars.append(li);
+      });
+      wildBox.append(head, bars, node("div", "ivsum", "IV total " + total + " / 186 (average 93)"));
+    }
+    if (wildNow.length) wildBox.prepend(node("h3", null, "WILD POKÉMON IVs"));
+    if (!wildBox.isConnected && shown != null) el().prepend(wildBox);
+  }
+
   function render(id, msg) {
     shown = id;
     const g = el(), gl = $("guideL");
@@ -1247,6 +1299,7 @@ const Guide = (() => {
     const main = node("div", "gcol"), side = node("div", "gcol");
     if (wide.matches) { gl.append(main); gl.hidden = g.hidden; } else g.append(main);
     g.append(side);
+    if (wildBox) g.prepend(wildBox); // top of the right-hand panel, in both layouts
     const loc = node("div", "loc", m.name || "???"), dbg = node("div", "dbg", debugLine());
     dbg.hidden = !showDebug;
     loc.onclick = () => { showDebug = !showDebug; dbg.hidden = !showDebug; };

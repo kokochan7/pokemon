@@ -1,0 +1,51 @@
+// Checks js/ivs.js against a fake DS RAM made of dummy bytes (no ROM or save needed): node tools/test_ivs.js
+const fs = require("fs");
+const src = fs.readFileSync(require("path").join(__dirname, "../js/ivs.js"), "utf8");
+const WildIVs = new Function(src + "\nreturn WildIVs;")();
+const assert = require("assert");
+
+const ORDERS = ["ABCD", "ABDC", "ACBD", "ACDB", "ADBC", "ADCB", "BACD", "BADC", "BCAD", "BCDA", "BDAC", "BDCA",
+  "CABD", "CADB", "CBAD", "CBDA", "CDAB", "CDBA", "DABC", "DACB", "DBAC", "DBCA", "DCAB", "DCBA"];
+const xor = (words, seed) => words.map((w) => { seed = (Math.imul(seed, 0x41C64E6D) + 0x6073) >>> 0; return w ^ seed >>> 16; });
+// A party Pokémon as the game stores it (encrypted, shuffled), built the textbook way.
+function makeMon(pid, species, level, ivs, egg = false) {
+  const blocks = { A: new Array(16).fill(0), B: new Array(16).fill(0), C: new Array(16).fill(0), D: new Array(16).fill(0) };
+  blocks.A[0] = species; blocks.A[2] = 0x1234; blocks.A[3] = 0x5678; // OT id
+  const iv = (ivs.reduce((a, v, i) => a | v << i * 5, 0) | (egg ? 1 << 30 : 0)) >>> 0;
+  blocks.B[8] = iv & 0xffff; blocks.B[9] = iv >>> 16;
+  const plain = ORDERS[((pid >> 13) & 31) % 24].split("").flatMap((c) => blocks[c]);
+  const sum = plain.reduce((a, b) => a + b, 0) & 0xffff;
+  const party = new Array(50).fill(0); party[2] = level; party[3] = 20; party[4] = 20;
+  const out = new Uint8Array(236), v = new DataView(out.buffer);
+  v.setUint32(0, pid, true); v.setUint16(6, sum, true);
+  xor(plain, sum).forEach((w, i) => v.setUint16(8 + i * 2, w, true));
+  xor(party, pid).forEach((w, i) => v.setUint16(0x88 + i * 2, w, true));
+  return out;
+}
+function putParty(h, at, mons) {
+  const v = new DataView(h.buffer);
+  v.setUint32(at, 6, true); v.setUint32(at + 4, mons.length, true);
+  mons.forEach((m, i) => h.set(m, at + 8 + i * 236));
+}
+
+const h = new Uint8Array(0x800000), ram = 0x100000, gen = ram + 0x10000;
+const mine = [makeMon(0x11112222, 155, 9, [10, 20, 30, 1, 2, 3]), makeMon(0x33334444, 16, 5, [5, 5, 6, 7, 8, 9])];
+putParty(h, gen + WildIVs.PARTY_AT, mine);                // the save's party
+putParty(h, ram + 0x200000, mine.slice(0, 1));             // the battle's copy of the player's lead
+putParty(h, ram + 0x210000, [makeMon(0xAAAA0001, 19, 3, [31, 31, 0, 12, 25, 31])]); // the wild Rattata
+putParty(h, ram + 0x220000, [makeMon(0xBBBB0001, 74, 12, [6, 6, 6, 6, 6, 6])]);    // a trainer's Geodude
+putParty(h, ram + 0x230000, [makeMon(0xCCCC0001, 175, 1, [9, 8, 7, 6, 5, 4], true)]); // an egg
+const bad = makeMon(0xDDDD0001, 25, 4, [1, 2, 3, 4, 5, 6]); bad[20] ^= 1; // broken checksum
+putParty(h, ram + 0x240000, [bad]);
+
+const m = WildIVs.mon(h, ram + 0x210000 + 8);
+assert.deepStrictEqual([m.species, m.level, m.ivs], [19, 3, [31, 31, 0, 12, 25, 31]]);
+const wild = WildIVs.wild(h, ram, 0x400000, [gen]);
+assert.deepStrictEqual(wild.map((x) => x.pid.toString(16)), ["aaaa0001"]);
+assert.deepStrictEqual(WildIVs.rate(wild[0].ivs), { total: 130, grade: "excellent" });
+assert.strictEqual(WildIVs.rate([15, 15, 15, 15, 15, 15]).grade, "decent");
+assert.strictEqual(WildIVs.rate([2, 20, 10, 5, 13, 8]).grade, "bad");
+assert.deepStrictEqual(WildIVs.natureStats(3), [1, 4]); // Adamant: +Atk -SpA
+assert.strictEqual(WildIVs.natureStats(12), null);      // Serious
+console.log("wild:", wild.map((x) => `#${x.species} Lv${x.level} ${x.ivs.join("/")} ${WildIVs.NATURES[x.nature]}`).join(", "));
+console.log("ok");
