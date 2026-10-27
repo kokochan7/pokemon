@@ -170,7 +170,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   condition checks, found with the decomp: the object whose script (following its GoTo/Call labels) runs that
   bullet's `SetFlag` or `TrainerBattle` (gym bullets use the step's boss), or the object hidden by a
   `FLAG_HIDE_*` flag; a few were picked by hand (Chuck's wife, Amphy, the Surf gentleman, Lance). "Reach town"
-  bullets stay map-only. A bullet's optional 4th value is a small help line under it (quiz answers and puzzle
+  bullets stay map-only; every bullet about a person or object needs a spot, or no line shows once you're on its map
+  (Kenny hit this with HM06 and HM04, 2026-10-27, when all such bullets were given one). A bullet's optional 4th value is a small help line under it (quiz answers and puzzle
   tips taken from the decomp's scripts and messages: Radio Card quiz, Dragon's Den, Rocket Hideout passwords and
   switch, Vermilion trash cans), hidden once ticked. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
   connect, not story blocks inside them (a Rocket in the way, a Strength boulder), and inside a multi-floor cave

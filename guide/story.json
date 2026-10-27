@@ -33,7 +33,11 @@
     [
      "Let the old man show you around town (Map card)",
      "v:4073>=2",
-     67
+     [
+      67,
+      566,
+      396
+     ]
     ],
     [
      "Go north on Route 30 to Mr. Pokémon's house",
@@ -84,7 +88,11 @@
     [
      "Beat the red-haired rival in Cherrygrove",
      "v:4073>=4",
-     67
+     [
+      67,
+      575,
+      399
+     ]
     ]
    ],
    "boss": [
@@ -113,12 +121,20 @@
     [
      "Tell the police officer the thief's name",
      "f:0x79",
-     61
+     [
+      61,
+      3,
+      6
+     ]
     ],
     [
      "Hand Elm the Egg and hear what's next",
      "v:4108>=4",
-     61
+     [
+      61,
+      6,
+      5
+     ]
     ]
    ]
   },
@@ -194,12 +210,16 @@
     [
      "Ruins of Alph (west of Route 32): solve the Kabuto puzzle",
      "f:0x977",
-     113
+     [
+      312,
+      6,
+      6
+     ]
     ],
     [
-     "Unown Report from the Ruins of Alph research center",
+     "Unown Report: the researchers hand it over when you drop into the underground hall",
      "f:0x110",
-     113
+     315
     ]
    ]
   },
@@ -240,7 +260,11 @@
     [
      "Answer Elm's call and visit the Violet Poké Mart",
      "v:4074>=3",
-     157
+     [
+      157,
+      6,
+      8
+     ]
     ],
     [
      "Keep the Egg in your party: it hatches into Togepi",
@@ -425,12 +449,20 @@
     [
      "Find the first lost Farfetch'd and scare it home",
      "f:0x7D",
-     117
+     [
+      117,
+      25,
+      62
+     ]
     ],
     [
      "Find the second one",
      "f:0x7E",
-     117
+     [
+      117,
+      41,
+      54
+     ]
     ],
     [
      "Get HM01 Cut from the charcoal man",
@@ -444,7 +476,11 @@
     [
      "Cut the tree blocking the north exit",
      "",
-     117
+     [
+      117,
+      16,
+      62
+     ]
     ]
    ],
    "catch": [
@@ -576,7 +612,11 @@
     [
      "Get the SquirtBottle at the Goldenrod Flower Shop",
      "",
-     184
+     [
+      184,
+      3,
+      5
+     ]
     ],
     [
      "Go north on Route 35, then east on Route 36",
@@ -667,7 +707,11 @@
     [
      "Drop to the basement and wake the legendary beasts",
      "v:4079>=2",
-     217
+     [
+      217,
+      20,
+      16
+     ]
     ]
    ],
    "boss": [
@@ -763,7 +807,11 @@
     [
      "Meet Jasmine at the top of the Lighthouse",
      "v:40A5>=1",
-     225
+     [
+      225,
+      7,
+      8
+     ]
     ],
     [
      "Surf west across Routes 40-41 to Cianwood City",
@@ -843,7 +891,11 @@
     [
      "Catch Lapras in Union Cave B2F (Fridays, needs Surf)",
      "c:131",
-     154
+     [
+      154,
+      18,
+      88
+     ]
     ]
    ]
   },
@@ -927,8 +979,12 @@
    "todo": [
     [
      "Get HM04 Strength from the man on Route 42",
-     "",
-     44
+     "v:4091>=1",
+     [
+      44,
+      434,
+      174
+     ]
     ],
     [
      "Go east on Route 42 to Mahogany Town",
@@ -1052,7 +1108,11 @@
     [
      "Get HM05 Whirlpool from Lance",
      "",
-     248
+     [
+      248,
+      15,
+      24
+     ]
     ]
    ],
    "boss": [
@@ -1105,7 +1165,11 @@
     [
      "Slide across the ice to Pryce",
      "",
-     140,
+     [
+      140,
+      7,
+      4
+     ],
      "On ice you slide until something stops you. The arrows show the slides that reach Pryce."
     ]
    ],
@@ -1156,7 +1220,11 @@
     [
      "Free the Director in the warehouse (Card Key)",
      "v:4077>=4",
-     202
+     [
+      202,
+      20,
+      13
+     ]
     ],
     [
      "Beat Ariana on 5F",
@@ -1319,7 +1387,11 @@
     [
      "Answer the Dragon Master kindly: Rising Badge",
      "b:7",
-     288,
+     [
+      288,
+      6,
+      9
+     ],
      "Answers: Friend, Strategy, Strong, Love, Both. Only Junior, Cheating, Weak, Violence or Strength fail."
     ]
    ],
@@ -1342,7 +1414,11 @@
     [
      "Fly to New Bark and get the Master Ball from Elm",
      "v:4108>=9",
-     61
+     [
+      61,
+      6,
+      5
+     ]
     ]
    ]
   },
@@ -1353,7 +1429,11 @@
     [
      "Face your rival in Ecruteak",
      "v:410C>=4",
-     78
+     [
+      78,
+      397,
+      174
+     ]
     ],
     [
      "Beat the five Kimono Girls at the Dance Theater",
@@ -1735,12 +1815,20 @@
     [
      "Find the stolen part in the Cerulean Gym",
      "",
-     427
+     [
+      427,
+      3,
+      10
+     ]
     ],
     [
      "Bring it back to the manager",
      "",
-     467
+     [
+      467,
+      13,
+      8
+     ]
     ],
     [
      "Get the EXPN Card at the Lavender Radio Tower",
@@ -1754,7 +1842,11 @@
     [
      "Play the Poké Flute channel to wake Snorlax",
      "",
-     19
+     [
+      19,
+      1354,
+      304
+     ]
     ]
    ],
    "catch": [
@@ -1782,7 +1874,11 @@
     [
      "Find Misty at Cerulean Cape (Route 25)",
      "f:0x9b3",
-     29
+     [
+      29,
+      1421,
+      47
+     ]
     ],
     [
      "Beat Misty",
@@ -2013,7 +2109,11 @@
     [
      "Get a Kanto starter from Prof. Oak",
      "c:1|c:4|c:7",
-     505
+     [
+      505,
+      8,
+      6
+     ]
     ],
     [
      "Catch Suicune on Route 25",
