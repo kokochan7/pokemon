@@ -348,3 +348,27 @@ body.playing #scene { display: none; }
   #cloudList .name, #lib .name { flex-basis: calc(100% - 30px); }
   .bar .t { display: none; }
 }
+
+/* Wild Pokémon IVs (js/ivs.js), at the top of the guide while you battle one */
+.guide .ivbox { margin: 0 0 6px; }
+.guide .ivbox h3 { margin-top: 0; }
+.guide .ivhead { display: flex; align-items: center; gap: 6px; }
+.guide .ivhead img { width: 48px; height: 48px; margin: -6px -4px -6px -8px; image-rendering: pixelated; }
+.guide .ivwho { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.guide .ivwho b { font-weight: 800; font-size: 13px; }
+.guide .ivnat { color: #585868; font-size: 11px; }
+.guide .ivgrade { font: 9px/1 var(--pixel); padding: 5px 6px 4px; border: 2px solid var(--ink); color: #fff; text-shadow: 1px 1px 0 #000; }
+.guide .ivgrade.excellent { background: #e0a020; }
+.guide .ivgrade.decent { background: #4888c8; }
+.guide .ivgrade.bad { background: #a04848; }
+.guide .ivbars li { display: grid; grid-template-columns: 34px 1fr 20px; align-items: center; gap: 6px; font-size: 11px; line-height: 1.5; }
+.guide .ivk { font-weight: 700; color: #484858; }
+.guide .ivk.up::after { content: " ▲"; color: #d83820; font-size: 8px; }
+.guide .ivk.down::after { content: " ▼"; color: #3870c0; font-size: 8px; }
+.guide .ivbar { height: 7px; background: var(--paper-2); border: 1px solid #c8c0b0; }
+.guide .ivbar i { display: block; height: 100%; background: #68a048; }
+.guide .ivbars li.max .ivbar i { background: #e0a020; }
+.guide .ivbars li.zero .ivbar i { background: #a04848; }
+.guide .ivv { text-align: right; font-weight: 700; }
+.guide .ivbars li.max .ivv { color: #b07810; }
+.guide .ivsum { color: #585868; font-size: 11px; margin-top: 2px; }

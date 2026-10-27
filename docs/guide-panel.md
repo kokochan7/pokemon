@@ -211,3 +211,19 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   0x108/0x109 Ho-Oh/Lugia met, 0x964 Hall of Fame, 0xF2 S.S. Ticket, 0x11F EXPN Card, 0x12B Mt. Silver open.
 - `{HeartGold text|SoulSilver text}` in story.json picks the running version.
 - Tested only with synthetic RAM so far (flag offsets cross-checked with the decomp's save layout).
+
+## Wild Pokémon IVs (js/ivs.js)
+
+- While you battle a wild Pokémon, a "WILD POKÉMON IVs" box sits at the top of the right-hand panel: name,
+  level, nature (▲/▼ on the stats it raises/lowers), the six IVs as bars (31 gold, 0 red) and a verdict from the
+  IV total (0-186, a random Pokémon averages 93): EXCELLENT from 124, DECENT from 75, BAD below.
+- How it's found: a battle's enemy side is a `Party` (maxCount 6, curCount, then 236-byte party Pokémon). Every
+  4-byte spot in DS RAM holding 6 then 1-6 is checked; each Pokémon is decrypted the usual Gen 4 way (blocks
+  shuffled by `((pid >> 13) & 31) % 24`, XOR with the LCRNG seeded by the checksum / the PID for the party
+  part) and kept only if the checksum adds up. IVs are block B +0x10, level is party +0x8C.
+- Left out: the player's own Pokémon (by PID, from the save's party at general block +0x90, the decomp's
+  `SAVE_PARTY` right after `SAVE_PLAYERDATA`), eggs, parties of more than one, and trainer Pokémon (the game
+  gives them six equal IVs). Wild doubles are two parties of one, so both show.
+- Freed battle memory isn't cleared, so the box shows only Pokémon whose PID wasn't seen before, and hides once
+  the player stands on a different tile than at the start (or after a catch, as it's then yours).
+- `node tools/test_ivs.js` checks the decryption and filters on fake RAM. Tested only with synthetic RAM so far.
