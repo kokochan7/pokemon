@@ -250,7 +250,7 @@ const Guide = (() => {
   function debugLine() {
     const h = heap();
     return (debug || "no scan") + " · pick " + pick + " · now " + (h ? cands.map((b) => mapAt(h, b)).join("/") : "-") +
-      (warpAt ? " · warp " + Math.round((Date.now() - warpAt) / 1000) + "s" : "") + (pollError ? " · ERR " + pollError : "");
+      (wildDebug ? " · " + wildDebug : "") + (warpAt ? " · warp " + Math.round((Date.now() - warpAt) / 1000) + "s" : "") + (pollError ? " · ERR " + pollError : "");
   }
   function pollOnce() {
     const h = heap();
@@ -1235,19 +1235,24 @@ const Guide = (() => {
   let pickedTime = null, highlight = null, mapWrap = null, showDebug = false;
   // The wild Pokémon you're battling, with its IVs (js/ivs.js). It shows as soon as a new one turns up in
   // DS RAM and goes once you walk a tile after the battle (or catch it: it then counts as yours).
-  let wildSeen = new Set(), wildNow = [], wildTile = null, wildBox = null, dexNames = null;
+  // The field is torn down during a battle, and the player-object scan can then lock onto a stale copy
+  // left in freed memory, at another spot. So a move only counts when the same object (same address)
+  // reads a new tile; a new address just becomes the new starting point.
+  let wildSeen = new Set(), wildNow = [], wildAt = null, wildBox = null, dexNames = null, wildDebug = "";
   function wildTick() {
     const h = heap();
     if (idle() || !h || ram == null || !cands.length) return;
     const found = WildIVs.wild(h, ram, RAM_SIZE, cands);
     const fresh = found.filter((m) => !wildSeen.has(m.pid));
     for (const m of found) wildSeen.add(m.pid);
-    if (fresh.length) { wildNow = fresh; wildTile = null; drawWild(); return; }
+    wildDebug = "iv " + found.length + "/" + wildNow.length;
+    if (fresh.length) { wildNow = fresh; wildAt = null; drawWild(); return; }
     if (!wildNow.length) return;
-    const p = player(h), t = p && p.map(Math.floor).join();
-    if (!t) return;
-    if (wildTile == null) wildTile = t;
-    else if (t !== wildTile) { wildNow = []; drawWild(); }
+    const p = player(h);
+    if (!p) return;
+    const at = [me, Math.floor(p[0]), Math.floor(p[1])];
+    if (!wildAt || wildAt[0] !== at[0]) wildAt = at;
+    else if (at[1] !== wildAt[1] || at[2] !== wildAt[2]) { wildNow = []; drawWild(); }
   }
   function drawWild() {
     if (!wildBox) wildBox = node("div", "ivbox");
