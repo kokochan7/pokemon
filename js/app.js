@@ -111,6 +111,7 @@ async function launch(name, blob, core, label) {
     ExpShare.started();
     pinMenuBar();
     addSpeedButton();
+    fixCheatToggle();
     if (emuCore === "desmume") window.EJS_emulator.changeSettingOption("desmume_advanced_timing", "disabled");
   };
   // The emulator's Restart is a bare core reset that skips saving and can leave DS games
@@ -160,6 +161,25 @@ function tuneRetroArch() {
   const base = GM.prototype.getRetroArchCfg;
   GM.prototype.getRetroArchCfg = function () { return base.call(this) + RETROARCH_CFG; };
   GM.prototype.ppTuned = true;
+}
+
+// Cheats menu: EmulatorJS passes each toggle straight to the core's retro_cheat_set, and
+// DeSmuME ignores its "enabled" flag, so switching a cheat off just added it again and the
+// code kept running. Instead, on every toggle clear the core's cheat list and re-add only
+// the cheats that are still on. Values a cheat already wrote stay until the game changes them.
+function fixCheatToggle() {
+  const emu = window.EJS_emulator;
+  if (!emu || emu.cheatsFixed) return;
+  emu.cheatsFixed = true;
+  emu.cheatChanged = function (checked, code, index) {
+    const gm = this.gameManager;
+    if (!gm) return;
+    gm.resetCheat();
+    (this.cheats || []).forEach((c, i) => {
+      const on = i === index ? checked : c.checked;
+      if (on && c.code) gm.setCheat(i, true, c.code);
+    });
+  };
 }
 
 // Speed button in the emulator's menu bar: each click toggles 1x / 2x.
