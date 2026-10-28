@@ -35,6 +35,7 @@ putParty(h, gen + WildIVs.PARTY_AT, mine);                // the save's party
 putParty(h, ram + 0x200000, mine.slice(0, 1));             // the battle's copy of the player's lead
 putParty(h, ram + 0x210000, [makeMon(0xAAAA0001, 19, 3, [31, 31, 0, 12, 25, 31])]); // the wild Rattata
 putParty(h, ram + 0x220000, [makeMon(0xBBBB0001, 74, 12, [6, 6, 6, 6, 6, 6])]);    // a trainer's Geodude
+putParty(h, ram + 0x228000, [makeMon(0xFFFF0031, 75, 32, [31, 31, 31, 31, 31, 31])]); // wild under an IV cheat
 putParty(h, ram + 0x230000, [makeMon(0xCCCC0001, 175, 1, [9, 8, 7, 6, 5, 4], true)]); // an egg
 const bad = makeMon(0xDDDD0001, 25, 4, [1, 2, 3, 4, 5, 6]); bad[20] ^= 1; // broken checksum
 putParty(h, ram + 0x240000, [bad]);
@@ -62,8 +63,8 @@ putParty(h, ram + 0x260000, [bad2]);
 const m = WildIVs.mon(h, ram + 0x210000 + 8);
 assert.deepStrictEqual([m.species, m.level, m.ivs], [19, 3, [31, 31, 0, 12, 25, 31]]);
 const wild = WildIVs.wild(h, ram, 0x400000, [gen]);
-assert.deepStrictEqual(wild.map((x) => x.pid.toString(16)), ["aaaa0001", "eeee0001"]);
-assert.deepStrictEqual(wild[1].ivs, [3, 30, 17, 9, 22, 14]);
+assert.deepStrictEqual(wild.map((x) => x.pid.toString(16)), ["aaaa0001", "ffff0031", "eeee0001"]);
+assert.deepStrictEqual(wild[2].ivs, [3, 30, 17, 9, 22, 14]);
 assert.deepStrictEqual(WildIVs.rate(wild[0].ivs), { total: 130, grade: "excellent" });
 assert.strictEqual(WildIVs.rate([15, 15, 15, 15, 15, 15]).grade, "decent");
 assert.strictEqual(WildIVs.rate([2, 20, 10, 5, 13, 8]).grade, "bad");

@@ -229,7 +229,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   part) and kept only if the checksum adds up. IVs are block B +0x10, level is party +0x8C.
 - Left out: the player's own Pokémon (by PID, from the save's party at general block +0x90, the decomp's
   `SAVE_PARTY` right after `SAVE_PLAYERDATA`), eggs, parties of more than one, and trainer Pokémon (the game
-  gives them six equal IVs). Wild doubles are two parties of one, so both show.
+  gives them six equal IVs; six 31s still count as wild, since IV cheats give wild Pokémon that: Kenny's real RAM
+  dump on 2026-10-28 had a wild Graveler with six 31s that this filter hid). Wild doubles are two parties of one, so both show.
 - Freed battle memory isn't cleared, so a Pokémon whose PID wasn't seen before starts a new encounter, and the box
   shows that encounter's Pokémon for as long as they can be read (until the next encounter, or a catch, as it's then
   yours). Hiding on the player's first step after the battle was dropped (2026-10-28): the field's memory is reused
