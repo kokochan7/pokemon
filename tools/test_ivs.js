@@ -38,10 +38,28 @@ putParty(h, ram + 0x230000, [makeMon(0xCCCC0001, 175, 1, [9, 8, 7, 6, 5, 4], tru
 const bad = makeMon(0xDDDD0001, 25, 4, [1, 2, 3, 4, 5, 6]); bad[20] ^= 1; // broken checksum
 putParty(h, ram + 0x240000, [bad]);
 
+// The battle's unencrypted copies (BattleMon): the player's lead and a wild Ursaring whose encrypted copy a
+// cheat broke (no valid Party for it).
+function battleMon(at, species, level, ivs, pid) {
+  const v = new DataView(h.buffer);
+  v.setUint16(at, species, true);
+  for (let i = 2; i < 12; i += 2) v.setUint16(at + i, 50 + i, true);
+  v.setUint16(at + 0xC, 33, true);
+  v.setUint32(at + 0x14, ivs.reduce((a, x, i) => a | x << i * 5, 0) >>> 0, true);
+  for (let i = 0; i < 8; i++) h[at + 0x18 + i] = 6;
+  h[at + 0x24] = 0; h[at + 0x25] = 0; h[at + 0x34] = level;
+  v.setUint32(at + 0x4C, 90, true); v.setUint32(at + 0x50, 100, true); v.setUint32(at + 0x68, pid, true);
+}
+battleMon(ram + 0x250000, 155, 9, [10, 20, 30, 1, 2, 3], 0x11112222);
+battleMon(ram + 0x250000 + 0xC0, 217, 33, [3, 30, 17, 9, 22, 14], 0xEEEE0001);
+const bad2 = makeMon(0xEEEE0001, 217, 33, [3, 30, 17, 9, 22, 14]); bad2[30] ^= 0x40;
+putParty(h, ram + 0x260000, [bad2]);
+
 const m = WildIVs.mon(h, ram + 0x210000 + 8);
 assert.deepStrictEqual([m.species, m.level, m.ivs], [19, 3, [31, 31, 0, 12, 25, 31]]);
 const wild = WildIVs.wild(h, ram, 0x400000, [gen]);
-assert.deepStrictEqual(wild.map((x) => x.pid.toString(16)), ["aaaa0001"]);
+assert.deepStrictEqual(wild.map((x) => x.pid.toString(16)), ["aaaa0001", "eeee0001"]);
+assert.deepStrictEqual(wild[1].ivs, [3, 30, 17, 9, 22, 14]);
 assert.deepStrictEqual(WildIVs.rate(wild[0].ivs), { total: 130, grade: "excellent" });
 assert.strictEqual(WildIVs.rate([15, 15, 15, 15, 15, 15]).grade, "decent");
 assert.strictEqual(WildIVs.rate([2, 20, 10, 5, 13, 8]).grade, "bad");

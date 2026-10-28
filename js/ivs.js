@@ -66,6 +66,28 @@ const WildIVs = (() => {
     return out;
   }
 
+  // The battle's own copy of each Pokémon on the field (pokeheartgold's BattleMon, 0xC0+ bytes, not
+  // encrypted): species +0, stats +2..+0xB, moves +0xC, IVs +0x14, stat stages +0x18 (8 x 0-12, 6 = normal),
+  // types +0x24/+0x25, level +0x34, HP +0x4C / max +0x50, PID +0x68. A fallback for when the encrypted copy
+  // can't be read (Kenny, 2026-10-28: "iv 0/0" after Action Replay codes).
+  function battleMons(h, ram, size) {
+    const out = [];
+    for (let o = ram; o + 0x6c <= ram + size; o += 4) {
+      const species = u16(h, o);
+      if (!species || species > 493 || h[o + 0x34] < 1 || h[o + 0x34] > 100) continue;
+      let ok = true;
+      for (let i = 0; i < 8 && ok; i++) ok = h[o + 0x18 + i] <= 12;
+      for (let i = 2; i < 12 && ok; i += 2) { const v = u16(h, o + i); ok = v > 0 && v < 1000; }
+      if (!ok || h[o + 0x24] > 17 || h[o + 0x25] > 17) continue;
+      const m0 = u16(h, o + 0xC);
+      if (!m0 || m0 > 467 || [0xE, 0x10, 0x12].some((k) => u16(h, o + k) > 467)) continue;
+      const hp = u32(h, o + 0x4C), maxHp = u32(h, o + 0x50), pid = u32(h, o + 0x68), ivw = u32(h, o + 0x14);
+      if (!maxHp || maxHp > 999 || hp > maxHp || !pid || ivw >>> 30 & 1) continue;
+      out.push({ pid, species, level: h[o + 0x34], ivs: STATS.map((_, i) => ivw >>> i * 5 & 31), nature: pid % 25, hp, maxHp });
+    }
+    return out;
+  }
+
   // Wild Pokémon in DS RAM: lone Pokémon in a Party that isn't the player's and isn't a trainer's.
   // `saves` = general block offsets in the heap (the player's party is at +0x90).
   function wild(h, ram, size, saves) {
@@ -77,6 +99,9 @@ const WildIVs = (() => {
       const m = p.mons[0];
       if (mine.has(m.pid) || m.ivs.every((v) => v === m.ivs[0])) continue;
       out.set(m.pid, m);
+    }
+    for (const m of battleMons(h, ram, size)) {
+      if (!mine.has(m.pid) && !out.has(m.pid) && !m.ivs.every((v) => v === m.ivs[0])) out.set(m.pid, m);
     }
     return [...out.values()];
   }
@@ -98,5 +123,5 @@ const WildIVs = (() => {
     return up === down ? null : [up, down];
   }
 
-  return { mon, parties, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
+  return { mon, parties, battleMons, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
 })();
