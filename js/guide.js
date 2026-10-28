@@ -1293,6 +1293,22 @@ const Guide = (() => {
     if (!wildBox.isConnected && shown != null) el().prepend(wildBox);
   }
 
+  // Debug data for fixing RAM readers against the real game: a JSON line (what the guide is following),
+  // then each DS RAM image in the heap (4 MB each). It holds the game's live memory, save data included,
+  // so it is only downloaded to Kenny's own computer; never commit one.
+  function saveDump() {
+    const h = heap();
+    if (!h) return;
+    const imgs = (rams.length ? rams : ram != null ? [ram] : []).filter((r) => r >= 0 && r + RAM_SIZE <= h.length);
+    const info = JSON.stringify({ when: new Date().toISOString(), map: shown, rams: imgs, ram, cands, me, debug: debugLine() }) + "\n";
+    const blob = new Blob([info, ...imgs.map((r) => h.slice(r, r + RAM_SIZE))], { type: "application/octet-stream" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pokemon-ram-" + Date.now() + ".bin";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
   function render(id, msg) {
     shown = id;
     const g = el(), gl = $("guideL");
@@ -1311,8 +1327,11 @@ const Guide = (() => {
     if (wildBox) g.prepend(wildBox); // top of the right-hand panel, in both layouts
     const loc = node("div", "loc", m.name || "???"), dbg = node("div", "dbg", debugLine());
     dbg.hidden = !showDebug;
-    loc.onclick = () => { showDebug = !showDebug; dbg.hidden = !showDebug; };
-    main.append(loc, dbg);
+    loc.onclick = () => { showDebug = !showDebug; dbg.hidden = dump.hidden = !showDebug; };
+    const dump = node("button", "dump", "Save debug data");
+    dump.hidden = !showDebug;
+    dump.onclick = saveDump;
+    main.append(loc, dbg, dump);
     main.append(node("div", "place", m.place || "\u00a0")); // always there, so the map below doesn't shift
 
     let canvas = null;

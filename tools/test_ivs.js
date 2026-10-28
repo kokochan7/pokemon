@@ -2,6 +2,7 @@
 const fs = require("fs");
 const src = fs.readFileSync(require("path").join(__dirname, "../js/ivs.js"), "utf8");
 const WildIVs = new Function(src + "\nreturn WildIVs;")();
+WildIVs.useBattleMons = true; // the fallback is off in the page, but keep testing it
 const assert = require("assert");
 
 const ORDERS = ["ABCD", "ABDC", "ACBD", "ACDB", "ADBC", "ADCB", "BACD", "BADC", "BCAD", "BCDA", "BDAC", "BDCA",

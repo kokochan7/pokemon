@@ -385,3 +385,4 @@ body.playing #scene { display: none; }
 .guide .ivbars li.max .ivv { color: #687088; position: relative; }
 .guide .ivbars li.max .ivv::after { top: -6px; right: -7px; font-size: 8px; }
 .guide .ivsum { color: #585868; font-size: 11px; margin-top: 2px; }
+.guide .dump { font: 700 10px/1 var(--read); padding: 4px 6px; margin: 2px 0 4px; }

@@ -114,7 +114,9 @@ const WildIVs = (() => {
       if (mine.has(m.pid) || m.ivs.every((v) => v === m.ivs[0])) continue;
       out.set(m.pid, m);
     }
-    for (const m of battleMons(h, ram, size, mine)) {
+    // The BattleMon fallback is off: in Kenny's game it showed junk outside battle and still missed the real
+    // wild Pokémon (2026-10-28). Turn it back on only after checking it against a real RAM dump.
+    if (WildIVs.useBattleMons) for (const m of battleMons(h, ram, size, mine)) {
       if (!mine.has(m.pid) && !m.ivs.every((v) => v === m.ivs[0])) out.set(m.pid, { ...(out.get(m.pid) || m), live: true });
     }
     return [...out.values()];
@@ -137,5 +139,5 @@ const WildIVs = (() => {
     return up === down ? null : [up, down];
   }
 
-  return { mon, parties, battleMons, BATTLE_MON, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
+  return { useBattleMons: false, mon, parties, battleMons, BATTLE_MON, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
 })();
