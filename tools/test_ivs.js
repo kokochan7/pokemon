@@ -48,10 +48,13 @@ function battleMon(at, species, level, ivs, pid) {
   v.setUint32(at + 0x14, ivs.reduce((a, x, i) => a | x << i * 5, 0) >>> 0, true);
   for (let i = 0; i < 8; i++) h[at + 0x18 + i] = 6;
   h[at + 0x24] = 0; h[at + 0x25] = 0; h[at + 0x34] = level;
+  v.setUint16(at + 0x36, 0x12B, true); v.setUint16(at + 0x38, 0xffff, true); // a one-letter name
   v.setUint32(at + 0x4C, 90, true); v.setUint32(at + 0x50, 100, true); v.setUint32(at + 0x68, pid, true);
 }
 battleMon(ram + 0x250000, 155, 9, [10, 20, 30, 1, 2, 3], 0x11112222);
-battleMon(ram + 0x250000 + 0xC0, 217, 33, [3, 30, 17, 9, 22, 14], 0xEEEE0001);
+battleMon(ram + 0x250000 + WildIVs.BATTLE_MON, 217, 33, [3, 30, 17, 9, 22, 14], 0xEEEE0001);
+// Junk with a BattleMon's shape but not next to the player's Pokémon (Kenny's game showed several, 2026-10-28).
+battleMon(ram + 0x270000, 72, 1, [4, 0, 0, 0, 0, 0], 0x12345678);
 const bad2 = makeMon(0xEEEE0001, 217, 33, [3, 30, 17, 9, 22, 14]); bad2[30] ^= 0x40;
 putParty(h, ram + 0x260000, [bad2]);
 

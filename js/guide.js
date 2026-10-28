@@ -1238,7 +1238,7 @@ const Guide = (() => {
   // read in DS RAM (a caught one counts as yours and drops out). Hiding on the player's first step after
   // the battle was tried (PR #64/#65) but the field's memory is reused during a battle, so it hid the box
   // mid-fight in Kenny's game.
-  let wildSeen = new Set(), wildNow = [], wildPids = [], wildBox = null, dexNames = null, wildDebug = "", wildKey = "";
+  let wildSeen = new Set(), wildLooked = false, wildNow = [], wildPids = [], wildBox = null, dexNames = null, wildDebug = "", wildKey = "";
   function wildTick() {
     const h = heap();
     if (idle() || !h || ram == null || !cands.length) return;
@@ -1246,7 +1246,11 @@ const Guide = (() => {
     // one, so look in all of them.
     const found = [...new Map((rams.length ? rams : [ram]).filter((r) => r >= 0 && r + RAM_SIZE <= h.length).flatMap((r) => WildIVs.wild(h, r, RAM_SIZE, cands))
       .map((m) => [m.pid, m])).values()];
-    const fresh = found.filter((m) => !wildSeen.has(m.pid));
+    // On the first look, older battles' Pokémon are still in RAM too, so only the ones in a battle's
+    // array next to the player's Pokémon (`live`) count; after that, any Pokémon not seen before does.
+    const first = !wildLooked;
+    wildLooked = true;
+    const fresh = found.filter((m) => !wildSeen.has(m.pid) && (!first || m.live));
     for (const m of found) wildSeen.add(m.pid);
     if (fresh.length) wildPids = fresh.map((m) => m.pid);
     wildNow = found.filter((m) => wildPids.includes(m.pid));
