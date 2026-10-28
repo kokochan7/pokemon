@@ -156,7 +156,7 @@ const Story = (() => {
     }
     const bullet = (kind, j, [text, cond, place, help], done) => {
       const li = el("li", done ? "ok" : cond ? "" : "info", text);
-      if (help) li.append(el("div", "help", help)); // quiz answers, puzzle tips
+      if (help && pick(help)) li.append(el("div", "help", help)); // quiz answers, puzzle tips
       if (place != null && nav) {
         const key = i + kind + j, at = where(place);
         li.classList.add("go");
@@ -174,7 +174,8 @@ const Story = (() => {
       if (later && s.todo[j][1]) done[j] = true;
       later = later || done[j];
     }
-    s.todo.forEach((t, j) => ul.append(bullet("t", j, t, done[j])));
+    // A bullet whose text is empty in this version ("{|SoulSilver only}") isn't shown.
+    s.todo.forEach((t, j) => pick(t[0]) && ul.append(bullet("t", j, t, done[j])));
     box.append(ul);
     // Optional side quests worth doing at this point; they tick themselves the same way.
     if (s.opt) {

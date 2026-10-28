@@ -166,11 +166,17 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   known. When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
   It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
   2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
+- A bullet's text can be version-only: `"{|SoulSilver text}"` is empty in HeartGold, and an empty bullet isn't shown.
+  The SoulSilver Lugia step uses this for the way down (Kenny got lost, 2026-10-28): northeast island (Route 41 warp
+  at 237,340, per Bulbapedia) → 1F ladder (51,22) → B1F ladder (54,43) → B2F monk who checks the Silver Wing (36,30,
+  flag 0x106 once shown) → down to Lugia's cave (31,43). The chain follows the decomp's warp anchors; which ladder
+  each island's area reaches isn't in the decomp (no terrain there), so the island choice rests on Bulbapedia.
 - Spots: most bullets carry `[map, x, z]`, the person, object, sign or trigger that does what the bullet's
   condition checks, found with the decomp: the object whose script (following its GoTo/Call labels) runs that
   bullet's `SetFlag` or `TrainerBattle` (gym bullets use the step's boss), or the object hidden by a
   `FLAG_HIDE_*` flag; a few were picked by hand (Chuck's wife, Amphy, the Surf gentleman, Lance). "Reach town"
-  bullets stay map-only. A bullet's optional 4th value is a small help line under it (quiz answers and puzzle
+  bullets stay map-only; every bullet about a person or object needs a spot, or no line shows once you're on its map
+  (Kenny hit this with HM06 and HM04, 2026-10-27, when all such bullets were given one). A bullet's optional 4th value is a small help line under it (quiz answers and puzzle
   tips taken from the decomp's scripts and messages: Radio Card quiz, Dragon's Den, Rocket Hideout passwords and
   switch, Vermilion trash cans), hidden once ticked. Redrawn when the player changes tile (`updateNav()` from `follow()`). It only knows which maps
   connect, not story blocks inside them (a Rocket in the way, a Strength boulder), and inside a multi-floor cave
