@@ -1246,11 +1246,11 @@ const Guide = (() => {
     // one, so look in all of them.
     const found = [...new Map((rams.length ? rams : [ram]).filter((r) => r >= 0 && r + RAM_SIZE <= h.length).flatMap((r) => WildIVs.wild(h, r, RAM_SIZE, cands))
       .map((m) => [m.pid, m])).values()];
-    // On the first look, older battles' Pokémon are still in RAM too, so only the ones in a battle's
-    // array next to the player's Pokémon (`live`) count; after that, any Pokémon not seen before does.
+    // On the first look, older battles' Pokémon may still be in RAM too, so if some are in a battle's array
+    // next to the player's Pokémon (`live`), only those count; after that, any Pokémon not seen before does.
     const first = !wildLooked;
     wildLooked = true;
-    const fresh = found.filter((m) => !wildSeen.has(m.pid) && (!first || m.live));
+    const fresh = found.filter((m) => !wildSeen.has(m.pid) && (!first || m.live || !found.some((x) => x.live)));
     for (const m of found) wildSeen.add(m.pid);
     if (fresh.length) wildPids = fresh.map((m) => m.pid);
     wildNow = found.filter((m) => wildPids.includes(m.pid));

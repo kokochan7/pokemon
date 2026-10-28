@@ -4,7 +4,7 @@
 // every Gen 4 game: four 32-byte blocks shuffled by the PID and XORed with an LCRNG seeded by the
 // checksum (box part) or the PID (party part). A copy is valid when its checksum adds up.
 // The player's own party (save data, general block +0x90) is left out by PID, and trainer Pokémon are
-// left out by their IVs: the game gives every trainer Pokémon six equal IVs.
+// left out by their IVs: the game gives every trainer Pokémon six equal IVs (six 31s still count as wild).
 // Freed battle memory isn't cleared, so the wild Pokémon is the one whose PID wasn't there before.
 const WildIVs = (() => {
   const MON = 236, PARTY_AT = 0x90;
@@ -111,16 +111,19 @@ const WildIVs = (() => {
     for (const p of parties(h, ram, size)) {
       if (p.mons.length !== 1) continue;
       const m = p.mons[0];
-      if (mine.has(m.pid) || m.ivs.every((v) => v === m.ivs[0])) continue;
+      if (mine.has(m.pid) || trainerLike(m.ivs)) continue;
       out.set(m.pid, m);
     }
     // The BattleMon fallback is off: in Kenny's game it showed junk outside battle and still missed the real
     // wild Pokémon (2026-10-28). Turn it back on only after checking it against a real RAM dump.
     if (WildIVs.useBattleMons) for (const m of battleMons(h, ram, size, mine)) {
-      if (!mine.has(m.pid) && !m.ivs.every((v) => v === m.ivs[0])) out.set(m.pid, { ...(out.get(m.pid) || m), live: true });
+      if (!mine.has(m.pid) && !trainerLike(m.ivs)) out.set(m.pid, { ...(out.get(m.pid) || m), live: true });
     }
     return [...out.values()];
   }
+  // Trainer Pokémon get six equal IVs (0-31). Six 31s is also what an IV cheat gives wild Pokémon (Kenny's
+  // "max31" code: a wild Graveler with six 31s was hidden, 2026-10-28), so only equal IVs below 31 mean a trainer.
+  const trainerLike = (ivs) => ivs[0] < 31 && ivs.every((v) => v === ivs[0]);
   function partyAt(h, at) {
     if (at < 0 || at + 8 > h.length) return [];
     const n = u32(h, at + 4), out = [];
