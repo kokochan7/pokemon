@@ -1242,10 +1242,13 @@ const Guide = (() => {
   function wildTick() {
     const h = heap();
     if (idle() || !h || ram == null || !cands.length) return;
-    const found = WildIVs.wild(h, ram, RAM_SIZE, cands);
+    // The heap can hold more than one DS RAM image (e.g. after loading a state), and `ram` may be a stale
+    // one, so look in all of them.
+    const found = [...new Map((rams.length ? rams : [ram]).filter((r) => r >= 0 && r + RAM_SIZE <= h.length).flatMap((r) => WildIVs.wild(h, r, RAM_SIZE, cands))
+      .map((m) => [m.pid, m])).values()];
     const fresh = found.filter((m) => !wildSeen.has(m.pid));
     for (const m of found) wildSeen.add(m.pid);
-    wildDebug = "iv " + found.length + "/" + wildNow.length;
+    wildDebug = "iv " + found.length + "/" + wildNow.length + " in " + rams.length;
     if (fresh.length) { wildNow = fresh; wildAt = null; drawWild(); return; }
     if (!wildNow.length) return;
     const p = player(h);
