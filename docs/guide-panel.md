@@ -166,6 +166,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   known. When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
   It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
   2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
+- A bullet's text can be version-only: `"{|SoulSilver text}"` is empty in HeartGold, and an empty bullet isn't shown.
+  The SoulSilver Lugia step uses this for the way down (Kenny got lost, 2026-10-28): northeast island (Route 41 warp
+  at 237,340, per Bulbapedia) → 1F ladder (51,22) → B1F ladder (54,43) → B2F monk who checks the Silver Wing (36,30,
+  flag 0x106 once shown) → down to Lugia's cave (31,43). The chain follows the decomp's warp anchors; which ladder
+  each island's area reaches isn't in the decomp (no terrain there), so the island choice rests on Bulbapedia.
 - Spots: most bullets carry `[map, x, z]`, the person, object, sign or trigger that does what the bullet's
   condition checks, found with the decomp: the object whose script (following its GoTo/Call labels) runs that
   bullet's `SetFlag` or `TrainerBattle` (gym bullets use the step's boss), or the object hidden by a
