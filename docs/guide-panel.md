@@ -237,4 +237,7 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   Tap the location name: the debug line ends in `iv found/showing in N` (N = DS RAM images in the heap).
 - The wild party is looked for in every DS RAM image in the heap, not just `ram`: after cheats/state loads Kenny's
   heap held 3 images and `ram` was a stale one, so nothing was found (2026-10-28).
+- Fallback: the battle's own unencrypted copy of each Pokémon on the field (`BattleMon`, offsets in `battleMons()`),
+  found by shape (stat stages 0-12, level, types, moves, HP) and filtered the same way. Added after Kenny's real game
+  showed `iv 0/0` with Action Replay codes on, where no valid encrypted copy was found (2026-10-28).
 - `node tools/test_ivs.js` checks the decryption and filters on fake RAM. Tested only with synthetic RAM so far.
