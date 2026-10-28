@@ -230,10 +230,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 - Left out: the player's own Pokémon (by PID, from the save's party at general block +0x90, the decomp's
   `SAVE_PARTY` right after `SAVE_PLAYERDATA`), eggs, parties of more than one, and trainer Pokémon (the game
   gives them six equal IVs). Wild doubles are two parties of one, so both show.
-- Freed battle memory isn't cleared, so the box shows only Pokémon whose PID wasn't seen before, and hides once
-  the player stands on a different tile than at the start (or after a catch, as it's then yours). The field is torn
-  down during a battle and the player-object scan can lock onto a stale copy in freed memory, so a move only counts
-  when the same object address reads a new tile (a stale copy at another address once hid the box mid-battle).
+- Freed battle memory isn't cleared, so a Pokémon whose PID wasn't seen before starts a new encounter, and the box
+  shows that encounter's Pokémon for as long as they can be read (until the next encounter, or a catch, as it's then
+  yours). Hiding on the player's first step after the battle was dropped (2026-10-28): the field's memory is reused
+  during a battle, and in Kenny's game that hid the box mid-fight even when checking the same object address.
   Tap the location name: the debug line ends in `iv found/showing in N` (N = DS RAM images in the heap).
 - The wild party is looked for in every DS RAM image in the heap, not just `ram`: after cheats/state loads Kenny's
   heap held 3 images and `ram` was a stale one, so nothing was found (2026-10-28).
