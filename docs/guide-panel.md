@@ -234,5 +234,7 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   the player stands on a different tile than at the start (or after a catch, as it's then yours). The field is torn
   down during a battle and the player-object scan can lock onto a stale copy in freed memory, so a move only counts
   when the same object address reads a new tile (a stale copy at another address once hid the box mid-battle).
-  Tap the location name: the debug line ends in `iv found/showing`.
+  Tap the location name: the debug line ends in `iv found/showing in N` (N = DS RAM images in the heap).
+- The wild party is looked for in every DS RAM image in the heap, not just `ram`: after cheats/state loads Kenny's
+  heap held 3 images and `ram` was a stale one, so nothing was found (2026-10-28).
 - `node tools/test_ivs.js` checks the decryption and filters on fake RAM. Tested only with synthetic RAM so far.
