@@ -66,24 +66,38 @@ const WildIVs = (() => {
     return out;
   }
 
-  // The battle's own copy of each Pokémon on the field (pokeheartgold's BattleMon, 0xC0+ bytes, not
+  // The battle's own copy of each Pokémon on the field (pokeheartgold's BattleMon, 0xBC bytes, not
   // encrypted): species +0, stats +2..+0xB, moves +0xC, IVs +0x14, stat stages +0x18 (8 x 0-12, 6 = normal),
-  // types +0x24/+0x25, level +0x34, HP +0x4C / max +0x50, PID +0x68. A fallback for when the encrypted copy
-  // can't be read (Kenny, 2026-10-28: "iv 0/0" after Action Replay codes).
-  function battleMons(h, ram, size) {
+  // types +0x24/+0x25, level +0x34, nickname +0x36 (11 chars, 0xFFFF-ended), HP +0x4C / max +0x50, PID +0x68.
+  // A fallback for when the encrypted copy can't be read (Kenny, 2026-10-28: "iv 0/0" after Action Replay
+  // codes). Plenty of other memory has this rough shape, so it only counts in the battle's array of four
+  // (player, enemy, player 2, enemy 2): the slot just before it must hold one of the player's Pokémon.
+  const BATTLE_MON = 0xBC;
+  function battleMonAt(h, o) {
+    if (o < 0 || o + BATTLE_MON > h.length) return null;
+    const species = u16(h, o), level = h[o + 0x34];
+    if (!species || species > 493 || level < 1 || level > 100) return null;
+    for (let i = 0; i < 8; i++) if (h[o + 0x18 + i] > 12) return null;
+    for (let i = 2; i < 12; i += 2) { const v = u16(h, o + i); if (!v || v > 999) return null; }
+    if (h[o + 0x24] > 17 || h[o + 0x25] > 17) return null;
+    const m0 = u16(h, o + 0xC);
+    if (!m0 || m0 > 467 || [0xE, 0x10, 0x12].some((k) => u16(h, o + k) > 467)) return null;
+    let end = -1;
+    for (let i = 0; i < 11 && end < 0; i++) if (u16(h, o + 0x36 + i * 2) === 0xffff) end = i;
+    if (end < 1) return null; // no name, or no end mark
+    const hp = u32(h, o + 0x4C), maxHp = u32(h, o + 0x50), pid = u32(h, o + 0x68), ivw = u32(h, o + 0x14);
+    if (!maxHp || maxHp > 999 || hp > maxHp || !pid || ivw >>> 30 & 1) return null;
+    return { pid, species, level, ivs: STATS.map((_, i) => ivw >>> i * 5 & 31), nature: pid % 25, hp, maxHp };
+  }
+  function battleMons(h, ram, size, mine) {
     const out = [];
-    for (let o = ram; o + 0x6c <= ram + size; o += 4) {
+    for (let o = ram + BATTLE_MON; o + BATTLE_MON <= ram + size; o += 4) {
       const species = u16(h, o);
-      if (!species || species > 493 || h[o + 0x34] < 1 || h[o + 0x34] > 100) continue;
-      let ok = true;
-      for (let i = 0; i < 8 && ok; i++) ok = h[o + 0x18 + i] <= 12;
-      for (let i = 2; i < 12 && ok; i += 2) { const v = u16(h, o + i); ok = v > 0 && v < 1000; }
-      if (!ok || h[o + 0x24] > 17 || h[o + 0x25] > 17) continue;
-      const m0 = u16(h, o + 0xC);
-      if (!m0 || m0 > 467 || [0xE, 0x10, 0x12].some((k) => u16(h, o + k) > 467)) continue;
-      const hp = u32(h, o + 0x4C), maxHp = u32(h, o + 0x50), pid = u32(h, o + 0x68), ivw = u32(h, o + 0x14);
-      if (!maxHp || maxHp > 999 || hp > maxHp || !pid || ivw >>> 30 & 1) continue;
-      out.push({ pid, species, level: h[o + 0x34], ivs: STATS.map((_, i) => ivw >>> i * 5 & 31), nature: pid % 25, hp, maxHp });
+      if (!species || species > 493) continue;
+      const m = battleMonAt(h, o);
+      if (!m || mine.has(m.pid)) continue;
+      const before = battleMonAt(h, o - BATTLE_MON);
+      if (before && mine.has(before.pid)) out.push({ ...m, live: true });
     }
     return out;
   }
@@ -100,8 +114,8 @@ const WildIVs = (() => {
       if (mine.has(m.pid) || m.ivs.every((v) => v === m.ivs[0])) continue;
       out.set(m.pid, m);
     }
-    for (const m of battleMons(h, ram, size)) {
-      if (!mine.has(m.pid) && !out.has(m.pid) && !m.ivs.every((v) => v === m.ivs[0])) out.set(m.pid, m);
+    for (const m of battleMons(h, ram, size, mine)) {
+      if (!mine.has(m.pid) && !m.ivs.every((v) => v === m.ivs[0])) out.set(m.pid, { ...(out.get(m.pid) || m), live: true });
     }
     return [...out.values()];
   }
@@ -123,5 +137,5 @@ const WildIVs = (() => {
     return up === down ? null : [up, down];
   }
 
-  return { mon, parties, battleMons, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
+  return { mon, parties, battleMons, BATTLE_MON, wild, rate, natureStats, STATS, NATURES, MON, PARTY_AT };
 })();

@@ -239,5 +239,9 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   heap held 3 images and `ram` was a stale one, so nothing was found (2026-10-28).
 - Fallback: the battle's own unencrypted copy of each Pokémon on the field (`BattleMon`, offsets in `battleMons()`),
   found by shape (stat stages 0-12, level, types, moves, HP) and filtered the same way. Added after Kenny's real game
-  showed `iv 0/0` with Action Replay codes on, where no valid encrypted copy was found (2026-10-28).
+  showed `iv 0/0` with Action Replay codes on, where no valid encrypted copy was found (2026-10-28). Shape alone
+  matched junk (Lv1 Tentacruel with all-0 IVs and the like), so a BattleMon also needs a 0xFFFF-ended name and
+  must sit in the battle's array of four (0xBC each): the slot before it holds one of the player's Pokémon.
+- On the first look after the page loads, older battles' Pokémon are still in RAM, so only those in a battle's
+  array (`live`) start the box; later, any Pokémon not seen before does.
 - `node tools/test_ivs.js` checks the decryption and filters on fake RAM. Tested only with synthetic RAM so far.
