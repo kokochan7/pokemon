@@ -1233,12 +1233,12 @@ const Guide = (() => {
   }
 
   let pickedTime = null, highlight = null, mapWrap = null, showDebug = false;
-  // The wild Pokémon you're battling, with its IVs (js/ivs.js). It shows as soon as a new one turns up in
-  // DS RAM and goes once you walk a tile after the battle (or catch it: it then counts as yours).
-  // The field is torn down during a battle, and the player-object scan can then lock onto a stale copy
-  // left in freed memory, at another spot. So a move only counts when the same object (same address)
-  // reads a new tile; a new address just becomes the new starting point.
-  let wildSeen = new Set(), wildNow = [], wildAt = null, wildBox = null, dexNames = null, wildDebug = "";
+  // The wild Pokémon you're battling, with its IVs (js/ivs.js). A Pokémon whose PID wasn't seen before
+  // starts a new encounter; the box then shows that encounter's Pokémon for as long as they can still be
+  // read in DS RAM (a caught one counts as yours and drops out). Hiding on the player's first step after
+  // the battle was tried (PR #64/#65) but the field's memory is reused during a battle, so it hid the box
+  // mid-fight in Kenny's game.
+  let wildSeen = new Set(), wildNow = [], wildPids = [], wildBox = null, dexNames = null, wildDebug = "", wildKey = "";
   function wildTick() {
     const h = heap();
     if (idle() || !h || ram == null || !cands.length) return;
@@ -1248,14 +1248,11 @@ const Guide = (() => {
       .map((m) => [m.pid, m])).values()];
     const fresh = found.filter((m) => !wildSeen.has(m.pid));
     for (const m of found) wildSeen.add(m.pid);
+    if (fresh.length) wildPids = fresh.map((m) => m.pid);
+    wildNow = found.filter((m) => wildPids.includes(m.pid));
     wildDebug = "iv " + found.length + "/" + wildNow.length + " in " + rams.length;
-    if (fresh.length) { wildNow = fresh; wildAt = null; drawWild(); return; }
-    if (!wildNow.length) return;
-    const p = player(h);
-    if (!p) return;
-    const at = [me, Math.floor(p[0]), Math.floor(p[1])];
-    if (!wildAt || wildAt[0] !== at[0]) wildAt = at;
-    else if (at[1] !== wildAt[1] || at[2] !== wildAt[2]) { wildNow = []; drawWild(); }
+    const key = wildNow.map((m) => m.pid + ":" + m.level).join();
+    if (key !== wildKey) { wildKey = key; drawWild(); }
   }
   function drawWild() {
     if (!wildBox) wildBox = node("div", "ivbox");
