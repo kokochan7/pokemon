@@ -125,7 +125,13 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 
 ## Trainers: who you're battling, who's beaten
 
-- hgss.json trainer rows are `[x, z, name, party, trainer id]` (the id is the decomp's `TRAINER_*` number).
+- hgss.json trainer rows are `[x, z, name, party, trainer id, hide flag]` (the id is the decomp's `TRAINER_*` number;
+  the hide flag is the object's `eventFlag`, 0 if none). A trainer whose hide flag is set isn't on the map, so it is
+  left off the map and the list (`away()`). The S.S. Aqua needs this (Kenny, 2026-10-29: cabins listed trainers who
+  weren't there): each cabin holds three sets of trainers, flag 0x22A, 0x22B or 0x22C, and boarding sets two of them,
+  so one set shows per trip (first trip: the 0x22A set; then Olivine->Vermilion 0x22B, Vermilion->Olivine 0x22C).
+  Rocket grunts that leave, gym trainers who are away and the like use it too. Hide flags get cleared again, so
+  `away()` reads only the live copy (`cands[pick]`), not the save buffer like the other flags.
 - Beaten trainers are dimmed with a tick: flag 0x550 + id in the save data in RAM (`Story.beaten()`).
 - The trainer you're battling gets a red bar and a BATTLING tag, scrolls into view and is ringed on the map
   (`opponent()` / `markTrainers()` in guide.js, 4 times a second). It is the trainer map object standing next to the
@@ -211,6 +217,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
 - Conditions: `f:` flag, `t:` trainer beaten, `b:`/`k:` Johto/Kanto badge bit, `v:4108>=3` var; `|` any, `&` all.
   The shown step is the first one not done; a step also counts as done once a later one is, except steps marked
   `free` (Kanto gyms, any order).
+- S.S. Aqua first trip (Sail to Kanto step), var 0x40CB `VAR_SCENE_SS_AQUA`: boarding sets var 0x40E1 (boat
+  direction); 2 grandpa bumps into you on 1F; flag 0xED B1F sailor asks you to find his buddy (needed before the napping
+  sailor will wake); 3 beat the napping sailor (1F SE rooms, 7,10); 4 hide-and-seek with the girl in the Captain's cabin;
+  5 found her on B1F (1,13), which warps you to grandpa in the 1F NW rooms; 6 Metal Coat, the ship docks.
 - Story vars/flags used (from the decomp's scripts): 0x4108 Elm's lab scene (1 starter, 3 after Mr. Pokémon,
   4 reported back, 6-7 Falkner + Togepi egg, 8 Dragon's Den, 9 Master Ball), 0x4073 Cherrygrove (2 tour, 4 rival
   beaten), 0x4074 Violet (3 egg collected), 0x4079 Ecruteak (1 gym empty, 2 Burned Tower beasts seen), 0x40A5

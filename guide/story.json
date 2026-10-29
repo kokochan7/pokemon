@@ -1711,9 +1711,64 @@
      ]
     ],
     [
-     "Ride the S.S. Aqua from Olivine to Vermilion",
+     "Board the S.S. Aqua at Olivine Port",
+     "v:40E1>=1",
+     [
+      240,
+      7,
+      9
+     ],
+     "Show the ticket to the sailor. The cabin trainers are optional; a nap in a cabin bed heals your team."
+    ],
+    [
+     "B1F: a sailor asks you to find his buddy",
+     "f:0xED",
+     [
+      329,
+      38,
+      18
+     ]
+    ],
+    [
+     "1F Southeast Rooms: wake the napping sailor and beat him",
+     "v:40CB>=3",
+     [
+      309,
+      7,
+      10
+     ]
+    ],
+    [
+     "Captain's cabin (east end of 1F): play hide-and-seek with the little girl",
+     "v:40CB>=4",
+     [
+      308,
+      10,
+      4
+     ]
+    ],
+    [
+     "Find her hiding at the west end of B1F",
+     "v:40CB>=5",
+     [
+      329,
+      1,
+      13
+     ]
+    ],
+    [
+     "Get the Metal Coat from her grandpa; the ship docks",
+     "v:40CB>=6",
+     [
+      328,
+      9,
+      8
+     ]
+    ],
+    [
+     "Walk off the ship into Vermilion City",
      "f:0x9b5",
-     330
+     387
     ]
    ],
    "opt": [

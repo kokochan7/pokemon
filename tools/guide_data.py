@@ -167,7 +167,10 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
                  if (n := item_name(o["scriptId"], "std_itemball_"))]
         hidden = [[b["x"], b["z"], n, hidden_scripts[b["scriptId"]] - 8000 + 800 if b["scriptId"] in hidden_scripts else 0]
                   for b in z.get("bgs", []) if (n := item_name(b["scriptId"], "std_hiddenitem_"))]
-        trainers = [[o["x"], o["z"], *t] for o in z.get("objects", []) if (t := trainer(o["scriptId"]))]
+        # [x, z, name, party, trainer id, flag that hides them]: the S.S. Aqua's cabins hold a different set of
+        # trainers per trip, each set hidden by its own flag.
+        trainers = [[o["x"], o["z"], *t, flag_ids.get(o.get("eventFlag"), 0)] for o in z.get("objects", [])
+                    if (t := trainer(o["scriptId"]))]
         # People behind counters, so the mini map can draw the counter (and the nurse's healing machine):
         # [x, z, 0 nurse | 1 shop clerk | 2 reception desk]
         staff = [[o["x"], o["z"], STAFF[o["spriteId"]]] for o in z.get("objects", []) if o["spriteId"] in STAFF]
