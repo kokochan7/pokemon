@@ -72,9 +72,10 @@ const Story = (() => {
   };
   function team(party, sprite) {
     const p = el("div", "party");
-    for (const [dex, name, lv] of party) {
+    for (const [dex, name, lv, weak = {}] of party) {
       const mon = el("span", "pm"), img = el("img");
-      img.src = sprite + dex + ".png"; img.alt = name; img.title = name; img.loading = "lazy";
+      const w = Object.entries(weak).map(([t, m]) => t + (m > 2 ? " ×4" : "")).join(", ");
+      img.src = sprite + dex + ".png"; img.alt = name; img.title = name + (w ? "\nWeak to " + w : ""); img.loading = "lazy";
       img.onerror = () => { img.style.visibility = "hidden"; };
       mon.append(img, el("span", null, name + " " + (lv + ExpShare.LEVEL_UP)));
       p.append(mon);
@@ -92,15 +93,37 @@ const Story = (() => {
   const TYPE_ICON = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-iv/heartgold-soulsilver/";
   const TYPES = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
     "grass", "electric", "psychic", "ice", "dragon", "dark"];
-  function icons(types) {
+  // tip (optional): type -> hover text; x4: types to mark ×4.
+  function icons(types, tip = {}, x4 = new Set()) {
     const row = el("span", "types");
     for (const t of types) {
       const img = el("img");
-      img.src = TYPE_ICON + (TYPES.indexOf(t) + 1) + ".png"; img.alt = img.title = t;
+      img.src = TYPE_ICON + (TYPES.indexOf(t) + 1) + ".png"; img.alt = t; img.title = tip[t] || t;
       img.onerror = () => { img.replaceWith(el("span", "tname", t)); };
-      row.append(img);
+      if (!x4.has(t)) { row.append(img); continue; }
+      const wrap = el("span", "x4");
+      wrap.append(img, el("i", null, "×4"));
+      row.append(wrap);
     }
     return row;
+  }
+
+  // The boss's weaknesses, from the shown teams' own types and abilities (tools/story_data.py works them
+  // out per Pokémon with the Gen 4 type chart): every type that's super effective on at least one of
+  // them, the ones that hit the most of the team first. ×4 marks a type that's 4x on someone.
+  function weakRow(parties) {
+    const hit = {}, x4 = new Set();
+    for (const party of parties) for (const [, name, , weak = {}] of party) {
+      for (const [t, m] of Object.entries(weak)) {
+        (hit[t] = hit[t] || []).push(name + (m > 2 ? " ×4" : ""));
+        if (m > 2) x4.add(t);
+      }
+    }
+    const types = Object.keys(hit).sort((a, b) => hit[b].length - hit[a].length || x4.has(b) - x4.has(a)
+      || TYPES.indexOf(a) - TYPES.indexOf(b));
+    const tip = {};
+    for (const t of types) tip[t] = t + ": " + hit[t].join(", ");
+    return types.length ? icons(types, tip, x4) : null;
   }
 
   // The NEXT section, all at a glance: the step's to-do bullets (ticked from the save data), the
@@ -146,9 +169,10 @@ const Story = (() => {
       head.append(el("b", null, b.name));
       if (b.types.length) head.append(icons(b.types));
       div.append(head);
-      if (b.weak.length) {
+      const weak = weakRow(shown.map((t) => bosses.teams[t]).filter(Boolean));
+      if (weak) {
         const w = el("div", "weak");
-        w.append(el("span", null, "Weakness"), icons(b.weak));
+        w.append(el("span", null, "Weakness"), weak);
         div.append(w);
       }
       for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));

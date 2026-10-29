@@ -248,6 +248,9 @@ body.playing #scene { display: none; }
   border: 2px solid #f0f0f0; color: #f0f0f0; font: 9px/1 var(--pixel); }
 .guide .story .types { display: inline-flex; flex-wrap: wrap; gap: 3px; }
 .guide .story .types img { width: 48px; height: 16px; image-rendering: pixelated; }
+.guide .story .x4 { position: relative; display: inline-flex; }
+.guide .story .x4 i { position: absolute; right: -4px; top: -6px; font: bold 10px/1 sans-serif; font-style: normal;
+  color: #fff; background: #d02828; border: 1px solid #000; border-radius: 3px; padding: 1px 2px; }
 .guide .story .tname { font-size: 11px; text-transform: uppercase; border: 1px solid var(--ink); padding: 0 3px; }
 .guide .cgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 4px; }
 .guide .cgrid li { display: flex; align-items: center; gap: 2px; font-size: 11px; line-height: 1.15; min-width: 0; }
