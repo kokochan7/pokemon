@@ -554,10 +554,14 @@ const Guide = (() => {
         // The widest-by-tallest wall rectangle sitting on the door, at most 6 tall and 13 wide.
         let top = dz - 1, l = dx, r = dx, best = 0;
         for (let t = dz - 1; t >= dz - 6 && wall(dx, t); t--) {
-          const col = (x) => { for (let z = t; z < dz; z++) if (!wall(x, z)) return false; return true; };
-          let a = dx, b = dx;
-          while (a > dx - 6 && col(a - 1)) a--;
-          while (b < dx + 6 && col(b + 1)) b++;
+          // (walls already taken by a neighbouring building stay with it)
+          const col = (x) => { for (let z = t; z < dz; z++) if (!wall(x, z) || house[z * W + x]) return false; return true; };
+          // Another door in the same row ends this building halfway to it (Cerulean's West House and
+          // Pokémon Center share one wall block in the data).
+          let a = dx, b = dx, minA = dx - 6, maxB = dx + 6;
+          for (const [ox, oz] of doors) if (oz === dz && ox !== dx) { if (ox < dx) minA = Math.max(minA, Math.floor((ox + dx) / 2) + 1); else maxB = Math.min(maxB, Math.ceil((ox + dx) / 2) - 1); }
+          while (a > minA && col(a - 1)) a--;
+          while (b < maxB && col(b + 1)) b++;
           const area = (b - a + 1) * (dz - t) * (b > a ? 1 : 0.5); // prefer a real building over a 1-wide post
           if (area > best) { best = area; top = t; l = a; r = b; }
         }
@@ -570,8 +574,16 @@ const Guide = (() => {
       }
     }
 
-    // The building a door at (x, z) opens from: the rectangle holding the tile above it.
-    const of = (x, z) => rects.find((q) => x >= q.l && x <= q.r && z - 1 >= q.top && z - 1 <= q.bottom) || null;
+    // The building a door at (x, z) opens from: the rectangle holding the tile above it, or above the
+    // door tile when the warp is the mat in front of it (Cerulean's Pokémon Center, 2026-10-29).
+    const of = (x, z) => {
+      for (let up = 1; up <= 2; up++) {
+        const q = rects.find((q) => x >= q.l && x <= q.r && z - up >= q.top && z - up <= q.bottom);
+        if (q) return q;
+        if (up === 1 && (wall(x, z - 1) || cls(at(x, z - 1)) !== 4)) break;
+      }
+      return null;
+    };
     return (L.buildings = { house, rects, of });
   }
 
@@ -811,6 +823,16 @@ const Guide = (() => {
     return t.name === m.name ? t.place || t.name : t.place && !t.blocks ? t.place : t.name;
   }
 
+  // Roof icons (original art, drawn as SVG): Pokémon Center, Mart, Gym, anything else is a house.
+  const ICON_SVG = (body) => '<svg viewBox="0 0 12 12" aria-hidden="true">' + body + "</svg>";
+  const ICONS = {
+    center: ICON_SVG('<circle cx="6" cy="6" r="5.3" fill="#f8f8f0" stroke="#181820" stroke-width="1.1"/><path d="M.7 6a5.3 5.3 0 0 1 10.6 0z" fill="#e03838" stroke="#181820" stroke-width="1.1"/><circle cx="6" cy="6" r="1.7" fill="#f8f8f0" stroke="#181820" stroke-width="1.1"/>'),
+    mart: ICON_SVG('<rect x=".6" y=".6" width="10.8" height="10.8" rx="2.2" fill="#3868d0" stroke="#181820" stroke-width="1.1"/><path d="M3 9V3.2l3 3.4 3-3.4V9" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>'),
+    gym: ICON_SVG('<path d="M6 .6 11.4 6 6 11.4.6 6z" fill="#e8b830" stroke="#181820" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 3.4 8.6 6 6 8.6 3.4 6z" fill="#fff4c0"/>'),
+    house: ICON_SVG('<path d="M6 1 11.3 5.6H9.8V11H2.2V5.6H.7z" fill="#f8f8f0" stroke="#181820" stroke-width="1.1" stroke-linejoin="round"/><rect x="4.9" y="7.3" width="2.2" height="3.7" fill="#a06840"/>'),
+  };
+  const iconFor = (name) => /Pok.mon Center/.test(name) ? "center" : /Mart|Department Store|Shop/.test(name) ? "mart" : /\bGym\b/.test(name) ? "gym" : "house";
+
   // A door tag's name, short: "1F Northwest Rooms" -> "NW Rooms", "Pokémon Center 1F" -> "Pokémon Center"
   // (a floor alone, like "B1F", stays).
   const COMPASS = { Northwest: "NW", Northeast: "NE", Southwest: "SW", Southeast: "SE" };
@@ -873,15 +895,20 @@ const Guide = (() => {
       if (!name) continue;
       const cx = list.reduce((a, d) => a + d[0], 0) / list.length, cz = list.reduce((a, d) => a + d[1], 0) / list.length;
       const [x, z] = list.reduce((a, d) => Math.hypot(d[0] - cx, d[1] - cz) < Math.hypot(a[0] - cx, a[1] - cz) ? d : a);
-      // A door in a building: the name sits small on its roof with a little arrow over the door
-      // (Kenny, 2026-10-29). Other doors (caves, gates, rooms) get a tag just above the door.
+      // A door in a building: an icon on its roof, like the games' town maps (Kenny, 2026-10-29: names
+      // didn't fit small roofs), with a little arrow over the door. Hover or tap shows the name. Other
+      // doors (caves, gates, rooms) get a name tag just above the door.
       const b = L.env === "out" && buildings(m, L).of(x, z);
       if (b) {
         const roofBottom = b.bottom > b.top ? b.bottom - 1 : b.bottom;
-        const tag = label("door roof", shortName(name), (b.l + b.r + 1) / 2, (b.top + roofBottom + 1) / 2, name);
-        tag.to = to; tag.roof = true; tag.fit = (b.r - b.l + 1) * g.k - 2;
-        const arrow = label("pointer", "▼", x + 0.5, z);
-        arrow.to = to;
+        const tag = label("door roof", "", (b.l + b.r + 1) / 2, (b.top + roofBottom + 1) / 2, name);
+        tag.innerHTML = ICONS[iconFor(name)];
+        tag.dataset.name = shortName(name);
+        const size = Math.round(Math.max(9, Math.min(14, (Math.min(b.r - b.l + 1, roofBottom - b.top + 1) + 0.6) * g.k)));
+        tag.style.width = tag.style.height = size + "px";
+        tag.onclick = () => { tag.classList.add("show"); clearTimeout(tag.hide); tag.hide = setTimeout(() => tag.classList.remove("show"), 2500); };
+        tag.to = to; tag.roof = true;
+        if (b.bottom - b.top >= 2) { const arrow = label("pointer", "▼", x + 0.5, z); arrow.to = to; } // a small building: the icon is enough
       } else {
         const tag = label("door", shortName(name), x + 0.5, z, name);
         tag.k = g.k; tag.to = to;
@@ -889,12 +916,6 @@ const Guide = (() => {
     }
     // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
     const tags = [...box.querySelectorAll(".exit")];
-    // Roof names shrink to fit their building (down to 6px), then wrap onto a second line.
-    for (const t of tags) {
-      if (!t.roof) continue;
-      for (let px = 7; t.offsetWidth > t.fit && px > 6; ) t.style.fontSize = --px + "px";
-      if (t.offsetWidth > t.fit) { t.style.whiteSpace = "normal"; t.style.width = Math.max(24, t.fit) + "px"; }
-    }
     for (const t of tags) { t.w = t.offsetWidth; t.h = t.offsetHeight; }
     clampExits(box);
     if (!box.clamps) { box.clamps = true; box.addEventListener("scroll", () => clampExits(box), { passive: true }); }

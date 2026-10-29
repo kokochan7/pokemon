@@ -82,8 +82,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   pinned inside the visible part of the map while it scrolls (`clampExits()`). Doors get one name per place they lead to
   (Kenny, 2026-10-29: the S.S. Aqua's cabin doors covered the map), at the door nearest the middle of that
   place's doors. Outdoors, a door in a building (`buildings()`, the same rectangles the painter draws as houses)
-  gets its name small on the building's roof, white with a dark outline, shrunk to fit (7px, then 6px, then two
-  lines), plus a small ▼ over the door (Kenny: tags were too big and all over the place). Other doors (caves,
+  gets an icon on the building's roof, like the games' town maps: Poké Ball = Pokémon Center, blue M = Mart, gold
+  badge = Gym, house = anything else (`ICONS`, `iconFor()`; Kenny, 2026-10-29: roof text didn't fit small roofs).
+  Hover or tap shows the name; a small ▼ marks the door on buildings 3+ tiles tall. Two doors in one wall block
+  (Cerulean's West House and Pokémon Center) split it halfway between them, and a warp on the mat below a door
+  tile still finds its building. Other doors (caves,
   gates, rooms) get a tag above the door, moved under it if the spot is taken, and left out if it would still
   cover another tag. Names come from `exitName()`, shortened by `shortName()` ("1F Northwest Rooms" -> "NW Rooms",
   "Pokémon Center 1F" -> "Pokémon Center"; the full name is the tooltip).
