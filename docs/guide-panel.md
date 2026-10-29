@@ -155,6 +155,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   (–, ✓ when done; Kenny found ☆ looked too important, 2026-10-26). Flags come from the decomp's scripts (the SetFlag next to the GiveItem/GivePokemon). `c:N` =
   National Dex N caught: Pokédex at general block +0x12B8 (magic 0xBEEFCAFE, then caught bits, bit species-1).
   Conditions can be per version like text: `{f:0x117|f:0x116}` (HG's, then SS's).
+- Kanto optional lists (Kenny's ask, 2026-10-29): NPC gifts, TMs, in-game trades and side quests on each Kanto step, found
+  by listing every Kanto map object whose script gives an item or Pokémon or trades, with the flag it sets. Bill's
+  grandpa (Sea Cottage) counts up var 0x412D to 5 (his list differs per version, in the help line); the Copycat's Pass
+  quest ends on flag 0x87. The Super Rod and GB Sounds set no flag (the game checks the bag), so they are plain bullets.
+  Brock's Diglett's Cave hours come from his map script (hour 12-14 before you have his number, 17-19 after).
 - Places and the way there (Kenny's ask, 2026-10-26): a bullet's optional 3rd value in story.json is where it
   happens: a map id, `[map id, x, z]` for a spot, or `"HG id|SS id"`. The name isn't shown under the bullet (Kenny removed the 📍 tags,
   2026-10-26: he just clicks); `placeName()` (with `PLACES`/`NAMES` fixing decomp names) names stops in the bar. Clicking the bullet picks it (gold bar;

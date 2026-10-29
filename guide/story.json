@@ -1751,7 +1751,46 @@
      "won": "k:5"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "TM29 Psychic from Mr. Psychic in Saffron",
+     "f:0x12F",
+     [
+      399,
+      8,
+      5
+     ]
+    ],
+    [
+     "Upgrade from the guard in Silph Co. (evolves Porygon when traded)",
+     "f:0x130",
+     [
+      402,
+      4,
+      4
+     ]
+    ],
+    [
+     "Cleanse Tag from the old woman in the Route 5 house",
+     "f:0x131",
+     [
+      517,
+      3,
+      5
+     ]
+    ],
+    [
+     "TM64 Explosion: trade a RageCandyBar to the man in the Route 5 Underground Path",
+     "f:0x164",
+     [
+      532,
+      7,
+      27
+     ],
+     "The RageCandyBar is ¥200 from the man in Mahogany Town."
+    ]
+   ]
   },
   {
    "title": "Kanto gym: Erika",
@@ -1782,7 +1821,19 @@
      "won": "k:3"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "Spell Tag from the man in the Celadon Condominiums roof room (boosts Ghost moves)",
+     "f:0x158",
+     [
+      380,
+      6,
+      6
+     ],
+     "He only tells his story after sunset."
+    ]
+   ]
   },
   {
    "title": "Fix the Power Plant",
@@ -1849,6 +1900,44 @@
       1354,
       304
      ]
+    ],
+    [
+     "Trade a Dugtrio for a Magneton in the Power Plant",
+     "f:0x121",
+     [
+      467,
+      6,
+      4
+     ]
+    ],
+    [
+     "Copycat in Saffron: fetch her lost Poké Doll from the Vermilion Fan Club for a Magnet Train Pass",
+     "f:0x87",
+     [
+      405,
+      5,
+      7
+     ],
+     "After the power is back: talk to the Copycat, then the Fan Club man who found the doll, then bring it back."
+    ],
+    [
+     "Super Rod from the Fishing Guru's brother in the Route 12 house",
+     "",
+     [
+      533,
+      5,
+      5
+     ]
+    ],
+    [
+     "Lt. Surge at the Saffron Magnet Train station: trade Pikachu with him",
+     "f:0x162",
+     [
+      400,
+      19,
+      10
+     ],
+     "He waits there once his number is in your Pokégear."
     ]
    ]
   },
@@ -1885,7 +1974,28 @@
      "won": "k:1"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "Show Bill's grandpa in the Sea Cottage the Pokémon he describes: a stone or an Everstone for each",
+     "v:412D>=5",
+     [
+      440,
+      7,
+      7
+     ],
+     "One per visit, in order: {Oddish, Growlithe, Jigglypuff, Pichu, Marill|Lickitung, Oddish, Staryu, Vulpix, Pichu}."
+    ],
+    [
+     "Nugget from the trainer at the end of Route 25 (then he battles you)",
+     "f:0x122",
+     [
+      29,
+      1392,
+      45
+     ]
+    ]
+   ]
   },
   {
    "title": "Kanto gym: Janine",
@@ -1916,7 +2026,18 @@
      "won": "k:4"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "Lucky Punch from the woman on Route 14: lead with a Chansey",
+     "f:0x15C",
+     [
+      22,
+      1348,
+      387
+     ]
+    ]
+   ]
   },
   {
    "title": "Kanto gym: Brock",
@@ -1952,7 +2073,64 @@
      "won": "k:0"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "{Silver Wing|Rainbow Wing} from the old man in Pewter: lets you meet {Lugia|Ho-Oh} too",
+     "{f:0x94|f:0x93}",
+     [
+      51,
+      1069,
+      94
+     ]
+    ],
+    [
+     "Trade a Haunter for a Xatu in the Pewter Pokémon Center",
+     "f:0x133",
+     [
+      475,
+      4,
+      17
+     ]
+    ],
+    [
+     "Trade Brock a Bonsly for his Rhyhorn (knows Thunder Fang) in Diglett's Cave",
+     "f:0x165",
+     [
+      106,
+      36,
+      4
+     ],
+     "With the Boulder Badge he's there noon to 3 pm: swap numbers. Then he's there 5 to 8 pm and trades on Mon, Thu and Sat."
+    ],
+    [
+     "Nugget from the man in the Route 2 house",
+     "f:0x134",
+     [
+      417,
+      5,
+      5
+     ]
+    ],
+    [
+     "Sacred Ash from Oak's aide in the Route 2 gatehouse (revives the whole team)",
+     "f:0x135",
+     [
+      418,
+      6,
+      7
+     ]
+    ],
+    [
+     "TM85 Dream Eater from the sleepy man in Viridian City",
+     "f:0x12E",
+     [
+      50,
+      1008,
+      264
+     ]
+    ]
+   ]
   },
   {
    "title": "Kanto gym: Blaine",
@@ -2007,7 +2185,18 @@
      "won": "k:7"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "GB Sounds from the Sound Designer in the Celadon Condominiums 3F (show him all 8 Kanto badges)",
+     "",
+     [
+      378,
+      14,
+      6
+     ]
+    ]
+   ]
   },
   {
    "title": "Mt. Silver: the final battle",
@@ -2044,6 +2233,17 @@
      "types": [],
      "won": "f:0x25F"
     }
+   ],
+   "opt": [
+    [
+     "TM47 Steel Wing from the celebrity in the Route 28 house",
+     "f:0x137",
+     [
+      510,
+      5,
+      5
+     ]
+    ]
    ]
   },
   {
