@@ -221,6 +221,8 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   direction); 2 grandpa bumps into you on 1F; flag 0xED B1F sailor asks you to find his buddy (needed before the napping
   sailor will wake); 3 beat the napping sailor (1F SE rooms, 7,10); 4 hide-and-seek with the girl in the Captain's cabin;
   5 found her on B1F (1,13), which warps you to grandpa in the 1F NW rooms; 6 Metal Coat, the ship docks.
+  The step is done on reaching Vermilion (fly flag 0x9B5), not on the first Kanto badge (Kenny sat on a finished step in
+  Vermilion, 2026-10-29); the Vermilion side quests are on the Lt. Surge step.
 - Story vars/flags used (from the decomp's scripts): 0x4108 Elm's lab scene (1 starter, 3 after Mr. Pokémon,
   4 reported back, 6-7 Falkner + Togepi egg, 8 Dragon's Den, 9 Master Ball), 0x4073 Cherrygrove (2 tour, 4 rival
   beaten), 0x4074 Violet (3 egg collected), 0x4079 Ecruteak (1 gym empty, 2 Burned Tower beasts seen), 0x40A5
