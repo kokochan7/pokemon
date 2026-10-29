@@ -795,6 +795,10 @@ const Guide = (() => {
     return t.name === m.name ? t.place || t.name : t.place && !t.blocks ? t.place : t.name;
   }
 
+  // A door tag's name, short: "1F Northwest Rooms" -> "NW Rooms" (a floor alone, like "B1F", stays).
+  const COMPASS = { Northwest: "NW", Northeast: "NE", Southwest: "SW", Southeast: "SE" };
+  const shortName = (name) => name.replace(/^B?\d+F (?=\S)/, "").replace(/\b(Northwest|Northeast|Southwest|Southeast)\b(?= \S)/g, (w) => COMPASS[w]);
+
   // Exits as labels on the map: one at each edge that leads to a neighbouring map (placed at the
   // widest walkable gap on that edge), and one over each door.
   const DIR = { N: [0, -1, "▲"], S: [0, 1, "▼"], W: [-1, 0, "◀"], E: [1, 0, "▶"] };
@@ -839,10 +843,20 @@ const Guide = (() => {
       const tag = label("edge " + d, d === "E" ? name + " " + arrow : arrow + " " + name, x, z);
       tag.side = d; tag.to = to;
     }
+    // One tag per place the doors lead to (Kenny, 2026-10-29: the S.S. Aqua's cabin doors each had
+    // their own "1F Northwest Rooms" tag and covered the map), over the door nearest the middle of
+    // that place's doors, with a shortened name. The full name is the tag's tooltip.
+    const doors = new Map();
     for (const [x, z, to] of m.warps || []) {
+      if (!doors.has(to)) doors.set(to, []);
+      doors.get(to).push([x - L.ox, z - L.oz]);
+    }
+    for (const [to, list] of doors) {
       const name = exitName(m, to);
       if (!name) continue;
-      const tag = label("door", name, x - L.ox + 0.5, z - L.oz, name);
+      const cx = list.reduce((a, d) => a + d[0], 0) / list.length, cz = list.reduce((a, d) => a + d[1], 0) / list.length;
+      const [x, z] = list.reduce((a, d) => Math.hypot(d[0] - cx, d[1] - cz) < Math.hypot(a[0] - cx, a[1] - cz) ? d : a);
+      const tag = label("door", shortName(name), x + 0.5, z, name);
       tag.k = g.k; tag.to = to;
     }
     // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
