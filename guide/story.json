@@ -1850,8 +1850,22 @@
      ]
     ],
     [
-     "Find the stolen part in the Cerulean Gym",
-     "",
+     "Walk into the Cerulean Gym: a Rocket runs out",
+     "v:4088>=1",
+     427
+    ],
+    [
+     "Beat the Rocket at Nugget Bridge (Route 24)",
+     "v:4087>=3",
+     [
+      28,
+      1328,
+      81
+     ]
+    ],
+    [
+     "Pick up the stolen part in the Cerulean Gym pool",
+     "v:4087>=4",
      [
       427,
       3,
@@ -1860,7 +1874,7 @@
     ],
     [
      "Bring it back to the manager",
-     "",
+     "f:0x118",
      [
       467,
       13,
@@ -1878,7 +1892,7 @@
     ],
     [
      "Play the Poké Flute channel to wake Snorlax",
-     "",
+     "f:0xF9",
      [
       19,
       1354,
@@ -1947,8 +1961,13 @@
    "done": "k:1",
    "todo": [
     [
-     "Find Misty at Cerulean Cape (Route 25)",
-     "f:0x9b3",
+     "Misty is away at first: hear the Power Plant manager's story, then walk into her gym",
+     "v:4088>=1",
+     427
+    ],
+    [
+     "Cerulean Cape (Route 25): interrupt Misty's date",
+     "v:4088>=2",
      [
       29,
       1421,
@@ -2045,6 +2064,16 @@
    "title": "Kanto gym: Brock",
    "done": "k:0",
    "todo": [
+    [
+     "Wake the Snorlax blocking Diglett's Cave (Route 11)",
+     "f:0xF9",
+     [
+      19,
+      1354,
+      304
+     ],
+     "Tune the Pokégear radio to the Poké Flute channel next to it (needs the EXPN Card)."
+    ],
     [
      "Go through Diglett's Cave",
      "",
@@ -2170,7 +2199,16 @@
    "done": "k:7",
    "todo": [
     [
-     "Beat Blue in Viridian City (after the other 7)",
+     "Find Blue on Cinnabar Island with the other 7 Kanto badges: he goes back to his gym",
+     "f:0x129",
+     [
+      57,
+      1036,
+      494
+     ]
+    ],
+    [
+     "Beat Blue in the Viridian Gym",
      "k:7",
      [
       496,

@@ -166,6 +166,12 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   grandpa (Sea Cottage) counts up var 0x412D to 5 (his list differs per version, in the help line); the Copycat's Pass
   quest ends on flag 0x87. The Super Rod and GB Sounds set no flag (the game checks the bag), so they are plain bullets.
   Brock's Diglett's Cave hours come from his map script (hour 12-14 before you have his number, 17-19 after).
+- Kanto gym unlocks (Kenny found Misty's gym empty, 2026-10-29). Before the Earth Badge every leader is in their gym
+  except Misty and Blue, and the steps now say how to get them there. Misty (var 0x4088): 1 once you walk into her gym after
+  hearing the Power Plant manager's story (var 0x411C 1 starts the Rocket scene), 2 once you break up her date at
+  Cerulean Cape, which fills the gym. The Machine Part (var 0x4087): 3 after you beat the Route 24 Rocket, 4 once picked
+  up. Blue: talk to him on Cinnabar with 7 Kanto badges (var 0x4135 counts them), flag 0x129, and he goes back to
+  Viridian. Brock: Snorlax sits on the Diglett's Cave entrance (Route 11), flag 0xF9 once it's woken.
 - Places and the way there (Kenny's ask, 2026-10-26): a bullet's optional 3rd value in story.json is where it
   happens: a map id, `[map id, x, z]` for a spot, or `"HG id|SS id"`. The name isn't shown under the bullet (Kenny removed the 📍 tags,
   2026-10-26: he just clicks); `placeName()` (with `PLACES`/`NAMES` fixing decomp names) names stops in the bar. Clicking the bullet picks it (gold bar;
