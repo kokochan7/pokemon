@@ -183,7 +183,10 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   its rooms). hgss.json's `hops` are warps back into the same map, `[x, z, x you land on, z you land on]` (from each
   warp's `anchor`): the Saffron Gym's pads, plus ladders inside Diglett's Cave, Cliff Cave, the Goldenrod Tunnel and
   Bell Tower 7F. `walk()` takes a pad as one move costing 8 (fewer pads beat a slightly shorter walk) and never walks
-  over a pad it doesn't mean to take; on a tie it keeps going straight, so the line turns less. The leg up to the next
+  over a pad it doesn't mean to take; on a tie it keeps going straight, so the line turns less. On a map with pads a
+  wall costs 1000 instead of 40: the first version sent Kenny straight through the Saffron Gym's walls (four pads
+  cost more than one wall at 40). Checked against Kenny's RAM dump: the real collision grid (found in DS RAM)
+  has solid walls between the rooms, and the steps from the entrance come out as 4 pads. The leg up to the next
   pad is the bold band with arrows; later legs are fainter, each warp is a dotted hop and each pad gets a number.
   On a gym map, or whenever the line uses a pad or ice, `steps()` writes it out under the bar ("2 left, 3 down onto
   pad 1", ..., "3 left, 3 up then face them and press A"): one line per pad, tile counts merged per direction,

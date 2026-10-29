@@ -1054,6 +1054,9 @@ const Guide = (() => {
     const hop = new Map();
     for (const [x, z, tx, tz] of hops || []) if (local(x, z) >= 0 && local(tx, tz) >= 0) hop.set(local(x, z), local(tx, tz));
     const via = new Int32Array(W * H).fill(-1), slid = new Uint8Array(W * H);
+    // With warp pads the walls between rooms are real (Kenny's Saffron Gym: four pads cost more than one
+    // wall at 40, so the line went straight through), so a wall is a much later resort there.
+    const wall = hop.size ? 1000 : 40;
     const trap = new Uint8Array(W * H);
     for (const [x, z, w, h] of traps || [])
       for (let j = z; j < z + h; j++) for (let i = x; i < x + w; i++) {
@@ -1080,7 +1083,7 @@ const Guide = (() => {
           // A wall or a ledge the wrong way is very dear but not ruled out: the terrain data marks some
           // walkable tiles (bridges, gaps by people) as walls, and no line at all helps nobody.
           if (trap[j]) k = 200;
-          else if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = 40;
+          else if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = wall;
           else if (tiles[b] === 2) k = 3;
           else if (b === ICE || (b >= 64 && b <= 67)) { [j, k] = slide(L, j, dx, dz); sl = 1; }
         }
