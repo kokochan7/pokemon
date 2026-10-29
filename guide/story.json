@@ -1,5 +1,5 @@
 {
- "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place, help]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. help (optional) is a small line under it: quiz answers, puzzle tips. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. A boss's \"won\" condition ticks it (scripted battles like rivals, leaders and executives never set the trainer-beaten flag, so t:N only works for ordinary trainers). Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types/weak are type names shown as icons. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
+ "about": "HeartGold/SoulSilver story steps for the guide panel's NEXT section, written by hand for this site. Each todo line is [text, condition, place, help]; place (optional) is where it happens: a map id (hgss.json), [map id, x, z] for a spot on it, or \"HG id|SS id\". Clicking the bullet shows the way there. help (optional) is a small line under it: quiz answers, puzzle tips. Conditions are read from the save data in DS RAM: f:N event flag (fly-point flags 0x9B0+ mark towns visited), t:N trainer beaten, b:N Johto badge bit, k:N Kanto badge bit, v:VAR>=N story variable (hex id); | is any, & is all (binds tighter). An empty condition is shown as a plain bullet. A step also counts as done once any later step is done, unless it is free (Kanto gyms: any order). Text in {HeartGold|SoulSilver} picks the version. A boss's \"won\" condition ticks it (scripted battles like rivals, leaders and executives never set the trainer-beaten flag, so t:N only works for ordinary trainers). Boss teams and catch sprites come from bosses.json (tools/story_data.py); a Rival with t: [a, b, c] is picked by the player's starter (Chikorita, Cyndaquil, Totodile). types are type names shown as icons (the gym's type); the Weakness row is worked out from the team in bosses.json. \"opt\" lists optional side quests worth doing at that point, with the same kind of conditions; c:N is National Dex N caught (Pokédex in the save).",
  "steps": [
   {
    "title": "Get your first Pokémon",
@@ -104,7 +104,6 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": [],
      "won": "v:4073>=4"
     }
    ]
@@ -174,12 +173,6 @@
       "grass",
       "flying"
      ],
-     "weak": [
-      "fire",
-      "flying",
-      "ice",
-      "rock"
-     ],
      "won": "f:0x76"
     }
    ],
@@ -244,11 +237,6 @@
      "types": [
       "flying"
      ],
-     "weak": [
-      "electric",
-      "rock",
-      "ice"
-     ],
      "won": "b:0"
     }
    ]
@@ -308,10 +296,6 @@
      "name": "Proton",
      "types": [
       "poison"
-     ],
-     "weak": [
-      "psychic",
-      "ground"
      ],
      "won": "f:0x7B"
     }
@@ -385,11 +369,6 @@
      "types": [
       "bug"
      ],
-     "weak": [
-      "fire",
-      "flying",
-      "rock"
-     ],
      "won": "b:1"
     }
    ],
@@ -437,7 +416,6 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": [],
      "won": "v:4075>=2"
     }
    ]
@@ -549,9 +527,6 @@
      "name": "Whitney",
      "types": [
       "normal"
-     ],
-     "weak": [
-      "fighting"
      ],
      "won": "b:2"
     }
@@ -723,7 +698,6 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": [],
      "won": "f:0x1C6"
     }
    ],
@@ -760,12 +734,6 @@
      "types": [
       "ghost",
       "poison"
-     ],
-     "weak": [
-      "ghost",
-      "dark",
-      "psychic",
-      "ground"
      ],
      "won": "b:3"
     }
@@ -834,10 +802,6 @@
      "name": "Chuck",
      "types": [
       "fighting"
-     ],
-     "weak": [
-      "flying",
-      "psychic"
      ],
      "won": "b:4"
     }
@@ -963,11 +927,6 @@
      "name": "Jasmine",
      "types": [
       "steel"
-     ],
-     "weak": [
-      "fire",
-      "fighting",
-      "ground"
      ],
      "won": "b:5"
     }
@@ -1122,10 +1081,6 @@
      "types": [
       "poison"
      ],
-     "weak": [
-      "psychic",
-      "ground"
-     ],
      "won": "v:40AC>=4|f:0xCA"
     },
     {
@@ -1134,10 +1089,6 @@
      "types": [
       "poison",
       "dark"
-     ],
-     "weak": [
-      "psychic",
-      "ground"
      ],
      "won": "v:40AC>=9|f:0xCA"
     }
@@ -1179,12 +1130,6 @@
      "name": "Pryce",
      "types": [
       "ice"
-     ],
-     "weak": [
-      "fire",
-      "fighting",
-      "rock",
-      "steel"
      ],
      "won": "b:6"
     }
@@ -1254,7 +1199,6 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": [],
      "won": "v:40A0>=1"
     },
     {
@@ -1262,10 +1206,6 @@
      "name": "Proton",
      "types": [
       "poison"
-     ],
-     "weak": [
-      "psychic",
-      "ground"
      ]
     },
     {
@@ -1273,10 +1213,6 @@
      "name": "Petrel",
      "types": [
       "poison"
-     ],
-     "weak": [
-      "psychic",
-      "ground"
      ],
      "won": "f:0x2C7"
     },
@@ -1286,10 +1222,6 @@
      "types": [
       "poison",
       "dark"
-     ],
-     "weak": [
-      "psychic",
-      "ground"
      ]
     },
     {
@@ -1298,11 +1230,6 @@
      "types": [
       "dark",
       "fire"
-     ],
-     "weak": [
-      "water",
-      "ground",
-      "fighting"
      ],
      "won": "f:0xC6"
     }
@@ -1347,10 +1274,6 @@
      "t": 35,
      "name": "Clair",
      "types": [
-      "dragon"
-     ],
-     "weak": [
-      "ice",
       "dragon"
      ],
      "won": "f:0xD1"
@@ -1521,7 +1444,6 @@
      ],
      "name": "Kimono Girls",
      "types": [],
-     "weak": [],
      "won": "f:0x103|f:0x104"
     }
    ],
@@ -1620,7 +1542,6 @@
      ],
      "name": "Rival",
      "types": [],
-     "weak": [],
      "won": "f:0x20A"
     },
     {
@@ -1628,11 +1549,6 @@
      "name": "Will",
      "types": [
       "psychic"
-     ],
-     "weak": [
-      "dark",
-      "ghost",
-      "bug"
      ],
      "won": "f:0xE4"
     },
@@ -1642,10 +1558,6 @@
      "types": [
       "poison"
      ],
-     "weak": [
-      "ground",
-      "psychic"
-     ],
      "won": "f:0xE5"
     },
     {
@@ -1653,10 +1565,6 @@
      "name": "Bruno",
      "types": [
       "fighting"
-     ],
-     "weak": [
-      "flying",
-      "psychic"
      ],
      "won": "f:0xE6"
     },
@@ -1666,10 +1574,6 @@
      "types": [
       "dark"
      ],
-     "weak": [
-      "fighting",
-      "bug"
-     ],
      "won": "f:0xE7"
     },
     {
@@ -1677,11 +1581,6 @@
      "name": "Lance",
      "types": [
       "dragon"
-     ],
-     "weak": [
-      "ice",
-      "dragon",
-      "rock"
      ],
      "won": "f:0x964"
     }
@@ -1798,9 +1697,6 @@
      "types": [
       "electric"
      ],
-     "weak": [
-      "ground"
-     ],
      "won": "k:2"
     }
    ],
@@ -1852,11 +1748,6 @@
      "types": [
       "psychic"
      ],
-     "weak": [
-      "dark",
-      "ghost",
-      "bug"
-     ],
      "won": "k:5"
     }
    ],
@@ -1887,13 +1778,6 @@
      "name": "Erika",
      "types": [
       "grass"
-     ],
-     "weak": [
-      "fire",
-      "flying",
-      "ice",
-      "poison",
-      "bug"
      ],
      "won": "k:3"
     }
@@ -1998,10 +1882,6 @@
      "types": [
       "water"
      ],
-     "weak": [
-      "electric",
-      "grass"
-     ],
      "won": "k:1"
     }
    ],
@@ -2032,10 +1912,6 @@
      "name": "Janine",
      "types": [
       "poison"
-     ],
-     "weak": [
-      "ground",
-      "psychic"
      ],
      "won": "k:4"
     }
@@ -2073,13 +1949,6 @@
      "types": [
       "rock"
      ],
-     "weak": [
-      "water",
-      "grass",
-      "fighting",
-      "ground",
-      "steel"
-     ],
      "won": "k:0"
     }
    ],
@@ -2111,11 +1980,6 @@
      "types": [
       "fire"
      ],
-     "weak": [
-      "water",
-      "ground",
-      "rock"
-     ],
      "won": "k:6"
     }
    ],
@@ -2140,7 +2004,6 @@
      "t": 261,
      "name": "Blue",
      "types": [],
-     "weak": [],
      "won": "k:7"
     }
    ],
@@ -2179,7 +2042,6 @@
      "t": 260,
      "name": "Red",
      "types": [],
-     "weak": [],
      "won": "f:0x25F"
     }
    ]
