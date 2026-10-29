@@ -1,8 +1,9 @@
-/* ---------- always-on Exp. Share and +5 trainer levels (HeartGold / SoulSilver) ---------- */
+/* ---------- always-on Exp. Share, +5 trainer levels and 2x HP bars (HeartGold / SoulSilver) ---------- */
 // After each knockout the Pokémon that fought get 100% of the EXP and the rest of the party (not
 // eggs, not fainted) gets 50% (Kenny's choice). Only the Pokémon on the field gets the "gained X
 // Exp. Points!" message; benched ones only show their level-ups. Every trainer's Pokémon are also
-// 5 levels higher than normal. Always on, with no button. Nothing in the ROM or save changes:
+// 5 levels higher than normal, and battle HP bars drain twice as fast. Always on, with no button.
+// Nothing in the ROM or save changes:
 // a few instructions of the game's code are patched in DS RAM, the same way an Action Replay code
 // works. The battle code (overlay 12) is reloaded for every battle, so it is re-patched each time;
 // the trainer party code is in the always-loaded ARM9 code and is patched once (and again after a
@@ -66,6 +67,17 @@ const ExpShare = (() => {
   ];
   const SEARCH = [0x02200000, 0x02280000]; // where overlay 12 can sit if it isn't at the US address
 
+  // Faster HP bars, also in overlay 12 (Kenny, 2026-10-29): ov12_022657E4 moves a draining or filling HP
+  // bar by hpChange = 1 HP per frame (for Pokémon with 48+ max HP; below that it moves one pixel per frame).
+  // "movs r0, #1" -> "movs r0, #2" makes it 2 HP per frame, so the bar drains twice as fast. The bar and
+  // the HP number still stop exactly on the new HP. Patched on its own, so a mismatch here never blocks
+  // the Exp. Share (same shift if the overlay sits elsewhere).
+  const HP_BAR = {
+    at: 0x022657e4,
+    code:  [0xb570, 0xb082, 0x1c05, 0x1c0c, 0xd10c, 0x2006, 0x9000, 0x2001, 0x9001, 0x1c2b, 0x6ae8, 0x6aa9, 0x6b2a, 0x3334],
+    patch: [null, null, null, null, null, null, null, 0x2002, null, null, null, null, null, null],
+  };
+
   // CreateNPCTrainerParty (ARM9, 0x02073604 in HG US) calls CreateMon(mon, species, level, iv, ...)
   // once for each of the 4 trainer data layouts, each time with this code. iv is at most 31, so the
   // "lsl r3, r3, #0x18 ... lsr r3, r3, #0x18" (keep the low byte) does nothing: the lsl becomes a nop
@@ -77,7 +89,7 @@ const ExpShare = (() => {
   const TRAINER_PATCH = { 3: NOP, 13: 0x3200 | LEVEL_UP };
   const TRAINER_SEARCH = [0x02000000, 0x02110000]; // ARM9 static code
 
-  let header = null, bases = [], scans = 0, shift = 0, logged = false, found = false, trainerAt = null, trainerBase = null, trainerTicks = 0;
+  let header = null, bases = [], scans = 0, shift = 0, logged = false, hpLogged = false, found = false, trainerAt = null, trainerBase = null, trainerTicks = 0;
 
   async function prepare(blob) {
     const h = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
@@ -136,8 +148,8 @@ const ExpShare = (() => {
     return false;
   }
 
-  function write(h, b) {
-    SITES.forEach((s) => s.patch.forEach((v, i) => {
+  function write(h, b, sites = SITES) {
+    sites.forEach((s) => s.patch.forEach((v, i) => {
       if (v == null) return;
       const o = b + s.at + shift + i * 2 - 0x02000000;
       h[o] = v & 0xff; h[o + 1] = v >> 8;
@@ -180,6 +192,11 @@ const ExpShare = (() => {
     if (trainerAt) trainerLevels(h, trainerBase);
     else if (trainerTicks++ % 10 === 0) { // search every 5s until the game's code is in RAM
       for (const b of bases) if ((trainerAt = findTrainer(h, b))) { trainerBase = b; trainerLevels(h, b); break; }
+    }
+    for (const b of bases) {
+      if (!siteIs(h, b, HP_BAR, false)) continue;
+      write(h, b, [HP_BAR]);
+      if (!hpLogged) { hpLogged = true; console.info("HP bars 2x: battle code patched"); }
     }
     for (const b of bases) {
       // Once the battle code has been found (and patched), it's always at the same address: no more searching.
