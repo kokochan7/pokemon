@@ -152,6 +152,11 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   words (40 steps from the starter to Red). Each step is a title plus short to-do bullets, each with its own
   condition so it ticks itself; a bullet with no condition shows as a plain dot. Kenny wants everything visible at a
   glance: no fold, no long paragraphs, no trainer list, icons over words.
+- Kanto gyms go in any order (Kenny was in Cerulean while NEXT said Erika, and ▶ was greyed out, 2026-10-29): once
+  the first open step is `free`, every open step up to the last free one is a choice (`choices()`; the Power Plant
+  step sits among them). NEXT shows the first choice with a bullet on a map of the player's map name (the guide
+  passes it with `Story.here()`: "Cerulean City" covers the town and its buildings, "Route 25" the route), else
+  keeps its last pick, else the first; ▶ pages through the other choices ("Any order: n of m left").
 - ◀ ▶ beside the step title (Kenny's ask, 2026-10-26: check he didn't miss anything) page back through earlier
   steps and forward to the current one, with an "Earlier step (n of m)" note. `Story.nodes()` keeps the viewed
   step and redraws its own box; the view snaps back when the current step changes. Bullets there still show the

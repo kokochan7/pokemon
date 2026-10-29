@@ -47,13 +47,38 @@ const Story = (() => {
 
   // The first step not done yet. A step also counts as done once a later step is, unless it is
   // "free" (Kanto gyms can be beaten in any order).
-  function current(h, base) {
-    const done = steps.map((s) => test(h, base, s.done));
+  function first(h, base, done) {
     for (let i = 0; i < steps.length; i++) {
       if (done[i] || (!steps[i].free && done.slice(i + 1).some(Boolean))) continue;
       return i;
     }
     return steps.length - 1;
+  }
+
+  // Where the player is, from the guide: the map's name ("Cerulean City" for the town and every house in it),
+  // and a map id -> name lookup for bullet places.
+  let town = null, townOf = () => null;
+  function here(name, lookup) { town = name; townOf = lookup; }
+
+  // Once the first open step is free (the Kanto gyms), any open step up to the last free one can be next:
+  // these are the ones ◀ ▶ page through, and the one shown is the first whose bullets happen in the
+  // player's town (Kenny went to Cerulean while NEXT still said Erika, 2026-10-29), else the first.
+  function choices(h, base) {
+    const done = steps.map((s) => test(h, base, s.done)), i = first(h, base, done);
+    if (!steps[i].free) return [i];
+    let last = i;
+    steps.forEach((s, j) => { if (s.free) last = j; });
+    const out = [];
+    for (let j = i; j <= last; j++) if (!done[j]) out.push(j);
+    return out;
+  }
+  // Off any step's map (a route between towns) the last pick stays.
+  let picked = -1;
+  function current(h, base) {
+    const c = choices(h, base);
+    const inTown = (j) => town && steps[j].todo.some(([, , p]) => p != null && townOf(where(p)[0]) === town);
+    picked = c.find(inTown) ?? (c.includes(picked) ? picked : c[0]);
+    return picked;
   }
 
   // A short string that changes whenever the NEXT section would look different.
@@ -141,19 +166,22 @@ const Story = (() => {
     const cur = current(h, base);
     if (cur !== seen) seen = view = cur;
     const box = el("div", "story");
-    fill(box, h, base, sprite, nav, cur);
+    fill(box, h, base, sprite, nav, cur, choices(h, base));
     return [box];
   }
 
-  function fill(box, h, base, sprite, nav, cur) {
+  function fill(box, h, base, sprite, nav, cur, open) {
     const i = view, s = steps[i];
-    const go = (d) => { view = Math.max(0, Math.min(cur, view + d)); fill(box, h, base, sprite, nav, cur); };
+    // Earlier steps, then the open ones (just the current step, or the Kanto gyms left to do).
+    const list = [...Array(open[0]).keys(), ...open], at = list.indexOf(i);
+    const go = (d) => { view = list[Math.max(0, Math.min(list.length - 1, at + d))]; fill(box, h, base, sprite, nav, cur, open); };
     const head = el("div", "shead"), back = el("button", "sback", "◀"), fwd = el("button", "sfwd", "▶");
-    back.title = "Earlier step"; back.disabled = i === 0; back.onclick = () => go(-1);
-    fwd.title = "Later step"; fwd.disabled = i >= cur; fwd.onclick = () => go(1);
+    back.title = "Earlier step"; back.disabled = at <= 0; back.onclick = () => go(-1);
+    fwd.title = "Later step"; fwd.disabled = at >= list.length - 1; fwd.onclick = () => go(1);
     head.append(back, el("div", "stitle", s.title), fwd);
     box.replaceChildren(head);
-    if (i < cur) box.append(el("div", "spast", "Earlier step (" + (i + 1) + " of " + (cur + 1) + "): no ✓ means not done yet"));
+    if (i < open[0]) box.append(el("div", "spast", "Earlier step (" + (i + 1) + " of " + (open[0] + 1) + "): no ✓ means not done yet"));
+    else if (open.length > 1) box.append(el("div", "spast", "Any order: " + (open.indexOf(i) + 1) + " of " + open.length + " left"));
     // The boss box sits right under the title (Kenny, 2026-10-26).
     const starter = STARTERS.indexOf(getVar(h, base, STARTER));
     for (const b of s.boss || []) {
@@ -232,5 +260,5 @@ const Story = (() => {
 
   const step = (h, base) => steps ? current(h, base) : -1;
 
-  return { load, key, nodes, catches, beaten, flag, test, step };
+  return { load, key, nodes, catches, beaten, flag, test, step, here };
 })();
