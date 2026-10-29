@@ -1162,8 +1162,11 @@ const Guide = (() => {
   // Save-data flags for the map: items picked up (their flag, from hgss.json) and trainers beaten.
   const got = (f) => { const h = heap(); return !!(f && h && storyBase != null && Story.flag(h, storyBase, f)); };
   const beaten = (tid) => { const h = heap(); return !!(tid && h && storyBase != null && Story.beaten(h, storyBase, tid)); };
+  // A trainer whose hide flag is set isn't there (the S.S. Aqua swaps its trainers each trip, Rockets leave).
+  // Hide flags get cleared again, so unlike the story flags this reads only the live copy, not the save buffer.
+  const away = (t) => { const h = heap(); return !!(t[5] && h && cands[pick] != null && Story.flag(h, cands[pick], t[5])); };
   const mapState = (m) => [...(m.items || []), ...(m.hidden || [])].map((it) => got(it[3]) ? 1 : 0).join("") + ":" +
-    (m.trainers || []).map((t) => beaten(t[4]) ? 1 : 0).join("");
+    (m.trainers || []).map((t) => away(t) ? 2 : beaten(t[4]) ? 1 : 0).join("");
   const mapBoxH = () => Math.max(260, Math.min(560, innerHeight * 0.55 / zoom));
   // The rooms you can walk into next are read from the ROM ahead of time, so they show at once.
   const prewarm = (m) => (window.requestIdleCallback || setTimeout)(() => {
@@ -1220,8 +1223,9 @@ const Guide = (() => {
       c.strokeStyle = "#f8f8f0"; c.lineWidth = 2 * grow; c.strokeRect(cx - r, cy - r, 2 * r, 2 * r);
     }
     // Trainers: a big square with a white outline; a beaten one is dimmed and gets a green tick.
-    (m.trainers || []).forEach(([x, z, , , tid], i) => {
-      const [cx, cy] = at(x, z), r = 9 * grow, won = beaten(tid);
+    (m.trainers || []).forEach((t, i) => {
+      if (away(t)) return;
+      const [x, z, , , tid] = t, [cx, cy] = at(x, z), r = 9 * grow, won = beaten(tid);
       c.globalAlpha = won ? 0.6 : 1;
       c.fillStyle = "#f8f8f0"; c.fillRect(cx - r - 2 * grow, cy - r - 2 * grow, 2 * r + 4 * grow, 2 * r + 4 * grow);
       c.fillStyle = "#181820"; c.fillRect(cx - r - grow, cy - r - grow, 2 * r + 2 * grow, 2 * r + 2 * grow);
@@ -1440,11 +1444,13 @@ const Guide = (() => {
       main.append(ul);
     }
 
-    if (m.trainers) {
+    const here = (m.trainers || []).filter((t) => !away(t));
+    if (here.length) {
       side.append(node("h3", null, "TRAINERS"));
       const ul = node("ul", "trainers");
-      m.trainers.forEach(([, , who, party, tid], i) => {
-        const li = node("li");
+      m.trainers.forEach((t, i) => {
+        if (away(t)) return;
+        const [, , who, party, tid] = t, li = node("li");
         li.dataset.tid = tid;
         li.append(node("div", "who", who));
         const p = node("div", "party");
@@ -1462,7 +1468,7 @@ const Guide = (() => {
       });
       side.append(ul);
     }
-    if (!enc && !m.trainers) side.append(node("div", "note", "No wild Pokémon or trainers here."));
+    if (!enc && !here.length) side.append(node("div", "note", "No wild Pokémon or trainers here."));
 
   }
 
