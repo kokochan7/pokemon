@@ -183,6 +183,11 @@ for const, (num, code) in sorted(maps.items(), key=lambda kv: kv[1][0]):
         if hidden: entry["hidden"] = hidden
         if trainers: entry["trainers"] = trainers
         if warps: entry["warps"] = warps
+        # Warp pads back into the same map (the Saffron Gym's rooms): [x, z, x you land on, z you land on]
+        zw = z.get("warps", [])
+        hops = [[wp["x"], wp["z"], zw[wp["anchor"]]["x"], zw[wp["anchor"]]["z"]] for wp in zw
+                if wp["header"] == const and wp["anchor"] < len(zw)]
+        if hops: entry["hops"] = hops
         if staff: entry["staff"] = staff
         # Trap tiles (back to the start, or a trap battle): [x, z, w, h]
         traps = [[c["x"], c["z"], c["w"], c["h"]] for c in z.get("coords", []) if trap(c["scriptId"], const)]

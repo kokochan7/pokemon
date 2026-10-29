@@ -179,6 +179,18 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
   known. When the next stop is Fly, no line is drawn; the bar says "Fly to ...".
   It is drawn as a faded red band with white arrows moving along it (`moveArrows()`, Kenny's reference picture,
   2026-10-26; drawn bigger when tiles are under ~9px), and that exit's tag turns red.
+- Warp pads and written steps (Kenny got lost in the Saffron Gym, 2026-10-29: the line ran through the walls between
+  its rooms). hgss.json's `hops` are warps back into the same map, `[x, z, x you land on, z you land on]` (from each
+  warp's `anchor`): the Saffron Gym's pads, plus ladders inside Diglett's Cave, Cliff Cave, the Goldenrod Tunnel and
+  Bell Tower 7F. `walk()` takes a pad as one move costing 8 (fewer pads beat a slightly shorter walk) and never walks
+  over a pad it doesn't mean to take; on a tie it keeps going straight, so the line turns less. The leg up to the next
+  pad is the bold band with arrows; later legs are fainter, each warp is a dotted hop and each pad gets a number.
+  On a gym map, or whenever the line uses a pad or ice, `steps()` writes it out under the bar ("2 left, 3 down onto
+  pad 1", ..., "3 left, 3 up then face them and press A"): one line per pad, tile counts merged per direction,
+  a slide as "slide left", and when the goal is a person the last step stops in front of them. Gym puzzles that
+  move things around (Azalea's Spinarak carts, Blackthorn's platforms, Cianwood's winch, Vermilion's cans) aren't
+  in the terrain, so those still rest on the bullet's help line. Fuchsia's invisible walls are ordinary walls in the
+  terrain (the gym code only animates them when you bump into one), so the line goes around them.
 - A bullet's text can be version-only: `"{|SoulSilver text}"` is empty in HeartGold, and an empty bullet isn't shown.
   The SoulSilver Lugia step uses this for the way down (Kenny got lost, 2026-10-28): northeast island (Route 41 warp
   at 237,340, per Bulbapedia) → 1F ladder (51,22) → B1F ladder (54,43) → B2F monk who checks the Silver Wing (36,30,

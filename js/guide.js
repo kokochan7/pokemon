@@ -1044,9 +1044,16 @@ const Guide = (() => {
     }
     return [j, W * H];
   }
-  function walk(L, sx, sz, ends, traps) {
+  // Warp pads into the same map (`hops`, the Saffron Gym's rooms) take you to their other pad for one step.
+  // Returned points can carry .pad (a pad to step on, the next point is where you land: .hop) and .slide
+  // (reached by sliding on ice).
+  function walk(L, sx, sz, ends, traps, hops) {
     const { grid, W, H } = L;
     if (!ends.size || sx < 0 || sz < 0 || sx >= W || sz >= H) return null;
+    const local = (x, z) => x - L.ox >= 0 && z - L.oz >= 0 && x - L.ox < W && z - L.oz < H ? (z - L.oz) * W + x - L.ox : -1;
+    const hop = new Map();
+    for (const [x, z, tx, tz] of hops || []) if (local(x, z) >= 0 && local(tx, tz) >= 0) hop.set(local(x, z), local(tx, tz));
+    const via = new Int32Array(W * H).fill(-1), slid = new Uint8Array(W * H);
     const trap = new Uint8Array(W * H);
     for (const [x, z, w, h] of traps || [])
       for (let j = z; j < z + h; j++) for (let i = x; i < x + w; i++) {
@@ -1064,8 +1071,10 @@ const Guide = (() => {
       for (const [dx, dz, ledge] of STEPS) {
         const nx = x + dx, nz = z + dz;
         if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
-        let j = nz * W + nx, v = grid[j], k = 1;
-        if (!ends.has(j)) {
+        let j = nz * W + nx, v = grid[j], k = 1, pad = -1, sl = 0;
+        // A warp costs a few steps (the fade), so fewer pads win over a slightly shorter walk.
+        if (!ends.has(j) && hop.has(j)) [pad, j, k] = [j, hop.get(j), 8];
+        else if (!ends.has(j)) {
           if (v < 0) continue;
           const b = v & 0xff;
           // A wall or a ledge the wrong way is very dear but not ruled out: the terrain data marks some
@@ -1073,18 +1082,50 @@ const Guide = (() => {
           if (trap[j]) k = 200;
           else if (v & 0x8000 || (b >= 56 && b <= 59 && b !== ledge)) k = 40;
           else if (tiles[b] === 2) k = 3;
-          else if (b === ICE || (b >= 64 && b <= 67)) [j, k] = slide(L, j, dx, dz);
+          else if (b === ICE || (b >= 64 && b <= 67)) { [j, k] = slide(L, j, dx, dz); sl = 1; }
         }
-        if (c + k >= cost[j]) continue;
-        cost[j] = c + k; from[j] = i;
-        (buckets[c + k] = buckets[c + k] || []).push(j);
+        // On a tie, the way that keeps going straight wins, so the line (and the steps) turn less.
+        const p = from[i], straight = p >= 0 && via[i] < 0 && i - p === j - i;
+        if (c + k > cost[j] || (c + k === cost[j] && !straight)) continue;
+        if (c + k < cost[j]) (buckets[c + k] = buckets[c + k] || []).push(j);
+        cost[j] = c + k; from[j] = i; via[j] = pad; slid[j] = sl;
       }
     }
     if (end < 0) return null;
-    const pts = [];
-    for (let i = end; i >= 0; i = from[i]) pts.unshift([i % W, (i / W) | 0]);
-    return pts.filter((p, n) => n === 0 || n === pts.length - 1 ||
+    const pts = [], at = (i) => [i % W, (i / W) | 0];
+    for (let i = end; i >= 0; i = from[i]) {
+      const p = at(i);
+      p.slide = !!slid[i];
+      pts.unshift(p);
+      if (via[i] >= 0) { p.hop = true; const q = at(via[i]); q.pad = true; pts.unshift(q); }
+    }
+    const keep = (p) => p.hop || p.pad || p.slide;
+    return pts.filter((p, n) => n === 0 || n === pts.length - 1 || keep(p) || keep(pts[n + 1]) ||
       (pts[n - 1][0] === p[0]) !== (pts[n + 1][0] === p[0]) || (pts[n - 1][1] === p[1]) !== (pts[n + 1][1] === p[1]));
+  }
+
+  // The line as written steps, one per warp pad (Kenny got lost in the Saffron Gym, 2026-10-29):
+  // "3 down, 4 left onto pad 1", ..., "2 up, then press A". Pads are numbered in the order you take them.
+  const WAYS = { "0,-1": "up", "0,1": "down", "-1,0": "left", "1,0": "right" };
+  function steps(pts, end) {
+    const out = [];
+    let legs = [], pads = 0;
+    const flush = (to) => { out.push(legs.map(([k, w]) => (k ? k + " " : "") + w).join(", ") + (legs.length ? " " : "") + to); legs = []; };
+    for (let n = 1; n < pts.length; n++) {
+      const p = pts[n], dx = p[0] - pts[n - 1][0], dz = p[1] - pts[n - 1][1];
+      if (p.hop) continue; // the warp itself
+      const big = Math.abs(dx) >= Math.abs(dz), w = WAYS[big ? Math.sign(dx) + ",0" : "0," + Math.sign(dz)];
+      const last = legs[legs.length - 1];
+      if (p.slide) legs.push([0, "slide " + w]);
+      else if (last && last[1] === w && last[0]) last[0] += Math.abs(dx) + Math.abs(dz);
+      else legs.push([Math.abs(dx) + Math.abs(dz), w]);
+      if (p.pad) flush("onto pad " + ++pads);
+    }
+    // Ending on a person: stop on the tile in front of them.
+    const last = legs[legs.length - 1];
+    if (end === "person" && last && last[0]) if (!--last[0]) legs.pop();
+    flush(end === "person" ? (legs.length ? "then " : "") + "face them and press A" : end);
+    return out;
   }
 
   // Redraws the way when the map, the player's tile or the pick changes (called from follow() and drawMap()).
@@ -1094,7 +1135,7 @@ const Guide = (() => {
     if (!c) return;
     const { svg, bar } = mapWrap, m = c.m, L = c.L, g = c.geo;
     if (!nav || !m || !L || !g || m !== data[shown]) {
-      svg.style.display = "none"; bar.hidden = true;
+      svg.style.display = "none"; bar.hidden = true; mapWrap.steps.hidden = true;
       for (const t of c.parentElement.querySelectorAll(".exit.go")) t.classList.remove("go");
       navDrawn = null;
       return;
@@ -1114,21 +1155,37 @@ const Guide = (() => {
     bar.append(x);
     bar.hidden = false;
     for (const t of c.parentElement.querySelectorAll(".exit")) t.classList.toggle("go", !!next && next.how !== "fly" && t.to === next.to);
-    const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to), m.traps);
-    if (!pts || pts.length < 2) { svg.style.display = "none"; svg.pts = null; return; }
+    const pts = path && (!next || next.how !== "fly") && walk(L, tx, tz, goals(m, L, next && next.to), m.traps, m.hops);
+    const list = mapWrap.steps;
+    if (!pts || pts.length < 2) { svg.style.display = "none"; svg.pts = null; list.hidden = true; return; }
+    // Written steps where the line alone is hard to follow: gyms, warp pads, ice.
+    const hard = /Gym/.test(m.place || "") || pts.some((p) => p.pad || p.slide);
+    list.replaceChildren(...(hard ? steps(pts, next ? "to the way to " + placeName(next.to) : nav.x != null ? "person" : "to the spot")
+      .map((t) => node("li", null, t)) : []));
+    list.hidden = !hard;
     svg.style.display = "";
     svg.setAttribute("viewBox", "0 0 " + g.w + " " + g.h);
     Object.assign(svg.style, { left: c.offsetLeft + c.clientLeft + "px", top: c.offsetTop + c.clientTop + "px", width: c.style.width, height: c.style.height });
-    svg.querySelector(".band").setAttribute("points", pts.map(([px, pz]) => px + 0.5 + "," + (pz + 0.5)).join(" "));
-    const [ex, ez] = pts[pts.length - 1], dot = svg.querySelector("circle");
+    // The leg up to the first pad is the one to walk now: drawn bold with the moving arrows. Later legs
+    // are fainter, each warp is a dotted hop, and each pad gets its number from the written steps.
+    const xy = ([px, pz]) => px + 0.5 + "," + (pz + 0.5), first = pts.findIndex((p) => p.pad) + 1 || pts.length;
+    const now = pts.slice(0, first), later = pts.slice(first);
+    svg.querySelector(".band").setAttribute("d", "M" + now.map(xy).join("L"));
+    svg.querySelector(".later").setAttribute("d", later.map((p) => (p.hop ? "M" : "L") + xy(p)).join(""));
+    svg.querySelector(".jump").setAttribute("d", pts.map((p, n) => p.hop ? "M" + xy(pts[n - 1]) + "L" + xy(p) : "").join(""));
+    const [ex, ez] = pts[pts.length - 1], dot = svg.querySelector("circle.end");
     dot.setAttribute("cx", ex + 0.5); dot.setAttribute("cy", ez + 0.5);
     // Arrows ride along the band like a conveyor (moveArrows()); the distance along it at each corner.
     // Drawn bigger when the map is shown small (under ~9px a tile), like the markers.
     svg.grow = Math.max(1, 9 / g.k);
-    svg.querySelector(".band").style.strokeWidth = 1.1 * svg.grow;
+    for (const b of svg.querySelectorAll(".band, .later")) b.style.strokeWidth = 1.1 * svg.grow;
+    svg.querySelector(".jump").style.strokeWidth = 0.3 * svg.grow;
     dot.setAttribute("r", 0.55 * svg.grow);
-    svg.pts = pts; svg.at = [0];
-    for (let n = 1; n < pts.length; n++) svg.at.push(svg.at[n - 1] + Math.abs(pts[n][0] - pts[n - 1][0]) + Math.abs(pts[n][1] - pts[n - 1][1]));
+    svg.querySelector(".pads").innerHTML = pts.filter((p) => p.pad).map(([px, pz], n) =>
+      '<g transform="translate(' + (px + 0.5) + " " + (pz + 0.5) + ") scale(" + svg.grow + ')"><circle r="0.75"/>' +
+      '<text dy="0.32">' + (n + 1) + "</text></g>").join("");
+    svg.pts = now; svg.at = [0];
+    for (let n = 1; n < now.length; n++) svg.at.push(svg.at[n - 1] + Math.abs(now[n][0] - now[n - 1][0]) + Math.abs(now[n][1] - now[n - 1][1]));
     if (!svg.moving) { svg.moving = true; requestAnimationFrame(moveArrows); }
   }
   // White arrows every ARROW_GAP tiles, moving ARROW_SPEED tiles a second toward the goal.
@@ -1366,16 +1423,18 @@ const Guide = (() => {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("class", "navpath");
         svg.setAttribute("preserveAspectRatio", "none");
-        svg.innerHTML = '<polyline class="band"/><g class="arrows"></g><circle r="0.55"/>';
+        svg.innerHTML = '<path class="later"/><path class="jump"/><path class="band"/><g class="arrows"></g><circle class="end" r="0.55"/><g class="pads"></g>';
         box.append(c, svg, dot);
         const legend = node("div", "legend");
         // Each key is a small CSS copy of the marker drawn on the map.
         for (const label of ["you", "item", "hidden", "trainer", "beaten"]) legend.append(node("span", "key " + label, label));
         const bar = node("div", "navbar");
         bar.hidden = true;
+        const list = node("ol", "navsteps");
+        list.hidden = true;
         mapWrap = node("div", "mapwrap");
-        mapWrap.append(box, bar, legend);
-        mapWrap.canvas = c; mapWrap.svg = svg; mapWrap.bar = bar;
+        mapWrap.append(box, bar, list, legend);
+        mapWrap.canvas = c; mapWrap.svg = svg; mapWrap.bar = bar; mapWrap.steps = list;
       }
       const wrap = mapWrap;
       canvas = wrap.canvas;
