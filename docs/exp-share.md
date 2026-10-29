@@ -56,3 +56,16 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   (a reset or a save state). Console: "Trainer levels +5: patched at 0x...". Checked in unicorn (level 30 -> 35, iv kept).
 - The guide panel's trainer teams (`js/guide.js`) and NEXT boss teams (`js/story.js`) show the level from the data plus
   `ExpShare.LEVEL_UP`, so they match what the game creates. `guide/hgss.json` and `guide/bosses.json` keep the original levels.
+
+## 2x HP bar speed
+
+- Battle HP bars (yours and the enemy's) drain and fill twice as fast (Kenny, 2026-10-29: "enemy HP drops too slow").
+  Same file, same overlay 12 check every 0.5s, always on. Damage and HP are unchanged; only the animation is faster.
+- `ov12_022657E4` (0x022657E4, US; pre-decompilation `asm/overlay_12_hp_bar.s`, commit 090b1267^, now
+  `src/battle/battle_hp_bar.c`) calls `BattleHpBar_CalculatePixelsChangeFrame(..., tilesWide = 6, hpChange = 1)` for HP.
+  For max HP 48 and up the bar moves `hpChange` HP per frame, clamped to the new HP. `movs r0, #1` at 0x022657F2
+  becomes `movs r0, #2`. The 14 halfwords from 0x022657E4 must match first (encoding checked with capstone).
+- Below 48 max HP the bar moves one pixel per frame instead (at most 48 frames for a full bar) and is unchanged:
+  that path is shared with the EXP bar.
+- Patched on its own (`HP_BAR` in `js/expshare.js`), so a mismatch there never stops the Exp. Share, and vice versa.
+  Console: "HP bars 2x: battle code patched". If the overlay sits elsewhere, it uses the Exp. Share's search shift.

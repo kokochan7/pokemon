@@ -52,4 +52,11 @@ const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer 
   // one site differs -> no write
   load(0x40); w16(0x02245b78 + 0x40, 0xb037); for (let i = 0; i < 12; i++) fn();
   console.log("mismatch site4 untouched:", r16(0x0223e79e + 0x40).toString(16));
+  // HP bar speed (ov12_022657E4): movs r0, #1 -> #2, on its own even when the Exp. Share sites don't match
+  const hpCode = [0xb570, 0xb082, 0x1c05, 0x1c0c, 0xd10c, 0x2006, 0x9000, 0x2001, 0x9001, 0x1c2b, 0x6ae8, 0x6aa9, 0x6b2a, 0x3334];
+  heap.fill(0, base + 0x200000, base + 0x280000);
+  hpCode.forEach((v, i) => w16(0x022657e4 + 0x40 + i * 2, v)); fn();
+  console.log("HP bar patched (2002):", r16(0x022657f2 + 0x40).toString(16));
+  hpCode.forEach((v, i) => w16(0x022657e4 + 0x40 + i * 2, v)); w16(0x022657fe + 0x40, 0x3335); fn();
+  console.log("HP bar mismatch untouched (2001):", r16(0x022657f2 + 0x40).toString(16));
 })();
