@@ -79,11 +79,14 @@ Code: `js/guide.js`. Data: `guide/hgss.json` (220 KB, built by `tools/guide_data
     block 221: nurse at 8,11, exit 8,19, B1F stairs 14,17). Ask Kenny for screenshots of real rooms.
 - Exits are HTML tags over the map (`placeExits()`), not a list. Each edge exit (`exits` in hgss.json) is an
   arrow tag at the widest walkable gap on the edge it shares with the neighbour's blocks; edge tags stay
-  pinned inside the visible part of the map while it scrolls (`clampExits()`). Doors get one name tag per place they lead to
-  (Kenny, 2026-10-29: the S.S. Aqua's cabin doors covered the map), over the door nearest the middle of that
-  place's doors (8-9px text), moved under the door if the spot is taken, and left out if it would still
-  cover another tag. Names come from `exitName()`, shortened by `shortName()` ("1F Northwest Rooms" -> "NW Rooms";
-  the full name is the tooltip).
+  pinned inside the visible part of the map while it scrolls (`clampExits()`). Doors get one name per place they lead to
+  (Kenny, 2026-10-29: the S.S. Aqua's cabin doors covered the map), at the door nearest the middle of that
+  place's doors. Outdoors, a door in a building (`buildings()`, the same rectangles the painter draws as houses)
+  gets its name small on the building's roof, white with a dark outline, shrunk to fit (7px, then 6px, then two
+  lines), plus a small ▼ over the door (Kenny: tags were too big and all over the place). Other doors (caves,
+  gates, rooms) get a tag above the door, moved under it if the spot is taken, and left out if it would still
+  cover another tag. Names come from `exitName()`, shortened by `shortName()` ("1F Northwest Rooms" -> "NW Rooms",
+  "Pokémon Center 1F" -> "Pokémon Center"; the full name is the tooltip).
 - The panel's text uses Nunito (Google Fonts) for readability; the rest of the site keeps the pixel fonts.
 - A blinking blue "you" dot shows the player live (5 reads a second). The saved position (+0x123C/+0x1240)
   only updates on warps, so it reads the player's map object (`LocalMapObject` in the decomp) in DS RAM

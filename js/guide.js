@@ -536,17 +536,16 @@ const Guide = (() => {
     return { ...L, grid: g, dim, W: w, H: h, ox: L.ox + x0, oz: L.oz + z0 };
   }
 
-  // Draw the terrain once per map; markers go on top of this cached copy. The tile art is 16px (T),
-  // drawn at ts px per tile: about the size the map is shown at, so big maps don't hold big canvases.
-  function paintTerrain(m, L, ts) {
-    const { grid, dim, W, H, env } = L, art = tileArt();
+  // Outdoors, the block of walls right above a door or warp is a building (rows above its bottom row are
+  // roof, the bottom row its front); a lone blocked tile is a sign or boulder. Worked out once per map:
+  // the painter draws the houses from it and the door tags sit on the building's roof (rects).
+  function buildings(m, L) {
+    if (L.buildings) return L.buildings;
+    const { grid, W, H, env } = L;
     const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
     const wall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
     const cls = (v) => tiles[v & 0xff] || 0;
-
-    // Outdoors, the block of walls right above a door or warp is a building (rows above its bottom
-    // row are roof); a lone blocked tile is a sign or boulder; other walls are trees.
-    const house = new Int8Array(W * H); // 0 none, 1.. roof colour + 1 for the front row, -1 boulder
+    const house = new Int8Array(W * H), rects = []; // 0 none, 1.. roof colour + 1 for the front row, -1 boulder
     if (env === "out") {
       const doors = (m.warps || []).map(([x, z]) => [x - L.ox, z - L.oz]);
       for (let i = 0; i < grid.length; i++) if (grid[i] >= 0 && !(grid[i] & 0x8000) && cls(grid[i]) === 4) doors.push([i % W, (i / W) | 0]);
@@ -563,12 +562,29 @@ const Guide = (() => {
           if (area > best) { best = area; top = t; l = a; r = b; }
         }
         for (let z = top; z < dz; z++) for (let x = l; x <= r; x++) house[z * W + x] = z === dz - 1 && top < dz - 1 ? 1 : 2 + (n % ROOFS.length);
+        rects.push({ l, r, top, bottom: dz - 1 });
       });
       for (let i = 0; i < grid.length; i++) {
         const x = i % W, z = (i / W) | 0;
         if (!house[i] && wall(x, z) && !wall(x - 1, z) && !wall(x + 1, z) && !wall(x, z - 1) && !wall(x, z + 1)) house[i] = -1;
       }
     }
+
+    // The building a door at (x, z) opens from: the rectangle holding the tile above it.
+    const of = (x, z) => rects.find((q) => x >= q.l && x <= q.r && z - 1 >= q.top && z - 1 <= q.bottom) || null;
+    return (L.buildings = { house, rects, of });
+  }
+
+  // Draw the terrain once per map; markers go on top of this cached copy. The tile art is 16px (T),
+  // drawn at ts px per tile: about the size the map is shown at, so big maps don't hold big canvases.
+  function paintTerrain(m, L, ts) {
+    const { grid, dim, W, H, env } = L, art = tileArt();
+    const at = (x, z) => x < 0 || z < 0 || x >= W || z >= H ? -1 : grid[z * W + x];
+    const wall = (x, z) => { const v = at(x, z); return v >= 0 && (v & 0x8000) !== 0; };
+    const cls = (v) => tiles[v & 0xff] || 0;
+
+    // Houses, signs and boulders (see buildings()); other walls are trees.
+    const { house } = buildings(m, L);
 
     const cv = document.createElement("canvas");
     cv.width = W * ts; cv.height = H * ts;
@@ -795,9 +811,10 @@ const Guide = (() => {
     return t.name === m.name ? t.place || t.name : t.place && !t.blocks ? t.place : t.name;
   }
 
-  // A door tag's name, short: "1F Northwest Rooms" -> "NW Rooms" (a floor alone, like "B1F", stays).
+  // A door tag's name, short: "1F Northwest Rooms" -> "NW Rooms", "Pokémon Center 1F" -> "Pokémon Center"
+  // (a floor alone, like "B1F", stays).
   const COMPASS = { Northwest: "NW", Northeast: "NE", Southwest: "SW", Southeast: "SE" };
-  const shortName = (name) => name.replace(/^B?\d+F (?=\S)/, "").replace(/\b(Northwest|Northeast|Southwest|Southeast)\b(?= \S)/g, (w) => COMPASS[w]);
+  const shortName = (name) => name.replace(/^B?\d+F (?=\S)/, "").replace(/ 1F$/, "").replace(/\b(Northwest|Northeast|Southwest|Southeast)\b(?= \S)/g, (w) => COMPASS[w]);
 
   // Exits as labels on the map: one at each edge that leads to a neighbouring map (placed at the
   // widest walkable gap on that edge), and one over each door.
@@ -856,11 +873,28 @@ const Guide = (() => {
       if (!name) continue;
       const cx = list.reduce((a, d) => a + d[0], 0) / list.length, cz = list.reduce((a, d) => a + d[1], 0) / list.length;
       const [x, z] = list.reduce((a, d) => Math.hypot(d[0] - cx, d[1] - cz) < Math.hypot(a[0] - cx, a[1] - cz) ? d : a);
-      const tag = label("door", shortName(name), x + 0.5, z, name);
-      tag.k = g.k; tag.to = to;
+      // A door in a building: the name sits small on its roof with a little arrow over the door
+      // (Kenny, 2026-10-29). Other doors (caves, gates, rooms) get a tag just above the door.
+      const b = L.env === "out" && buildings(m, L).of(x, z);
+      if (b) {
+        const roofBottom = b.bottom > b.top ? b.bottom - 1 : b.bottom;
+        const tag = label("door roof", shortName(name), (b.l + b.r + 1) / 2, (b.top + roofBottom + 1) / 2, name);
+        tag.to = to; tag.roof = true; tag.fit = (b.r - b.l + 1) * g.k - 2;
+        const arrow = label("pointer", "▼", x + 0.5, z);
+        arrow.to = to;
+      } else {
+        const tag = label("door", shortName(name), x + 0.5, z, name);
+        tag.k = g.k; tag.to = to;
+      }
     }
     // Tag sizes, measured once (one layout) so scrolling never has to read the page again.
     const tags = [...box.querySelectorAll(".exit")];
+    // Roof names shrink to fit their building (down to 6px), then wrap onto a second line.
+    for (const t of tags) {
+      if (!t.roof) continue;
+      for (let px = 7; t.offsetWidth > t.fit && px > 6; ) t.style.fontSize = --px + "px";
+      if (t.offsetWidth > t.fit) { t.style.whiteSpace = "normal"; t.style.width = Math.max(24, t.fit) + "px"; }
+    }
     for (const t of tags) { t.w = t.offsetWidth; t.h = t.offsetHeight; }
     clampExits(box);
     if (!box.clamps) { box.clamps = true; box.addEventListener("scroll", () => clampExits(box), { passive: true }); }
@@ -890,6 +924,12 @@ const Guide = (() => {
     // edge arrow or another tag is left out (its door keeps its outline), so tags never pile up.
     const hits = (r) => taken.some((q) => r.left < q.right + 2 && q.left < r.right + 2 && r.top < q.bottom + 2 && q.top < r.bottom + 2);
     for (const el of box.querySelectorAll(".exit.door")) {
+      if (el.roof) { // stays on its building; left out only if it would cover an edge arrow
+        const r = rect(el.x, el.y, el.w, el.h, [-0.5, -0.5, 0, 0]), hide = hits(r);
+        if (el.hidden !== hide) el.hidden = hide;
+        if (!hide) taken.push(r);
+        continue;
+      }
       let below = false, r = rect(el.x, el.y, el.w, el.h, [-0.5, -1, 0, -1]);
       if (hits(r)) { below = true; r = rect(el.x, el.y + el.k, el.w, el.h, [-0.5, 0, 0, 1]); }
       const hide = hits(r);
