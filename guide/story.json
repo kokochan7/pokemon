@@ -1699,7 +1699,7 @@
   },
   {
    "title": "Sail to Kanto",
-   "done": "k:0|k:1|k:2|k:3|k:4|k:5|k:6|k:7",
+   "done": "f:0x9b5",
    "todo": [
     [
      "Get the S.S. Ticket from Elm",
@@ -1770,26 +1770,6 @@
      "f:0x9b5",
      387
     ]
-   ],
-   "opt": [
-    [
-     "Rare Candy from the Fan Club chairman in Vermilion",
-     "f:0xF8",
-     [
-      362,
-      14,
-      5
-     ]
-    ],
-    [
-     "PP Max from a man in Vermilion",
-     "f:0xF7",
-     [
-      54,
-      1326,
-      309
-     ]
-    ]
    ]
   },
   {
@@ -1824,7 +1804,27 @@
      "won": "k:2"
     }
    ],
-   "free": true
+   "free": true,
+   "opt": [
+    [
+     "Rare Candy from the Fan Club chairman in Vermilion",
+     "f:0xF8",
+     [
+      362,
+      14,
+      5
+     ]
+    ],
+    [
+     "PP Max from a man in Vermilion",
+     "f:0xF7",
+     [
+      54,
+      1326,
+      309
+     ]
+    ]
+   ]
   },
   {
    "title": "Kanto gym: Sabrina",
