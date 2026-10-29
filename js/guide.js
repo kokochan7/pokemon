@@ -275,6 +275,7 @@ const Guide = (() => {
       if (stuck) { cands = []; scans = 0; return; }
     }
     if (!(id in data) || id <= 1) { cands = []; return; }
+    Story.here(data[id].name, (m) => data[m] && data[m].name); // NEXT picks the Kanto gym in this town
     const t = timeOfDay(), st = Story.key(h, cands); // story progress from flags, vars and badges
     if (id !== shown) highlight = null;
     // Story and map flags are read from every match (see Story), not just the one picked for the map id.
