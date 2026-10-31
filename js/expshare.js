@@ -1,6 +1,6 @@
 /* ---------- always-on Exp. Share, +5 trainer levels and 2x HP bars (HeartGold / SoulSilver) ---------- */
-// After each knockout the Pokémon that fought get 100% of the EXP and the rest of the party (not
-// eggs, not fainted) gets 50% (Kenny's choice). Only the Pokémon on the field gets the "gained X
+// After each knockout the Pokémon that fought get 200% of the EXP and the rest of the party (not
+// eggs, not fainted) gets 100% (Kenny's choice). Only the Pokémon on the field gets the "gained X
 // Exp. Points!" message; benched ones only show their level-ups. Every trainer's Pokémon are also
 // 5 levels higher than normal (not the Elite Four and Lance), and battle HP bars drain twice as fast. Always on, with no button.
 // Nothing in the ROM or save changes:
@@ -19,13 +19,13 @@ const ExpShare = (() => {
   // the overlay sits elsewhere the first site is searched for and the rest follow it.
   const SITES = [
     { // BtlCmd_CalcExpGain: always take the "Exp. Share held" branch, and split the EXP as
-      // gainedExp = EXP / 2 (fighters only) and partyGainedExp = EXP - EXP / 2 (everyone), with no
-      // dividing by the number of fighters: lsrs r1, r0, #1; subs r4, r0, r1; adds r0, r1, #0.
+      // gainedExp = EXP (fighters only) and partyGainedExp = EXP (everyone), with no dividing by the
+      // number of fighters: adds r4, r0, #0 (r0 = EXP is kept for gainedExp).
       at: 0x0223e796,
       code:  [0x0400, 0x9900, 0x0c00, 0x2900, 0xd020, 0x0844, 0x9901, 0x1c20, BL, BL, 0x1c29, 0x319c, 0x6008],
-      patch: [null, null, null, null, NOP, 0x0841, 0x1a44, 0x1c08, NOP, NOP, null, null, null],
+      patch: [null, null, null, null, NOP, 0x1c04, NOP, NOP, NOP, NOP, null, null, null],
     },
-    { // the second division, (EXP - EXP / 2) / holders: partyGainedExp = EXP - EXP / 2
+    { // the second division, (EXP - EXP / 2) / holders: partyGainedExp = EXP
       at: 0x0223e7c2,
       code:  [0x9900, 0x1c20, BL, BL, 0x1c29, 0x31a0, 0x6008],
       patch: [null, null, NOP, NOP, null, null, null],
@@ -48,7 +48,7 @@ const ExpShare = (() => {
       patch: [0x214c, null, null, null, null, null, null, null, null, NOP, NOP, 0x2800, null],
     },
     { // Task_GetExp, adding up the EXP: "holds an Exp. Share" is always true (cmp r0, r0), so a fighter
-      // gets gainedExp + partyGainedExp = 100% of the EXP and everyone else partyGainedExp = 50%.
+      // gets gainedExp + partyGainedExp = 200% of the EXP and everyone else partyGainedExp = 100%.
       at: 0x02245a48,
       code:  [0x4208, 0xd003, 0x9809, 0x309c, 0x6800, 0x900e, 0x9806, 0x2833, 0xd106, 0x9809, 0x30a0],
       patch: [null, null, null, null, null, null, null, 0x4280, null, null, null],
