@@ -37,6 +37,11 @@ const romBlob = () => ({ slice: () => ({ arrayBuffer: async () => header.buffer 
   trainerAt.forEach((a, k) => trainerCode(k).forEach((v, i) => w16(a + i * 2, v))); // as after a reset
   for (let i = 0; i < 2; i++) fn();
   console.log("re-patched after reset:", trainerDump());
+  global.Guide = { mapId: () => 302 }; fn(); // Koga's room: Elite Four keep their normal levels
+  console.log("Elite Four room, original code back (61b e1b):", trainerDump(), "levelUp(Koga 247) =", ExpShare.levelUp(247), "levelUp(1) =", ExpShare.levelUp(1));
+  global.Guide = { mapId: () => 300 }; fn(); // League entrance: +5 again
+  console.log("left the Elite Four, patched again:", trainerDump());
+  delete global.Guide;
   for (let i = 0; i < 12; i++) fn();
   console.log("still patched, written once:", dump(0).split("\n")[0]);
   // a different overlay in that memory: nothing written
