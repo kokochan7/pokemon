@@ -54,8 +54,13 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
 - The ARM9 range 0x02000000-0x02110000 is searched every 5s until exactly 4 matches lie within 0x400 bytes (any other
   count: nothing is written). Then those 4 spots are checked every 0.5s and re-patched if the original bytes come back
   (a reset or a save state). Console: "Trainer levels +5: patched at 0x...". Checked in unicorn (level 30 -> 35, iv kept).
+- Not the Elite Four and Lance (Kenny, 2026-10-31: "remove the +5 level for the elite 4"). While the guide's current map
+  (`Guide.mapId()`) is one of their rooms (301-305: Will, Koga, Bruno, Karen, Lance), the 4 spots get their original
+  bytes back, so the party made when the battle starts has the normal levels (rematches too). Leaving the room re-patches.
+  Console: "Trainer levels +5: off (Elite Four) at 0x...". This needs the guide to have found the save data in RAM: if the
+  guide panel was hidden (or the window too narrow) the whole time, the map is unknown and they still get +5.
 - The guide panel's trainer teams (`js/guide.js`) and NEXT boss teams (`js/story.js`) show the level from the data plus
-  `ExpShare.LEVEL_UP`, so they match what the game creates. `guide/hgss.json` and `guide/bosses.json` keep the original levels.
+  `ExpShare.LEVEL_UP` (`ExpShare.levelUp(trainer id)` for bosses, 0 for the E4 ids 245/247/418/246/244), so they match what the game creates. `guide/hgss.json` and `guide/bosses.json` keep the original levels.
 
 ## 2x HP bar speed
 

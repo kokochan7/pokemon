@@ -95,14 +95,14 @@ const Story = (() => {
     if (text != null) n.textContent = pick(String(text));
     return n;
   };
-  function team(party, sprite) {
+  function team(party, sprite, up) {
     const p = el("div", "party");
     for (const [dex, name, lv, weak = {}] of party) {
       const mon = el("span", "pm"), img = el("img");
       const w = Object.entries(weak).map(([t, m]) => t + (m > 2 ? " ×4" : "")).join(", ");
       img.src = sprite + dex + ".png"; img.alt = name; img.title = name + (w ? "\nWeak to " + w : ""); img.loading = "lazy";
       img.onerror = () => { img.style.visibility = "hidden"; };
-      mon.append(img, el("span", null, name + " " + (lv + ExpShare.LEVEL_UP)));
+      mon.append(img, el("span", null, name + " " + (lv + up)));
       p.append(mon);
     }
     return p;
@@ -203,7 +203,7 @@ const Story = (() => {
         w.append(el("span", null, "Weakness"), weak);
         div.append(w);
       }
-      for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite));
+      for (const t of shown) if (bosses.teams[t]) div.append(team(bosses.teams[t], sprite, ExpShare.levelUp(t)));
       box.append(div);
     }
     const bullet = (kind, j, [text, cond, place, help], done) => {

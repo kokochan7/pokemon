@@ -1596,6 +1596,9 @@ const Guide = (() => {
 
   }
 
-  return { prepare, started };
+  // The map id the guide is following right now (null until it has found the save data in RAM).
+  const mapId = () => { const h = heap(); return h && cands[pick] != null ? mapAt(h, cands[pick]) : null; };
+
+  return { prepare, started, mapId };
 })();
 

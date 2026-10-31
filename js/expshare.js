@@ -2,7 +2,7 @@
 // After each knockout the Pokémon that fought get 100% of the EXP and the rest of the party (not
 // eggs, not fainted) gets 50% (Kenny's choice). Only the Pokémon on the field gets the "gained X
 // Exp. Points!" message; benched ones only show their level-ups. Every trainer's Pokémon are also
-// 5 levels higher than normal, and battle HP bars drain twice as fast. Always on, with no button.
+// 5 levels higher than normal (not the Elite Four and Lance), and battle HP bars drain twice as fast. Always on, with no button.
 // Nothing in the ROM or save changes:
 // a few instructions of the game's code are patched in DS RAM, the same way an Action Replay code
 // works. The battle code (overlay 12) is reloaded for every battle, so it is re-patched each time;
@@ -88,6 +88,12 @@ const ExpShare = (() => {
     [0x9003], [0x9a00, 0xff00], [0x9900, 0xff00], [0x8852], [0x1c30], [0x0e1b]]; // ldr r2/r1, [sp, #any]
   const TRAINER_PATCH = { 3: NOP, 13: 0x3200 | LEVEL_UP };
   const TRAINER_SEARCH = [0x02000000, 0x02110000]; // ARM9 static code
+  // The Elite Four and Lance keep their normal levels (Kenny, 2026-10-31): while the guide reads one of
+  // their rooms as the current map, the original code is put back, so their parties are made unchanged.
+  const NORMAL_MAPS = [301, 302, 303, 304, 305];         // Will, Koga, Bruno, Karen, Lance rooms
+  const NORMAL_TRAINERS = [245, 247, 418, 246, 244];     // their trainer ids (NEXT boss teams)
+  const levelUp = (tid) => (NORMAL_TRAINERS.includes(+tid) ? 0 : LEVEL_UP);
+  const normalHere = () => typeof Guide !== "undefined" && NORMAL_MAPS.includes(Guide.mapId());
 
   let header = null, bases = [], scans = 0, shift = 0, logged = false, hpLogged = false, found = false, trainerAt = null, trainerBase = null, trainerTicks = 0;
 
@@ -171,13 +177,14 @@ const ExpShare = (() => {
     return out.length === 4 && out[3] - out[0] < 0x400 ? out : null;
   }
   function trainerLevels(h, b) {
+    const on = !normalHere();
     for (const a of trainerAt) {
-      if (!trainerIs(h, b, a, false)) continue; // already patched (or not the game's code right now)
+      if (!trainerIs(h, b, a, !on)) continue; // already as wanted (or not the game's code right now)
       for (const i in TRAINER_PATCH) {
-        const o = b + a + i * 2 - 0x02000000;
-        h[o] = TRAINER_PATCH[i] & 0xff; h[o + 1] = TRAINER_PATCH[i] >> 8;
+        const o = b + a + i * 2 - 0x02000000, v = on ? TRAINER_PATCH[i] : TRAINER_CODE[i][0];
+        h[o] = v & 0xff; h[o + 1] = v >> 8;
       }
-      console.info("Trainer levels +" + LEVEL_UP + ": patched at 0x" + a.toString(16));
+      console.info("Trainer levels +" + LEVEL_UP + ": " + (on ? "patched" : "off (Elite Four)") + " at 0x" + a.toString(16));
     }
   }
 
@@ -209,5 +216,5 @@ const ExpShare = (() => {
     }
   }
 
-  return { prepare, started, LEVEL_UP }; // LEVEL_UP: the guide panel adds it to trainer levels
+  return { prepare, started, LEVEL_UP, levelUp }; // the guide panel adds LEVEL_UP / levelUp(trainer id) to trainer levels
 })();
