@@ -40,11 +40,14 @@ prize is held at the gate, there's no Master Ball.
 
 ## Goldenrod Dept. Store 2F: Master Ball for ₽10,000
 
-- The ball clerk (map T07R0102, `SpecialMartBuy 19`) sells from `_020FBC4E` in ARM9 data (pret
+- The ball clerk (map T25R1002 = map 192, `SpecialMartBuy 4`) sells from `_020FBC1A` in ARM9 data (pret
   `scrcmd_mart.c`): Poké, Great, Ultra Ball, Escape Rope, Poké Doll, Repel, Super Repel, Max Repel, Grass,
   Flame, Bubble, Space Mail. The Master Ball goes after the Ultra Ball; the list can't grow, so Space Mail is
-  dropped. Celadon 2F's identical list (`_020FBC1A`, 0x34 before) is left alone. Found by searching
-  0x020F0000-0x02108000 for exactly two copies 0x34 apart; re-patched if the original comes back (a reset).
+  dropped. Celadon 2F's identical list (T07R0102, `SpecialMartBuy 19`, `_020FBC4E`, 0x34 after) is left alone.
+  Found by searching 0x020F0000-0x02108000 for exactly two copies 0x34 apart; re-patched if the original comes
+  back (a reset). The first version (PR #89) patched the second copy, which is Celadon's (T07 is Celadon, T25 is
+  Goldenrod); Kenny's RAM dump with the shop open showed the shop's heap copy of the first list (2026-11-01).
+  A Celadon list still patched that way is put back.
   Console: "Master Balls: Goldenrod 2F list patched at 0x...".
 - The price: `ShopMenu_GetItemPrice` (overlay 3, 0x02258120 US; `ov03_02258120` in
   `asm/overlay_03.s` at commit 8ec18b15c^) returns `GetItemAttr(item, ITEMATTR_PRICE)` for a normal mart, and

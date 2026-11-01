@@ -91,15 +91,17 @@ MB.prepare(fakeRom).then(() => {
   assert.strictEqual(masterBalls(bag), 4, "outside the park: nothing");
 
   // ---- the shop ----
-  // Two identical ball lists 0x34 apart (Celadon, then Goldenrod), as in the US ARM9 data.
-  MB.MART_OLD.forEach((v, i) => { put(ds(0x020fbc1a) + i * 2, v); put(ds(0x020fbc4e) + i * 2, v); });
+  // Two identical ball lists 0x34 apart (Goldenrod, then Celadon), as in the US ARM9 data.
+  // Celadon's comes already patched, as the first version of this did.
+  MB.MART_OLD.forEach((v, i) => put(ds(0x020fbc1a) + i * 2, v));
+  MB.MART_NEW.forEach((v, i) => put(ds(0x020fbc4e) + i * 2, v));
   // ShopMenu_GetItemPrice with real bl encodings (from keystone, GetItemAttr at 0x02077D00).
   const code = MB.PRICE.code.map((v, i) => (v === -1 ? { 9: 0xf61f, 10: 0xfde5, 27: 0xf7ff, 28: 0xffcf }[i] : v));
   code.forEach((v, i) => put(ds(0x02258120) + i * 2, v));
   assert(MB.priceIs(h, RAM));
   MB.shopTick(h, [RAM]);
-  assert.deepStrictEqual(MB.MART_NEW.map((_, i) => u16(ds(0x020fbc4e) + i * 2)), MB.MART_NEW, "Goldenrod list");
-  assert.deepStrictEqual(MB.MART_OLD.map((_, i) => u16(ds(0x020fbc1a) + i * 2)), MB.MART_OLD, "Celadon unchanged");
+  assert.deepStrictEqual(MB.MART_NEW.map((_, i) => u16(ds(0x020fbc1a) + i * 2)), MB.MART_NEW, "Goldenrod list");
+  assert.deepStrictEqual(MB.MART_OLD.map((_, i) => u16(ds(0x020fbc4e) + i * 2)), MB.MART_OLD, "Celadon back to normal");
   // Expected bytes: keystone's assembly of the new function (checked in unicorn: type 0 item 1 -> 10000,
   // every other mart type / item the same as the original).
   const want = [0xb508, 0x4b0f, 0x1c02, 0x5cd0, 0x2800, 0xd10b, 0x2901, 0xd005, 0x1c08, 0x2100, 0x220b, 0xf61f, 0xfde3,
