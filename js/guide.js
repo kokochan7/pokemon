@@ -1393,6 +1393,9 @@ const Guide = (() => {
     const fresh = found.filter((m) => !wildSeen.has(m.pid) && (!first || m.live || !found.some((x) => x.live)));
     for (const m of found) wildSeen.add(m.pid);
     if (fresh.length) wildPids = fresh.map((m) => m.pid);
+    // A shiny, perfect-IV or lucky wild Pokémon puts a Master Ball in the bag (js/masterball.js). Not on the
+    // first look, which can still see Pokémon from battles before the page was loaded.
+    if (fresh.length && !first) MasterBalls.wild(h, cands[pick], fresh);
     wildNow = found.filter((m) => wildPids.includes(m.pid));
     wildDebug = "iv " + found.length + "/" + wildNow.length + " in " + rams.length;
     const key = wildNow.map((m) => m.pid + ":" + m.level).join();
@@ -1599,6 +1602,9 @@ const Guide = (() => {
   // The map id the guide is following right now (null until it has found the save data in RAM).
   const mapId = () => { const h = heap(); return h && cands[pick] != null ? mapAt(h, cands[pick]) : null; };
 
-  return { prepare, started, mapId };
+  // The save's general block in the heap that the guide follows (the live one), or null.
+  const save = () => cands[pick] ?? null;
+
+  return { prepare, started, mapId, save };
 })();
 

@@ -415,3 +415,11 @@ body.playing #scene { display: none; }
 .guide .ivbars li.max .ivv::after { top: -6px; right: -7px; font-size: 8px; }
 .guide .ivsum { color: #585868; font-size: 11px; margin-top: 2px; }
 .guide .dump { font: 700 10px/1 var(--read); padding: 4px 6px; margin: 2px 0 4px; }
+
+/* Master Ball reward notice (js/masterball.js) */
+.mbtoast {
+  position: fixed; z-index: 50; top: 12px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px);
+  font: 10px/1.5 var(--pixel); color: var(--paper); background: #7030a0; padding: 10px 14px;
+  border: 3px solid var(--ink); box-shadow: 0 0 0 2px var(--paper), 4px 4px 0 var(--shade); pointer-events: none;
+}
+.mbtoast[hidden] { display: none; }

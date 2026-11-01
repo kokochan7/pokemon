@@ -98,7 +98,7 @@ async function launch(name, blob, core, label) {
   // at power-on like a real cartridge. Returns the fixed save name to use as the game name.
   const saveName = await SaveSync.prepare(name, blob, core, emuCore);
   window.EJS_gameName = saveName || name.replace(/\.[^.]+$/, "");
-  if (core === "nds") { Guide.prepare(blob); ExpShare.prepare(blob); }
+  if (core === "nds") { Guide.prepare(blob); ExpShare.prepare(blob); MasterBalls.prepare(blob); }
 
   window.EJS_gameUrl = new Blob([blob]);
   window.EJS_pathtodata = DATA_PATH;
@@ -109,6 +109,7 @@ async function launch(name, blob, core, label) {
     SaveSync.started();
     Guide.started();
     ExpShare.started();
+    MasterBalls.started();
     pinMenuBar();
     addSpeedButton();
     fixCheatToggle();
