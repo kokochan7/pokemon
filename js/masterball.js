@@ -123,12 +123,13 @@ const MasterBalls = (() => {
   }
 
   // ---- Goldenrod Dept. Store 2F sells Master Balls for ₽10,000 ----
-  // The ball clerk's list (SpecialMartBuy 19, _020FBC4E in ARM9 data; Celadon 2F uses the identical list 4
-  // just before it, at -0x34) gets a Master Ball after the Ultra Ball. The list can't grow, so the last
+  // The ball clerk's list (Goldenrod 2F is map T25R1002: SpecialMartBuy 4, _020FBC1A in ARM9 data; Celadon 2F,
+  // T07R0102, uses the identical list 19 right after it, at +0x34) gets a Master Ball after the Ultra Ball.
+  // Kenny's RAM dump showed the shop's copy of list 4 (2026-11-01). The list can't grow, so the last
   // entry, Space Mail, is dropped.
   const MART_OLD = [4, 3, 2, 78, 63, 79, 76, 77, 137, 138, 139, 145, 0xffff];
   const MART_NEW = [4, 3, 2, 1, 78, 63, 79, 76, 77, 137, 138, 139, 0xffff];
-  const MART_SEARCH = [0x020f0000, 0x02108000];  // US: 0x020FBC4E
+  const MART_SEARCH = [0x020f0000, 0x02108000];  // US: 0x020FBC1A
   // Its price: ShopMenu_GetItemPrice (overlay 3, 0x02258120 US) returns GetItemAttr(item, PRICE) for a
   // normal mart, and the Master Ball's price there is 0. The function is rewritten in place so a normal
   // mart returns 10000 for item 1. The seal / Pokéathlon paths are shortened to fit but return the same
@@ -176,8 +177,8 @@ const MasterBalls = (() => {
       const o = b + a - 0x02000000;
       if (u16(h, o) === 4 && u16(h, o + 2) === 3 && (listIs(h, o, MART_OLD) || listIs(h, o, MART_NEW))) out.push(a);
     }
-    // Celadon's list, then Goldenrod's 0x34 later.
-    return out.length === 2 && out[1] - out[0] === 0x34 ? out[1] : null;
+    // Goldenrod's list, then Celadon's 0x34 later.
+    return out.length === 2 && out[1] - out[0] === 0x34 ? out[0] : null;
   }
   function shopTick(h, bases) {
     if (martAt == null) {
@@ -185,6 +186,8 @@ const MasterBalls = (() => {
     }
     if (martAt != null) {
       const o = martBase + martAt - 0x02000000;
+      // The first version patched Celadon's list instead: put it back if it's still that way.
+      if (listIs(h, o + 0x34, MART_NEW)) MART_OLD.forEach((v, i) => put16(h, o + 0x34 + i * 2, v));
       if (listIs(h, o, MART_OLD)) {
         MART_NEW.forEach((v, i) => put16(h, o + i * 2, v));
         console.info("Master Balls: Goldenrod 2F list patched at 0x" + martAt.toString(16));
