@@ -29,6 +29,7 @@ js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM fl
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
 js/ivs.js           WildIVs: decrypts the wild Pokémon you're battling from DS RAM and rates its IVs (guide box)
 js/expshare.js      ExpShare: always-on Exp. Share (fighter 200%, benched 100%), +5 trainer levels (not E4), 2x HP bars, patched in DS RAM
+js/masterball.js    MasterBalls: Master Ball for shiny / perfect-IV / lucky wild Pokémon and Bug Contest wins, Goldenrod 2F sells them (₽10,000)
 js/library.js       GAMES (cloud) and STORED (local) lists, login, clock; runs the page start-up
 css/style.css       All styles
 scene.svg           Generated background art. Don't read it; regenerate with python3 tools/scene.py
@@ -37,7 +38,7 @@ functions/api/      login, logout, roms (list), romfile (?key=), save (?id=, bac
 guide/hgss.json     Generated guide data (220 KB). Don't read it whole; query it with python or jq
 guide/story.json    Hand-written story steps for NEXT; guide/bosses.json = their teams (tools/story_data.py)
 tools/              scene.py (background art), guide_data.py (builds hgss.json from pret/pokeheartgold), story_data.py,
-                    test_expshare.js, test_ivs.js (node, fake RAM)
+                    test_expshare.js, test_ivs.js, test_masterball.js (node, fake RAM)
 ```
 
 The js/ files are classic scripts sharing one global scope (no modules), so a top-level name in one
@@ -50,6 +51,7 @@ file is visible in the others. Keep the load order in `index.html`.
 - `docs/save-sync.md`: save ids, IDBFS paths, .dsv handling, conflict rule, HGSS save layout.
 - `docs/guide-panel.md`: guide layout, RAM scanning, terrain from the ROM, rebuilding hgss.json.
 - `docs/exp-share.md`: the Exp. Share, trainer-level and HP bar speed RAM patches (addresses, what each instruction change does).
+- `docs/master-balls.md`: Master Ball rewards (bag writes in DS RAM) and the Goldenrod shop patch.
 - `docs/testing.md`: wrangler dev server, testing with the real emulator offline, gotchas.
 - `docs/ideas.md`: backlog.
 

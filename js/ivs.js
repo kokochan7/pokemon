@@ -47,7 +47,8 @@ const WildIVs = (() => {
     const level = party[2] & 0xff;
     if (!level || level > 100) return null;
     const ivs = STATS.map((_, i) => ivw >>> i * 5 & 31);
-    return { pid, species, level, ivs, nature: pid % 25, hp: party[3], maxHp: party[4] };
+    const ot = (box[a + 2] | box[a + 3] << 16) >>> 0; // OT id (a wild Pokémon gets the player's)
+    return { pid, species, level, ivs, ot, nature: pid % 25, hp: party[3], maxHp: party[4] };
   }
 
   // Every party Pokémon in a Party struct found in DS RAM (ram .. ram + size).

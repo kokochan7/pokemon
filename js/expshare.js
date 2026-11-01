@@ -216,5 +216,6 @@ const ExpShare = (() => {
     }
   }
 
-  return { prepare, started, LEVEL_UP, levelUp }; // the guide panel adds LEVEL_UP / levelUp(trainer id) to trainer levels
+  // The DS RAM images found in the heap (one once the battle code has been patched); js/masterball.js uses them.
+  return { prepare, started, LEVEL_UP, levelUp, bases: () => bases }; // the guide panel adds LEVEL_UP / levelUp(trainer id) to trainer levels
 })();
