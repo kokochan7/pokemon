@@ -38,7 +38,7 @@ stones in the Items pocket are counted. If the count goes up while the flag is s
 stays set after a win, so the park's Shiny Stone item ball (flag 1286) is left out. If the bag is full and the
 prize is held at the gate, there's no Master Ball.
 
-## Goldenrod Dept. Store 2F: Master Ball for ₽10,000
+## Goldenrod Dept. Store 2F: Master Ball for ₽100,000
 
 - The ball clerk (map T25R1002 = map 192, `SpecialMartBuy 4`) sells from `_020FBC1A` in ARM9 data (pret
   `scrcmd_mart.c`): Poké, Great, Ultra Ball, Escape Rope, Poké Doll, Repel, Super Repel, Max Repel, Grass,
@@ -51,13 +51,18 @@ prize is held at the gate, there's no Master Ball.
   Console: "Master Balls: Goldenrod 2F list patched at 0x...".
 - The price: `ShopMenu_GetItemPrice` (overlay 3, 0x02258120 US; `ov03_02258120` in
   `asm/overlay_03.s` at commit 8ec18b15c^) returns `GetItemAttr(item, ITEMATTR_PRICE)` for a normal mart, and
-  the Master Ball's price there is 0. The 0x40-byte function is rewritten in place: a normal mart returns 10000
+  the Master Ball's price there is 0. The 0x40-byte function is rewritten in place: a normal mart returns 100000
   for item 1 (`cmp r1, #1; beq` -> `movs r0, #0x27; lsls r0, #8; adds r0, #0x10`). To make room, the seal and
   Pokéathlon/data card paths are shortened (`subs r0, #3; cmp r0, #1; bhi` instead of `adds r0, #0xfd; lsl; lsr;
   cmp; bhi`, and the two "return 100" paths share one). The `bl GetItemAttr` moves 4 bytes, so it's re-aimed
   (`moveBl`); the other bl stays put. Assembled with keystone and run in unicorn against the original for mart
-  types 0-5 and several items: only type 0 + Master Ball changes (0 -> 10000).
-  Console: "Master Balls: shop price 10000 patched". US address only (no search), checked byte for byte first.
+  types 0-5 and several items: only type 0 + Master Ball changes (0 -> 100000).
+  Console: "Master Balls: shop price 100000 patched". US address only (no search), checked byte for byte first.
+- Price history: ₽10,000 (2026-11-01), ₽100,000 (Kenny, 2026-11-03): `movs r0, #0xc3; lsls r0, #9; adds r0, #0xa0`.
+- The shop list prints prices with at most 4 digits (`ov31_0225DE24`, overlay 31, 0x0225DE24 US, `asm/overlay_31.s`:
+  `BufferIntegerAsString(..., price, 4, ...)`), so 5+ digits came out as "?000" (10000 too). Its `movs r3, #4` at
+  +0x22 becomes `#6`; the money and total lines already use 6. The 18 halfwords before it are checked first (they
+  match Kenny's SoulSilver RAM dump with the shop open). Console: "Master Balls: shop list prints 6 digits".
 - Selling a Master Ball still isn't possible: the bag's sell price reads the item data (0) directly.
 - Tested only against fake RAM here (no ROM in the repo). If the shop doesn't show it, ask Kenny for the
   console lines and a "Save debug data" RAM dump.

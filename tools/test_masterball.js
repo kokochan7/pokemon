@@ -102,13 +102,18 @@ MB.prepare(fakeRom).then(() => {
   MB.shopTick(h, [RAM]);
   assert.deepStrictEqual(MB.MART_NEW.map((_, i) => u16(ds(0x020fbc1a) + i * 2)), MB.MART_NEW, "Goldenrod list");
   assert.deepStrictEqual(MB.MART_OLD.map((_, i) => u16(ds(0x020fbc4e) + i * 2)), MB.MART_OLD, "Celadon back to normal");
-  // Expected bytes: keystone's assembly of the new function (checked in unicorn: type 0 item 1 -> 10000,
+  // Expected bytes: keystone's assembly of the new function (checked in unicorn: type 0 item 1 -> 100000,
   // every other mart type / item the same as the original).
   const want = [0xb508, 0x4b0f, 0x1c02, 0x5cd0, 0x2800, 0xd10b, 0x2901, 0xd005, 0x1c08, 0x2100, 0x220b, 0xf61f, 0xfde3,
-    0xbd08, 0x2027, 0x0200, 0x3010, 0xbd08, 0x3803, 0x2801, 0xd808, 0x1c08, 0x1c19, 0x3917, 0x3b13, 0x5851, 0x5cd2,
+    0xbd08, 0x20c3, 0x0240, 0x30a0, 0xbd08, 0x3803, 0x2801, 0xd808, 0x1c08, 0x1c19, 0x3917, 0x3b13, 0x5851, 0x5cd2,
     0xf7ff, 0xffcf, 0xbd08, 0x2064, 0xbd08, 0x0283, 0x0000];
   assert.deepStrictEqual(want.map((_, i) => u16(ds(0x02258120) + i * 2)), want, "price function");
   assert(!MB.priceIs(h, RAM), "patched once");
+  // The shop list's price printer (overlay 31): 4 digits -> 6. Bytes as in Kenny's game (shop-open RAM dump).
+  MB.LIST_DIGITS.code.forEach((v, i) => put(ds(0x0225de24) + i * 2, v));
+  MB.shopTick(h, [RAM]);
+  assert.strictEqual(u16(ds(0x0225de24) + 17 * 2), 0x2306, "movs r3, #6");
+  assert.strictEqual(u16(ds(0x0225de24) + 16 * 2), 0x1c28, "rest untouched");
   // a bl that has to borrow across the halves
   assert.deepStrictEqual(MB.moveBl(0xf000, 0xf801, 4), [0xf7ff, 0xffff]);
 

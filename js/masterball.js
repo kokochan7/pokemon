@@ -4,7 +4,7 @@
 //   puts a Master Ball in the bag so you can catch it safely;
 // - every wild Pokémon has a 1 in 200 chance to drop one ("lucky");
 // - winning 1st place in the Bug-Catching Contest gives one on top of the prize stone;
-// - the Goldenrod Dept. Store 2F ball clerk sells them for ₽10,000.
+// - the Goldenrod Dept. Store 2F ball clerk sells them for ₽100,000.
 // Rewards are written into the bag in DS RAM (the save's Balls pocket, plus the battle's copy of the bag,
 // which the game copies back over the save's bag when a battle ends). The shop is a code + data patch in
 // DS RAM, like the Exp. Share. Nothing in the ROM or save file changes. See docs/master-balls.md.
@@ -122,7 +122,7 @@ const MasterBalls = (() => {
     if (Story.flag(h, gen, WON)) give(h, gen, 1, "Bug-Catching Contest 1st place");
   }
 
-  // ---- Goldenrod Dept. Store 2F sells Master Balls for ₽10,000 ----
+  // ---- Goldenrod Dept. Store 2F sells Master Balls for ₽100,000 (Kenny, 2026-11-03; was ₽10,000) ----
   // The ball clerk's list (Goldenrod 2F is map T25R1002: SpecialMartBuy 4, _020FBC1A in ARM9 data; Celadon 2F,
   // T07R0102, uses the identical list 19 right after it, at +0x34) gets a Master Ball after the Ultra Ball.
   // Kenny's RAM dump showed the shop's copy of list 4 (2026-11-01). The list can't grow, so the last
@@ -132,7 +132,7 @@ const MasterBalls = (() => {
   const MART_SEARCH = [0x020f0000, 0x02108000];  // US: 0x020FBC1A
   // Its price: ShopMenu_GetItemPrice (overlay 3, 0x02258120 US) returns GetItemAttr(item, PRICE) for a
   // normal mart, and the Master Ball's price there is 0. The function is rewritten in place so a normal
-  // mart returns 10000 for item 1. The seal / Pokéathlon paths are shortened to fit but return the same
+  // mart returns 100000 for item 1. The seal / Pokéathlon paths are shortened to fit but return the same
   // (checked in unicorn against the original for mart types 0-5). BL = keep the original bl.
   const BL = -1;
   const PRICE = {
@@ -142,10 +142,25 @@ const MasterBalls = (() => {
       0x3b13, 0x5851, 0x5cd2, BL, BL, 0xbd08, 0x2064, 0xbd08, 0x0283, 0x0000],
     // "MOVED" = the original bl to GetItemAttr from halfwords 9-10, re-aimed from 4 bytes further on.
     patch: [0xb508, 0x4b0f, 0x1c02, 0x5cd0, 0x2800, 0xd10b, 0x2901, 0xd005, 0x1c08, 0x2100, 0x220b,
-      "MOVED", "MOVED", 0xbd08, 0x2027, 0x0200, 0x3010, 0xbd08, // movs r0, #0x27; lsls r0, #8; adds r0, #0x10 = 10000
+      "MOVED", "MOVED", 0xbd08, 0x20c3, 0x0240, 0x30a0, 0xbd08, // movs r0, #0xc3; lsls r0, #9; adds r0, #0xa0 = 100000
       0x3803, 0x2801, 0xd808, 0x1c08, 0x1c19, 0x3917, 0x3b13, 0x5851, 0x5cd2, null, null, 0xbd08, 0x2064, 0xbd08, null, null],
   };
-  const PRICE_NEW = 10000;
+  const PRICE_NEW = 100000;
+  // The shop list prints each price with at most 4 digits (ov31_0225DE24, overlay 31, 0x0225DE24 US:
+  // BufferIntegerAsString(..., price, 4, ...)), so 100000 would show as "?000". "movs r3, #4" -> "#6"
+  // (the money and total lines already use 6). Checked byte for byte first; normal prices print as before.
+  const LIST_DIGITS = {
+    at: 0x0225de24,
+    code: [0xb5f8, 0xb084, 0x1c05, 0x980a, 0x1c0e, 0x1ec0, 0x1c17, 0x2412, 0x2801, 0xd800, 0x2413, 0x2100,
+      0x9100, 0x2001, 0x9001, 0x1c1a, 0x1c28, 0x2304],
+    patch: { 17: 0x2306 },
+  };
+  function digitsTick(h, b) {
+    const o = b + LIST_DIGITS.at - 0x02000000;
+    if (!LIST_DIGITS.code.every((v, i) => u16(h, o + i * 2) === v)) return false;
+    for (const i in LIST_DIGITS.patch) put16(h, o + i * 2, LIST_DIGITS.patch[i]);
+    return true;
+  }
   const isBl = (hw, half) => half === 0 ? (hw & 0xf800) === 0xf000 : (hw & 0xe800) === 0xe800;
   function priceIs(h, b) {
     for (let i = 0; i < PRICE.code.length; i++) {
@@ -170,7 +185,7 @@ const MasterBalls = (() => {
     });
   }
   const listIs = (h, o, list) => list.every((v, i) => u16(h, o + i * 2) === v);
-  let martAt = null, martBase = null, martTicks = 0, priceLogged = false;
+  let martAt = null, martBase = null, martTicks = 0, priceLogged = false, digitsLogged = false;
   function findMart(h, b) {
     const out = [];
     for (let a = MART_SEARCH[0]; a < MART_SEARCH[1]; a += 2) {
@@ -194,6 +209,7 @@ const MasterBalls = (() => {
       }
     }
     for (const b of bases) {
+      if (digitsTick(h, b) && !digitsLogged) { digitsLogged = true; console.info("Master Balls: shop list prints 6 digits"); }
       if (!priceIs(h, b)) continue;
       patchPrice(h, b);
       if (!priceLogged) { priceLogged = true; console.info("Master Balls: shop price " + PRICE_NEW + " patched"); }
@@ -229,5 +245,5 @@ const MasterBalls = (() => {
     if (header) setInterval(tick, 500);
   }
 
-  return { prepare, started, wild, why, shiny, perfect, lucky, addBalls, bagCopies, moveBl, priceIs, patchPrice, findMart, shopTick, contestTick, PRICE, MART_OLD, MART_NEW };
+  return { prepare, started, wild, why, shiny, perfect, lucky, addBalls, bagCopies, moveBl, priceIs, patchPrice, findMart, shopTick, contestTick, PRICE, LIST_DIGITS, MART_OLD, MART_NEW };
 })();
