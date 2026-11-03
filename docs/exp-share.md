@@ -2,9 +2,9 @@
 
 Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node tools/test_expshare.js` (fake RAM, dummy bytes).
 
-- Always-on, whole party (Kenny's choice): after each knockout the Pokémon that fought get 150% of the EXP (EXP/2 +
+- Always-on, whole party (Kenny's choice): after each knockout the Pokémon that fought get 130% of the EXP (EXP * 77/256 +
   EXP) and every other party Pokémon gets 100% (EXP). History, all Kenny's calls: 100% for everyone
-  (2026-10-24), then benched 75%, then 50%, then fighters 75% with +5 trainer levels, then fighters 100% (2026-10-25), then fighters 200% and benched 100% (2026-10-31), then fighters 150% (2026-11-01). Eggs and fainted Pokémon get nothing, Lv 100 is skipped as usual. EVs go to everyone.
+  (2026-10-24), then benched 75%, then 50%, then fighters 75% with +5 trainer levels, then fighters 100% (2026-10-25), then fighters 200% and benched 100% (2026-10-31), then fighters 150% (2026-11-01), then fighters 130% (2026-11-03). Eggs and fainted Pokémon get nothing, Lv 100 is skipped as usual. EVs go to everyone.
   Lucky Egg, traded and trainer-battle boosts still apply. Only the Pokémon on the field gets "gained X Exp. Points!";
   benched ones get no message unless they level up ("grew to Lv. N!", stat summary, move learning, evolution after battle
   all work normally). A combined "your team gained EXP" line isn't possible without new game text.
@@ -16,12 +16,13 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   battle, so it is re-patched each time. All four sites must match byte for byte before anything is written.
 - The patch (addresses for the US ROM, from pret/pokeheartgold's pre-decompilation `asm/overlay_12_battle_command.s`,
   commit 9d46feb8; the decomp is matching, so these are the real ROM bytes; HG and SS share them):
-  - `BtlCmd_CalcExpGain` (0x0223E6A0): nop the `beq` at 0x0223E79E so the "someone holds an Exp. Share" branch is always
-    taken, replace `lsr r4, r0, #1; ldr r1, [sp, #4]; add r0, r4, #0` at 0x0223E7A0 with
-    `adds r4, r0, #0; lsrs r0, r0, #1; nop`, and nop the two `blx _s32_div_f` at 0x0223E7A6 / 0x0223E7C6 so
-    nothing is divided by the number of fighters. Result: `gainedExp` (ctx+0x9C) = EXP/2, `partyGainedExp` (ctx+0xA0) =
-    EXP (each at least 1). Checked in unicorn: EXP 100 -> 50 + 100, 63 -> 31 + 63. (200% for fighters was
-    `adds r4, r0, #0; nop; nop`: gainedExp = EXP.) (Earlier splits used
+  - `BtlCmd_CalcExpGain` (0x0223E6A0): the `beq` at 0x0223E79E becomes `adds r4, r0, #0` (r4 = EXP), so the
+    "someone holds an Exp. Share" branch is always taken; `lsr r4, r0, #1; ldr r1, [sp, #4]; add r0, r4, #0` at
+    0x0223E7A0 becomes `movs r1, #77; muls r0, r1; lsrs r0, r0, #8` (EXP is 16-bit there, so no overflow), and the two
+    `blx _s32_div_f` at 0x0223E7A6 / 0x0223E7C6 are nopped so nothing is divided by the number of fighters. Result:
+    `gainedExp` (ctx+0x9C) = EXP * 77 / 256 (30.1%, rounded down), `partyGainedExp` (ctx+0xA0) = EXP (each at least
+    1). Checked in unicorn: EXP 100 -> 30 + 100, 1000 -> 300 + 1000, 63 -> 18 + 63. (150%: `nop; adds r4, r0, #0;
+    lsrs r0, r0, #1; nop`; 200%: `nop; adds r4, r0, #0; nop; nop`. Earlier splits used
     `lsrs r1, r0, #1; subs r4, r0, r1` then `adds r0, r1, #0` for EXP/2 + EXP - EXP/2, or `lsrs r0, r1, #1` for EXP/4.)
   - The other branch of that `beq` (0x0223E7E2-0x0223E805) is dead after this, and holds an 18-halfword routine (code cave)
     used by the message step below. It returns Z=0 for "print the message" when the slot is
@@ -30,7 +31,7 @@ Code: `js/expshare.js` (`ExpShare`), loaded after `js/guide.js`. Test: `node too
   - `Task_GetExp` (0x02245898), slot picker loop: `mov r1, #6` (held item) -> `#76` (MON_DATA_IS_EGG) at 0x022458DC,
     nop the `bl GetItemAttr` at 0x022458EE, `cmp r0, #0x33` -> `cmp r0, #0` at 0x022458F2: every non-egg slot gets a turn.
   - `Task_GetExp`, EXP sum: `cmp r0, #0x33` -> `cmp r0, r0` at 0x02245A56 ("holds an Exp. Share" always true): fighters
-    get `gainedExp + partyGainedExp` = 150%, everyone else `partyGainedExp` = 100%. (For 100% for everyone, the `beq` at
+    get `gainedExp + partyGainedExp` = 130%, everyone else `partyGainedExp` = 100%. (For 100% for everyone, the `beq` at
     0x02245A4A became `b` so fighters skipped `gainedExp`, and `partyGainedExp` was the full EXP.)
   - `Task_GetExp`, message: `ldr r0, [sp, #0x38]; cmp r0, #0` at 0x02245B3E -> `bl 0x0223E7E2`; the `beq` after it goes to
     0x02245B76, whose `mov r0, #0x25` is nopped so it stores the routine's r0 as the state.
