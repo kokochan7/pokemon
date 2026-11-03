@@ -29,7 +29,7 @@ js/story.js         Story: NEXT walkthrough steps, story progress from DS RAM fl
 js/guide.js         Guide: HGSS guide panel (live map from DS RAM, mini map, encounters, trainers)
 js/ivs.js           WildIVs: decrypts the wild Pokémon you're battling from DS RAM and rates its IVs (guide box)
 js/expshare.js      ExpShare: always-on Exp. Share (fighter 130%, benched 100%), +5 trainer levels, 2x HP bars, patched in DS RAM
-js/masterball.js    MasterBalls: Master Ball for shiny / perfect-IV / lucky wild Pokémon and Bug Contest wins, Goldenrod 2F sells them (₽10,000)
+js/masterball.js    MasterBalls: Master Ball for shiny / perfect-IV / lucky wild Pokémon and Bug Contest wins, Goldenrod 2F sells them (₽100,000)
 js/library.js       GAMES (cloud) and STORED (local) lists, login, clock; runs the page start-up
 css/style.css       All styles
 scene.svg           Generated background art. Don't read it; regenerate with python3 tools/scene.py
